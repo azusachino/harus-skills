@@ -1,0 +1,71 @@
+# Generated lesson files
+lessons/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Environment files (if you add any)
+.env
+.env.local
+.env.*.local
+
+# Node modules (if you add JS tooling)
+node_modules/
+
+# Python (if you add Python tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+ENV/
+
+# Build outputs (if you add build scripts)
+dist/
+build/
+*.egg-info/
+
+# Test coverage (if you add tests)
+coverage/
+.coverage
+*.cover
+.pytest_cache/
+
+# Personal notes
+notes.md
+TODO.md
+scratch/

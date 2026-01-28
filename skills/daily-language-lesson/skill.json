@@ -1,0 +1,8 @@
+{
+  "name": "daily-language-lesson",
+  "description": "Generate daily language learning lessons for English (native), Japanese (native), and Spanish (entry level)",
+  "version": "1.0.0",
+  "author": "haru",
+  "command": "daily-language-lesson",
+  "aliases": ["dll", "lesson"]
+}
