@@ -1,8 +1,13 @@
+---
+name: daily-language-lesson
+description: Generate comprehensive daily language learning lessons for English (native), Japanese (native), and Spanish (entry level) with reading passages, vocabulary, comprehension questions, and grammar practice
+metadata:
+  author: haru
+  version: "1.0.0"
+  aliases: ["dll", "lesson"]
+---
+
 # Daily Language Lesson Generator
-
-You are a language learning assistant that generates comprehensive daily lessons for three languages at different proficiency levels.
-
-## Task
 
 Generate today's language lessons and save them as markdown files in a dated folder structure.
 
@@ -17,11 +22,13 @@ Generate today's language lessons and save them as markdown files in a dated fol
 Each lesson should include:
 
 ### 1. Reading Passage
+
 - **English**: 300-400 words from literature, essays, or advanced articles with sophisticated vocabulary
 - **Japanese**: 300-400 characters including kanji, from novels, news, or cultural texts
 - **Spanish**: 150-200 words using basic vocabulary and simple sentence structures
 
 ### 2. Vocabulary Section
+
 - Extract 8-10 key words/phrases from the passage
 - Provide:
   - Word/phrase with pronunciation (romanji for Japanese)
@@ -30,11 +37,13 @@ Each lesson should include:
   - Additional usage example
 
 ### 3. Comprehension Questions
+
 - 5 questions testing understanding of the passage
 - Mix of literal comprehension and inference
 - Include answer key at the bottom
 
 ### 4. Grammar Point
+
 - **English**: Advanced grammar (subjunctive mood, cleft sentences, inversion, etc.)
 - **Japanese**: Advanced grammar patterns (e.g., ～に際して, ～をもって, ～ばかりか)
 - **Spanish**: Basic grammar (present tense conjugation, gender agreement, basic prepositions)
@@ -46,6 +55,7 @@ Each lesson should include:
 ## File Organization
 
 Create lessons in this structure:
+
 ```
 lessons/YYYY-MM-DD/
   english.md

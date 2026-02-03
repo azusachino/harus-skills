@@ -9,6 +9,7 @@ Generate comprehensive daily language learning lessons for English, Japanese, an
 - **Spanish lessons** at entry level: Basic vocabulary, simple grammar for beginners
 
 Each lesson includes:
+
 - Reading passage appropriate for the level
 - Vocabulary extraction with definitions and examples
 - Comprehension questions with answer key

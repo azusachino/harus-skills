@@ -1,0 +1,248 @@
+# mise.toml - Tool and task management for harus-skills
+# https://mise.jdx.dev/
+
+[tools]
+# Formatters and linters
+"npm:prettier" = "latest"           # Format markdown, JSON, YAML
+"npm:markdownlint-cli2" = "latest"  # Lint markdown files
+"npm:@taplo/cli" = "latest"         # Format TOML files
+shfmt = "latest"                    # Format shell scripts
+
+# Git tools (optional, for enhanced workflows)
+"npm:commitizen" = "latest"         # Standardized commit messages
+
+[tasks.fmt]
+description = "Format all files (markdown, JSON, YAML, TOML, shell scripts)"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🎨 Formatting files..."
+
+# Format markdown, JSON, YAML files
+echo "  📝 Formatting markdown, JSON, YAML..."
+prettier --write "**/*.{md,json,yaml,yml}" \
+  --ignore-path .gitignore \
+  --prose-wrap always \
+  --print-width 80
+
+# Format TOML files
+echo "  📦 Formatting TOML files..."
+taplo format mise.toml 2>/dev/null || true
+
+# Format shell scripts (if any exist)
+if find . -name "*.sh" -o -name "*.bash" | grep -q .; then
+  echo "  🐚 Formatting shell scripts..."
+  shfmt -w -i 2 -ci -bn $(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules)
+fi
+
+echo "✅ Formatting complete!"
+"""
+
+[tasks.fmt-check]
+description = "Check formatting without modifying files"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🔍 Checking file formatting..."
+
+# Check markdown, JSON, YAML
+prettier --check "**/*.{md,json,yaml,yml}" \
+  --ignore-path .gitignore \
+  --prose-wrap always \
+  --print-width 80
+
+# Check TOML
+taplo format --check mise.toml 2>/dev/null || true
+
+# Check shell scripts
+if find . -name "*.sh" -o -name "*.bash" | grep -q .; then
+  shfmt -d -i 2 -ci -bn $(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules)
+fi
+
+echo "✅ All files are properly formatted!"
+"""
+
+[tasks.lint]
+description = "Lint all markdown files"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🔎 Linting markdown files..."
+markdownlint-cli2 "**/*.md" --config .markdownlint.json
+echo "✅ Linting complete!"
+"""
+
+[tasks.lint-fix]
+description = "Lint and fix markdown files"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🔧 Linting and fixing markdown files..."
+markdownlint-cli2 "**/*.md" --fix --config .markdownlint.json
+echo "✅ Linting and fixing complete!"
+"""
+
+[tasks.clean]
+description = "Remove generated lesson files"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🧹 Cleaning generated lessons..."
+rm -rf lessons/
+echo "✅ Clean complete!"
+"""
+
+[tasks.verify]
+description = "Verify all skills are properly formatted"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "✅ Verifying repository structure..."
+
+# Check all SKILL.md files exist
+for skill_dir in skills/*/; do
+  skill_name=$(basename "$skill_dir")
+  if [ ! -f "$skill_dir/SKILL.md" ]; then
+    echo "❌ Missing SKILL.md in $skill_name"
+    exit 1
+  fi
+  echo "  ✓ $skill_name has SKILL.md"
+done
+
+# Check marketplace.json
+if [ ! -f ".claude-plugin/marketplace.json" ]; then
+  echo "❌ Missing .claude-plugin/marketplace.json"
+  exit 1
+fi
+echo "  ✓ marketplace.json exists"
+
+# Check CLAUDE.md
+if [ ! -f "CLAUDE.md" ]; then
+  echo "❌ Missing CLAUDE.md"
+  exit 1
+fi
+echo "  ✓ CLAUDE.md exists"
+
+echo "✅ Repository structure is valid!"
+"""
+
+[tasks.list-skills]
+description = "List all available skills"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "📚 Available skills:"
+echo ""
+
+for skill_dir in skills/*/; do
+  if [ -f "$skill_dir/SKILL.md" ]; then
+    skill_name=$(basename "$skill_dir")
+    # Extract description from SKILL.md frontmatter
+    description=$(grep "^description:" "$skill_dir/SKILL.md" | cut -d':' -f2- | xargs)
+    echo "  • $skill_name"
+    if [ -n "$description" ]; then
+      echo "    $description"
+    fi
+    echo ""
+  fi
+done
+"""
+
+[tasks.install-hooks]
+description = "Install git hooks for automated formatting"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🪝 Installing git hooks..."
+
+# Create pre-commit hook
+cat > .git/hooks/pre-commit << 'EOF'
+#!/usr/bin/env bash
+# Auto-format staged files before commit
+
+echo "🎨 Auto-formatting staged files..."
+
+# Get list of staged markdown files
+STAGED_MD=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.md$' || true)
+
+if [ -n "$STAGED_MD" ]; then
+  echo "  📝 Formatting markdown files..."
+  echo "$STAGED_MD" | xargs prettier --write --prose-wrap always --print-width 80
+  echo "$STAGED_MD" | xargs git add
+fi
+
+# Get list of staged JSON/YAML files
+STAGED_DATA=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.(json|yaml|yml)$' || true)
+
+if [ -n "$STAGED_DATA" ]; then
+  echo "  📦 Formatting JSON/YAML files..."
+  echo "$STAGED_DATA" | xargs prettier --write
+  echo "$STAGED_DATA" | xargs git add
+fi
+
+echo "✅ Pre-commit formatting complete!"
+EOF
+
+chmod +x .git/hooks/pre-commit
+
+echo "✅ Git hooks installed!"
+echo "   Files will be auto-formatted before each commit."
+"""
+
+[tasks.check]
+description = "Run all checks (format check, lint, verify)"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🔍 Running all checks..."
+echo ""
+
+mise run fmt-check
+echo ""
+
+mise run lint
+echo ""
+
+mise run verify
+echo ""
+
+echo "✅ All checks passed!"
+"""
+
+[tasks.dev]
+description = "Setup development environment"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🛠️  Setting up development environment..."
+
+# Ensure all tools are installed
+mise install
+
+# Install git hooks
+mise run install-hooks
+
+echo "✅ Development environment ready!"
+echo ""
+echo "Available commands:"
+echo "  mise fmt          - Format all files"
+echo "  mise lint         - Lint markdown files"
+echo "  mise check        - Run all checks"
+echo "  mise list-skills  - List available skills"
+echo "  mise clean        - Remove generated lessons"
+"""
+
+[env]
+# Environment variables for formatting tools
+PRETTIER_PROSE_WRAP = "always"
+PRETTIER_PRINT_WIDTH = "80"

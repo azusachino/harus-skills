@@ -5,17 +5,26 @@
         "email": "azusachino@duck.com"
     },
     "metadata": {
-        "description": "harus skills",
+        "description": "Custom Claude Code skills for productivity and learning",
         "version": "1.0.0"
     },
     "plugins": [
         {
             "name": "code-skills",
-            "description": "Collection of daily programming helpers",
+            "description": "Collection of development and git workflow helpers",
             "source": "./",
             "strict": false,
             "skills": [
                 "./skills/mkmr"
+            ]
+        },
+        {
+            "name": "language-skills",
+            "description": "Language learning and lesson generation tools",
+            "source": "./",
+            "strict": false,
+            "skills": [
+                "./skills/daily-language-lesson"
             ]
         }
     ]
