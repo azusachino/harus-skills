@@ -41,6 +41,7 @@ make install
 ```
 
 This will:
+
 - Create `~/.config/claude/config.json` if it doesn't exist
 - Add this repository's skills directory to the configuration
 - Verify the setup
@@ -51,6 +52,7 @@ This will:
 
 1. Clone this repository
 2. Edit `~/.config/claude/config.json` and add:
+
    ```json
    {
      "skillDirectories": [
@@ -58,6 +60,7 @@ This will:
      ]
    }
    ```
+
 3. Restart Claude Code
 
 ### Verify Installation
@@ -80,6 +83,7 @@ make verify-config
 ```
 
 Lessons are saved to `lessons/YYYY-MM-DD/` with three files:
+
 - `english.md` - Native level
 - `japanese.md` - Native level
 - `spanish.md` - Entry level
@@ -99,7 +103,11 @@ make clean          # Remove generated lessons
 ## Contributing
 
 Feel free to add your own skills to this collection. Each skill should have its own directory under `skills/` with:
+
 - `skill.json` - Skill metadata and configuration
 - `prompt.md` - Instructions for Claude on how to execute the skill
 - `README.md` - Documentation for users
 
+## resources
+
+- https://github.com/anthropics/skills

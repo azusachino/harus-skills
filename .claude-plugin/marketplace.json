@@ -1,0 +1,22 @@
+{
+    "name": "harus-skills",
+    "owner": {
+        "name": "haru",
+        "email": "azusachino@duck.com"
+    },
+    "metadata": {
+        "description": "harus skills",
+        "version": "1.0.0"
+    },
+    "plugins": [
+        {
+            "name": "code-skills",
+            "description": "Collection of daily programming helpers",
+            "source": "./",
+            "strict": false,
+            "skills": [
+                "./skills/mkmr"
+            ]
+        }
+    ]
+}
