@@ -4,54 +4,83 @@ leap higher
 
 A collection of custom Claude Code skills for productivity and learning.
 
-## Skills
+## Plugins
 
-### 📚 Daily Language Lesson (`/daily-language-lesson`, `/dll`, `/lesson`)
+This marketplace contains two plugin collections:
 
-Generate comprehensive daily language learning lessons for multiple languages.
+### 🛠️ code-skills
 
-- **English**: Native level (advanced literature, idioms, sophisticated grammar)
-- **Japanese**: Native level (advanced kanji, keigo, literary expressions)
-- **Spanish**: Entry level (basic vocabulary, simple grammar)
+Development and git workflow helpers.
+
+**Skills:**
+
+- `/mkmr` - Create merge requests from current branch to mainline with automated diff analysis and description generation
+
+### 📚 language-skills
+
+Language learning and lesson generation tools.
+
+**Skills:**
+
+- `/daily-language-lesson` (aliases: `/dll`, `/lesson`) - Generate comprehensive daily language learning lessons
+  - **English**: Native level (advanced literature, idioms, sophisticated grammar)
+  - **Japanese**: Native level (advanced kanji, keigo, literary expressions)
+  - **Spanish**: Entry level (basic vocabulary, simple grammar)
 
 Each lesson includes reading passages, vocabulary, comprehension questions, and grammar practice. Lessons are saved as markdown files in dated folders.
 
-[Learn more →](skills/daily-language-lesson/README.md)
-
-## Quick Start
-
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd harus-skills
-
-# Install skills (adds to Claude Code config)
-make install
-
-# Restart Claude Code, then use:
-/lesson
-```
-
 ## Installation
 
-### Automated Installation (Recommended)
+### Prerequisites
 
-```bash
-make install
-```
+- [Claude Code](https://claude.ai/code) CLI tool installed
 
-This will:
+### Method 1: Install as Marketplace (Recommended)
 
-- Create `~/.config/claude/config.json` if it doesn't exist
-- Add this repository's skills directory to the configuration
-- Verify the setup
+This method allows you to install individual plugins as needed.
 
-**Important**: Restart Claude Code after installation for changes to take effect.
+1. **Add this repository as a marketplace:**
 
-### Manual Installation
+   ```bash
+   /plugin marketplace add azusachino/harus-skills
+   ```
 
-1. Clone this repository
-2. Edit `~/.config/claude/config.json` and add:
+2. **Install plugins:**
+
+   Option A - Via CLI:
+
+   ```bash
+   # Install both plugins
+   /plugin install code-skills@harus-skills
+   /plugin install language-skills@harus-skills
+
+   # Or install individually
+   /plugin install code-skills@harus-skills
+   /plugin install language-skills@harus-skills
+   ```
+
+   Option B - Via Browse Interface:
+   1. Run `/plugin marketplace browse`
+   2. Select `harus-skills`
+   3. Choose which plugin(s) to install (`code-skills` and/or `language-skills`)
+   4. Select `Install now`
+
+3. **Restart Claude Code** for changes to take effect
+
+### Method 2: Install via Skill Directory (Legacy)
+
+If you prefer to make all skills available without the plugin system:
+
+1. Clone this repository:
+
+   ```bash
+   git clone <your-repo-url>
+   cd harus-skills
+   ```
+
+2. Add to Claude Code configuration:
+
+   Edit `~/.config/claude/config.json` (create if it doesn't exist):
 
    ```json
    {
@@ -65,13 +94,31 @@ This will:
 
 ### Verify Installation
 
+In Claude Code, check available skills:
+
 ```bash
-make verify-config
+/help
 ```
+
+Your installed skills should appear in the skills section.
 
 ## Usage
 
-### Daily Language Lesson
+### mkmr - Create Merge Request
+
+```bash
+/mkmr
+```
+
+The skill will guide you through:
+
+1. Asking for permission to proceed
+2. Identifying mainline branch (main/develop)
+3. Checking for unstaged changes
+4. Analyzing diff and generating description
+5. Creating the merge request via gh/glab
+
+### daily-language-lesson - Generate Language Lessons
 
 ```bash
 # Generate today's language lessons
@@ -88,26 +135,79 @@ Lessons are saved to `lessons/YYYY-MM-DD/` with three files:
 - `japanese.md` - Native level
 - `spanish.md` - Entry level
 
-## Makefile Commands
+## Development
+
+### Setup
+
+This repository uses [mise](https://mise.jdx.dev/) for tool management:
 
 ```bash
-make help           # Show all available commands
-make install        # Install skills to Claude Code
-make uninstall      # Remove skills from Claude Code
-make verify-config  # Check configuration status
-make list-skills    # List all available skills
-make test           # Verify lesson generation
-make clean          # Remove generated lessons
+# Install mise (if not already installed)
+curl https://mise.run | sh
+
+# Install all tools and setup dev environment
+mise install
+mise run dev
+```
+
+### Daily Commands
+
+```bash
+mise fmt              # Format all files (markdown, JSON, YAML, TOML)
+mise lint             # Lint markdown files
+mise check            # Run all checks before committing
+mise list-skills      # List all available skills
+mise clean            # Remove generated lessons
+```
+
+**Important:** Always run `mise fmt` after editing files. Git hooks will auto-format on commit if installed via `mise run dev`.
+
+### Available Tasks
+
+Run `mise tasks` to see all available commands, or check `mise.toml` for details.
+
+## Skill Structure
+
+Each skill follows the [Agent Skills Standard](http://agentskills.io) format:
+
+```s
+skills/
+  skill-name/
+    SKILL.md          # Skill definition with YAML frontmatter and instructions
+    README.md         # Optional: User documentation
+```
+
+### SKILL.md Format
+
+```yaml
+---
+name: skill-name
+description: Clear description of what the skill does and when to use it
+metadata:
+  author: Your Name
+  version: "1.0.0"
+  aliases: ["alias1", "alias2"]  # Optional
+allowed-tools: git gh glab        # Optional: Restrict tool usage
+---
+
+# Skill Name
+
+[Instructions for Claude on how to execute the skill]
 ```
 
 ## Contributing
 
-Feel free to add your own skills to this collection. Each skill should have its own directory under `skills/` with:
+Feel free to add your own skills to this collection:
 
-- `skill.json` - Skill metadata and configuration
-- `prompt.md` - Instructions for Claude on how to execute the skill
-- `README.md` - Documentation for users
+1. Create a new directory under `skills/`
+2. Add a `SKILL.md` file following the format above
+3. Optionally add a `README.md` for user documentation
+4. Update `.claude-plugin/marketplace.json` to register the skill in the appropriate plugin
+5. Test the skill in Claude Code
+6. Submit a pull request
 
-## resources
+## Resources
 
-- https://github.com/anthropics/skills
+- [Anthropic Skills Repository](https://github.com/anthropics/skills) - Official skills and examples
+- [Agent Skills Standard](http://agentskills.io) - Specification and documentation
+- [Claude Code Documentation](https://support.claude.com/en/articles/12512180-using-skills-in-claude) - Using skills in Claude
