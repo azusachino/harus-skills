@@ -10,20 +10,12 @@
     },
     "plugins": [
         {
-            "name": "code-skills",
-            "description": "Collection of development and git workflow helpers",
+            "name": "harus-skills",
+            "description": "harus useful skills",
             "source": "./",
             "strict": false,
             "skills": [
-                "./skills/mkmr"
-            ]
-        },
-        {
-            "name": "language-skills",
-            "description": "Language learning and lesson generation tools",
-            "source": "./",
-            "strict": false,
-            "skills": [
+                "./skills/mkmr",
                 "./skills/daily-language-lesson"
             ]
         }
