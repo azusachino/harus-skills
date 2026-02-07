@@ -4,7 +4,7 @@
 [tools]
 # Formatters and linters
 "npm:prettier" = "latest"           # Format markdown, JSON, YAML
-"npm:markdownlint-cli2" = "latest"  # Lint markdown files
+"npm:markdownlint-cli" = "latest"  # Lint markdown files
 "npm:@taplo/cli" = "latest"         # Format TOML files
 shfmt = "latest"                    # Format shell scripts
 

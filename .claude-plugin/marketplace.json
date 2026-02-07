@@ -16,7 +16,8 @@
             "strict": false,
             "skills": [
                 "./skills/mkmr",
-                "./skills/daily-language-lesson"
+                "./skills/daily-language-lesson",
+                "./skills/next-session"
             ]
         }
     ]
