@@ -3,8 +3,10 @@ name: daily-language-lesson
 description: Generate comprehensive daily language learning lessons for English (native), Japanese (native), and Spanish (entry level) with reading passages, vocabulary, comprehension questions, and grammar practice
 metadata:
   author: haru
-  version: "1.0.0"
+  version: 1.0.0
   aliases: ["dll", "lesson"]
+context: fork
+disable-model-invocation: true
 ---
 
 # Daily Language Lesson Generator
