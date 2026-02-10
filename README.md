@@ -84,9 +84,7 @@ If you prefer to make all skills available without the plugin system:
 
    ```json
    {
-     "skillDirectories": [
-       "/path/to/harus-skills/skills"
-     ]
+     "skillDirectories": ["/path/to/harus-skills/skills"]
    }
    ```
 
@@ -186,10 +184,9 @@ description: Clear description of what the skill does and when to use it
 metadata:
   author: Your Name
   version: "1.0.0"
-  aliases: ["alias1", "alias2"]  # Optional
-allowed-tools: git gh glab        # Optional: Restrict tool usage
+  aliases: ["alias1", "alias2"] # Optional
+allowed-tools: git gh glab # Optional: Restrict tool usage
 ---
-
 # Skill Name
 
 [Instructions for Claude on how to execute the skill]

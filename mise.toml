@@ -9,7 +9,7 @@
 shfmt = "latest"                    # Format shell scripts
 
 # Git tools (optional, for enhanced workflows)
-"npm:commitizen" = "latest"         # Standardized commit messages
+"npm:commitizen" = "latest" # Standardized commit messages
 
 [tasks.fmt]
 description = "Format all files (markdown, JSON, YAML, TOML, shell scripts)"
@@ -17,26 +17,20 @@ run = """
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "🎨 Formatting files..."
+echo "Formatting files..."
 
-# Format markdown, JSON, YAML files
-echo "  📝 Formatting markdown, JSON, YAML..."
-prettier --write "**/*.{md,json,yaml,yml}" \
-  --ignore-path .gitignore \
-  --prose-wrap always \
-  --print-width 80
+# Format markdown, JSON, YAML files (config from .prettierrc.json)
+prettier --write "**/*.{md,json,yaml,yml}"
 
 # Format TOML files
-echo "  📦 Formatting TOML files..."
-taplo format mise.toml 2>/dev/null || true
+taplo format "**/*.toml" 2>/dev/null || true
 
 # Format shell scripts (if any exist)
 if find . -name "*.sh" -o -name "*.bash" | grep -q .; then
-  echo "  🐚 Formatting shell scripts..."
   shfmt -w -i 2 -ci -bn $(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules)
 fi
 
-echo "✅ Formatting complete!"
+echo "Done."
 """
 
 [tasks.fmt-check]
@@ -45,23 +39,20 @@ run = """
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "🔍 Checking file formatting..."
+echo "Checking file formatting..."
 
-# Check markdown, JSON, YAML
-prettier --check "**/*.{md,json,yaml,yml}" \
-  --ignore-path .gitignore \
-  --prose-wrap always \
-  --print-width 80
+# Check markdown, JSON, YAML (config from .prettierrc.json)
+prettier --check "**/*.{md,json,yaml,yml}"
 
 # Check TOML
-taplo format --check mise.toml 2>/dev/null || true
+taplo format --check "**/*.toml" 2>/dev/null || true
 
 # Check shell scripts
 if find . -name "*.sh" -o -name "*.bash" | grep -q .; then
   shfmt -d -i 2 -ci -bn $(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules)
 fi
 
-echo "✅ All files are properly formatted!"
+echo "All files are properly formatted."
 """
 
 [tasks.lint]
@@ -71,8 +62,8 @@ run = """
 set -euo pipefail
 
 echo "🔎 Linting markdown files..."
-markdownlint-cli2 "**/*.md" --config .markdownlint.json
-echo "✅ Linting complete!"
+markdownlint-cli2 "**/*.md" "#lessons/**" --config .markdownlint.json
+echo "Done."
 """
 
 [tasks.lint-fix]
@@ -81,9 +72,9 @@ run = """
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "🔧 Linting and fixing markdown files..."
-markdownlint-cli2 "**/*.md" --fix --config .markdownlint.json
-echo "✅ Linting and fixing complete!"
+echo "Linting and fixing markdown files..."
+markdownlint-cli2 "**/*.md" "#lessons/**" --fix --config .markdownlint.json
+echo "Done."
 """
 
 [tasks.clean]
@@ -175,7 +166,7 @@ STAGED_MD=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.md$' |
 
 if [ -n "$STAGED_MD" ]; then
   echo "  📝 Formatting markdown files..."
-  echo "$STAGED_MD" | xargs prettier --write --prose-wrap always --print-width 80
+  echo "$STAGED_MD" | xargs prettier --write
   echo "$STAGED_MD" | xargs git add
 fi
 
@@ -241,8 +232,3 @@ echo "  mise check        - Run all checks"
 echo "  mise list-skills  - List available skills"
 echo "  mise clean        - Remove generated lessons"
 """
-
-[env]
-# Environment variables for formatting tools
-PRETTIER_PROSE_WRAP = "always"
-PRETTIER_PRINT_WIDTH = "80"

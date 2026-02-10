@@ -58,7 +58,7 @@ Each lesson should include:
 
 Create lessons in this structure:
 
-```
+```text
 lessons/YYYY-MM-DD/
   english.md
   japanese.md
@@ -81,10 +81,11 @@ Each markdown file should follow this template:
 ## 📚 Vocabulary
 
 ### 1. [word/phrase]
-**Pronunciation**: [if applicable]
-**Definition**: [definition]
-**From passage**: "[example from passage]"
-**Usage**: [additional example]
+
+- **Pronunciation**: [if applicable]
+- **Definition**: [definition]
+- **From passage**: "[example from passage]"
+- **Usage**: [additional example]
 
 [repeat for all vocabulary items]
 
@@ -103,14 +104,17 @@ Each markdown file should follow this template:
 ## 📝 Grammar Point: [Topic]
 
 ### Explanation
+
 [clear explanation of the grammar point]
 
 ### Examples
+
 1. [example sentence with translation]
 2. [example sentence with translation]
 3. [example sentence with translation]
 
 ### Practice
+
 1. [exercise]
 2. [exercise]
 3. [exercise]
@@ -120,6 +124,7 @@ Each markdown file should follow this template:
 ## ✅ Answer Key
 
 ### Comprehension Questions
+
 1. [answer]
 2. [answer]
 3. [answer]
@@ -127,6 +132,7 @@ Each markdown file should follow this template:
 5. [answer]
 
 ### Grammar Practice
+
 1. [answer]
 2. [answer]
 3. [answer]

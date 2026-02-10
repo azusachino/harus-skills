@@ -1,0 +1,16 @@
+# Generated
+lessons/
+node_modules/
+dist/
+build/
+
+# Agent/tool configs (managed by tools, not prettier)
+.claude/
+.gemini/
+.cursor/
+.aider/
+
+# Cache and temp
+.cache/
+*.tmp
+*.temp

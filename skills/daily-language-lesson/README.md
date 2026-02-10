@@ -29,7 +29,7 @@ Run the skill using any of these commands:
 
 Lessons are saved to dated folders:
 
-```
+```text
 lessons/
   2026-01-28/
     english.md

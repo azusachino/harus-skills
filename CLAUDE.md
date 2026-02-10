@@ -15,6 +15,10 @@ skills/                         # Custom skill definitions
     README.md                  # User documentation
   mkmr/                        # Merge request creation skill
     SKILL.md                   # Skill definition with YAML frontmatter
+  init-project/                # Project initialization skill
+    SKILL.md                   # Skill definition with YAML frontmatter
+docs/                          # Project documentation
+  plans/                       # Design documents
 lessons/YYYY-MM-DD/            # Generated lesson files (gitignored)
 .claude-plugin/                # Claude plugin configuration
   marketplace.json             # Marketplace and plugin registration
@@ -47,6 +51,7 @@ Skills are invoked via the Skill tool:
 
 - `/daily-language-lesson` (aliases: `/dll`, `/lesson`) or `/language-skills:daily-language-lesson`
 - `/mkmr` or `/code-skills:mkmr`
+- `/init-project` (alias: `/init`) or `/harus-skills:init-project`
 
 ## Skill Development
 
@@ -84,6 +89,20 @@ Creates merge requests from current branch to mainline branch. Workflow:
 
 Uses `allowed-tools: git gh glab` to restrict tool usage.
 
+### init-project Skill
+
+Initializes any project with agent-agnostic infrastructure. Workflow:
+
+1. Scan project: detect language, framework, build system, existing tooling
+2. Report findings and ask interactive questions for gaps
+3. Generate `AGENTS.md` (architecture overview + conventions)
+4. Create `.agents/MEMORY.md` (seeded with personal defaults)
+5. Create `.agents/config.yaml` (tool and quality preferences)
+6. Create `docs/` structure (architecture, requirements, design, setup, plan, todo, status)
+7. Offer to fill tooling gaps (editorconfig, git hooks, CI, mise tasks)
+
+Uses `allowed-tools: ls mkdir git mise` to restrict tool usage.
+
 ## Installation Methods
 
 ### Method 1: Marketplace Plugin Installation (Recommended)
@@ -100,9 +119,7 @@ Adds skills directory to `~/.config/claude/config.json`:
 
 ```json
 {
-  "skillDirectories": [
-    "/path/to/harus-skills/skills"
-  ]
+  "skillDirectories": ["/path/to/harus-skills/skills"]
 }
 ```
 

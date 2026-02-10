@@ -1,24 +1,20 @@
 {
-    "name": "harus-skills",
-    "owner": {
-        "name": "haru",
-        "email": "azusachino@duck.com"
-    },
-    "metadata": {
-        "description": "Custom Claude Code skills for productivity and learning",
-        "version": "1.0.0"
-    },
-    "plugins": [
-        {
-            "name": "harus-skills",
-            "description": "harus useful skills",
-            "source": "./",
-            "strict": false,
-            "skills": [
-                "./skills/mkmr",
-                "./skills/daily-language-lesson",
-                "./skills/next-session"
-            ]
-        }
-    ]
+  "name": "harus-skills",
+  "owner": {
+    "name": "haru",
+    "email": "azusachino@duck.com"
+  },
+  "metadata": {
+    "description": "Custom Claude Code skills for productivity and learning",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "harus-skills",
+      "description": "harus useful skills",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/mkmr", "./skills/next-session", "./skills/daily-language-lesson", "./skills/init-project"]
+    }
+  ]
 }
