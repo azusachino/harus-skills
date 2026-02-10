@@ -3,10 +3,10 @@
 
 [tools]
 # Formatters and linters
-"npm:prettier" = "latest"           # Format markdown, JSON, YAML
-"npm:markdownlint-cli" = "latest"  # Lint markdown files
-"npm:@taplo/cli" = "latest"         # Format TOML files
-shfmt = "latest"                    # Format shell scripts
+"npm:prettier" = "latest"          # Format markdown, JSON, YAML
+"npm:markdownlint-cli2" = "latest" # Lint markdown files
+"npm:@taplo/cli" = "latest"        # Format TOML files
+shfmt = "latest"                   # Format shell scripts
 
 # Git tools (optional, for enhanced workflows)
 "npm:commitizen" = "latest" # Standardized commit messages
@@ -19,8 +19,11 @@ set -euo pipefail
 
 echo "Formatting files..."
 
-# Format markdown, JSON, YAML files (config from .prettierrc.json)
-prettier --write "**/*.{md,json,yaml,yml}"
+# Format JSON, YAML files (config from .prettierrc.json)
+prettier --write "**/*.{json,yaml,yml}"
+
+# Format markdown files
+markdownlint-cli2 --fix "**/*.md"
 
 # Format TOML files
 taplo format "**/*.toml" 2>/dev/null || true

@@ -32,9 +32,9 @@ Collect:
 
 ### Existing Tooling
 
-- Formatters (prettier, zig fmt, rustfmt, gofmt, black, etc.)
+- Formatters (prettier, `markdownlint-cli2` (markdown files), zig fmt, rustfmt, gofmt, black, etc.)
 - Linters (eslint, clippy, golangci-lint, pylint, etc.)
-- Git hooks (husky, pre-commit, lefthook, .git/hooks/)
+- Git hooks (husky, pre-commit, `github.com/j178/prek`, lefthook, .git/hooks/)
 - CI/CD (.github/workflows/, .gitlab-ci.yml, Jenkinsfile)
 - Editor config (.editorconfig, .vscode/, .idea/)
 - Task runner (mise.toml, Makefile, justfile, Taskfile.yml)
@@ -312,16 +312,7 @@ Populate from scan results.
 
 For each missing tool detected in the scan, offer to create the config. Ask permission for each one individually.
 
-**Reference configs are in `CONFIGS.md`** (same directory as this file). Read the relevant sections based on the detected language when generating configs. The reference covers:
-
-1. **Editor Config** - `.editorconfig` with per-language indent rules
-2. **Formatter Configs** - prettier, rustfmt, clang-format
-3. **Linter Configs** - clippy, golangci-lint, eslint, ruff, markdownlint
-4. **Task Runner: mise.toml** - full configs for Zig, Rust, Go, Node.js/TS, Python, Java (Gradle/Maven)
-5. **Task Runner: Makefile** - equivalent make targets for all languages
-6. **CI Workflows** - GitHub Actions templates (mise-based and language-specific)
-7. **Git Hooks** - pre-commit formatting hook
-8. **.gitignore** - common base + language-specific entries
+**Reference configs are in `CONFIGS.md`** (same directory as this file). Read `CONFIGS.md` for the index, then read `configs/common.md` and the language-specific config file (e.g., `configs/rust.md`) based on the detected language. Only read what is needed to minimize token usage.
 
 ## Phase 6: Summary
 
