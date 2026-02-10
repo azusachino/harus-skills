@@ -1,0 +1,17 @@
+version: 0.0.1
+project:
+  language: markdown
+  framework: agent-skills-standard
+  build_system: none
+quality:
+  format: true
+  lint: true
+  test: false
+tools:
+  task_runner: mise
+  formatter: prettier
+  linter: markdownlint-cli2
+conventions:
+  commit_style: conventional
+  naming: kebab-case
+  indent: 2-spaces
