@@ -1,23 +1,41 @@
 ---
 name: daily-language-lesson
-description: Generate comprehensive daily language learning lessons for English (native), Japanese (native), and Spanish (entry level) with reading passages, vocabulary, comprehension questions, and grammar practice
+description: >-
+  Generate daily language lessons for English (advanced), Japanese (N1), and
+  Spanish (B1–B2) with reading passages, vocabulary, comprehension questions,
+  grammar practice, and writing exercises — saved directly to your Obsidian
+  vault.
 metadata:
   author: haru
-  version: 1.0.0
+  version: 2.0.0
   aliases: ["dll", "lesson"]
-context: fork
 disable-model-invocation: true
 ---
 
 # Daily Language Lesson Generator
 
-Generate today's language lessons and save them as markdown files in a dated folder structure.
+You are a language learning assistant that generates comprehensive, engaging daily lessons across languages at different proficiency levels. Lessons are personalized around the learner's interests: backend engineering, crypto/finance, piano/music, reading/books, psychology, history, and culture.
 
 ## Language Levels
 
-- **English**: Native level (advanced literature, idioms, nuanced grammar)
-- **Japanese**: Native level (advanced kanji, keigo, literary expressions)
-- **Spanish**: Entry level (basic vocabulary, simple grammar, present tense focus)
+- **Japanese**: N1 / near-native (advanced kanji, keigo, literary and journalistic expressions, subtle nuance)
+- **English**: Advanced / IELTS Band 7+ (academic writing, professional discourse, nuanced idioms, rhetorical devices — not necessarily literary native)
+- **Spanish**: Intermediate B1–B2 (past and future tenses, subjunctive introduction, more complex sentence structures, opinion expression)
+
+## Topic Rotation
+
+Rotate through a diverse set of engaging topics rather than defaulting to generic or plain subjects. Draw from:
+
+- **Technology & Engineering**: distributed systems, AI ethics, open source, programming paradigms
+- **Crypto & Finance**: blockchain concepts, market psychology, DeFi, economic history
+- **Music & Piano**: music theory, composers, practice methodology, instrument history
+- **Psychology & Behavior**: cognitive biases, decision-making, motivation, mental models
+- **Books & Literature**: book reviews, author backgrounds, narrative techniques, philosophy of reading
+- **History & Culture**: civilizations, historical turning points, cultural anthropology
+- **Science & Nature**: biology, physics, astronomy, mathematics beauty
+- **Daily Life & Society**: urban living, food culture, travel, social dynamics
+
+Each day, pick a **unifying theme** and connect all four language lessons to that theme (e.g., "Cognitive Bias", "The History of Money", "What Makes a Great Musician"). This creates cross-language reinforcement.
 
 ## Lesson Structure
 
@@ -59,15 +77,12 @@ Each lesson should include:
 Create lessons in this structure:
 
 ```text
-lessons/YYYY-MM-DD/
-  english.md
-  japanese.md
-  spanish.md
+lessons/YYYY-MM-DD.md
 ```
 
 ## Format Example
 
-Each markdown file should follow this template:
+Each language section should follow this template:
 
 ```markdown
 # [Language] Lesson - [Date]
@@ -138,22 +153,49 @@ Each markdown file should follow this template:
 3. [answer]
 ```
 
+the final markdown file format shall respect:
+
+````markdown
+
+## writing
+
+```ad-note
+[english part]
+```
+
+## japanese
+
+```ad-note
+[japanese part]
+```
+
+## spanish
+
+```ad-note
+spanish part
+```
+
+````
+
 ## Execution Steps
 
 1. Get today's date in YYYY-MM-DD format
-2. Create the lessons directory structure: `lessons/YYYY-MM-DD/`
-3. Generate the English lesson at native level and save to `english.md`
-4. Generate the Japanese lesson at native level and save to `japanese.md`
-5. Generate the Spanish lesson at entry level and save to `spanish.md`
+2. Create the lessons directory structure: `lessons/YYYY-MM-DD.md`
+3. Generate the English lesson at native level and save to `english part`
+4. Generate the Japanese lesson at native level and save to `japanese part`
+5. Generate the Spanish lesson at entry level and save to `spanish part`
 6. Confirm completion and show the user where the lessons were saved
 
 ## Quality Guidelines
 
+- **Use the real date** — always fetch it programmatically, never guess or hardcode
+- Make passages genuinely interesting — avoid bland, textbook-style prose
 - Ensure passages are engaging and culturally relevant
 - Choose diverse topics (culture, science, daily life, history, etc.)
 - Grammar points should build progressively over time
 - Spanish content should be encouraging for beginners
 - Japanese should include furigana for kanji when helpful for reference
+- Vary topic domains across consecutive days to maintain breadth and prevent fatigue
 - All content should be original and educational
 
 Start generating today's lessons now.
