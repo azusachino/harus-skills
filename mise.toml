@@ -1,5 +1,7 @@
 # mise.toml - Tool and task management for harus-skills
 # https://mise.jdx.dev/
+[env]
+VAULT_PATH = "/Users/azusachino/Documents/harusObsidian/journal/daily"
 
 [tools]
 # Formatters and linters
@@ -65,7 +67,7 @@ run = """
 set -euo pipefail
 
 echo "🔎 Linting markdown files..."
-markdownlint-cli2 "**/*.md" "#lessons/**" --config .markdownlint.json
+markdownlint-cli2 "**/*.md" "#lessons/**" "#docs/plans/**" --config .markdownlint.json
 echo "Done."
 """
 
@@ -76,7 +78,7 @@ run = """
 set -euo pipefail
 
 echo "Linting and fixing markdown files..."
-markdownlint-cli2 "**/*.md" "#lessons/**" --fix --config .markdownlint.json
+markdownlint-cli2 "**/*.md" "#lessons/**" "#docs/plans/**" --fix --config .markdownlint.json
 echo "Done."
 """
 
