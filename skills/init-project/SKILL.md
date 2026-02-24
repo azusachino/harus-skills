@@ -32,8 +32,8 @@ Collect:
 
 ### Existing Tooling
 
-- Formatters (prettier, `markdownlint-cli2` (markdown files), zig fmt, rustfmt, gofmt, black, etc.)
-- Linters (eslint, clippy, golangci-lint, pylint, etc.)
+- Formatters (prettier, markdownlint-cli2, zig fmt, rustfmt, gofmt, black, etc.)
+- Linters (eslint, markdownlint-cli2, clippy, golangci-lint, pylint, etc.)
 - Git hooks (husky, pre-commit, `github.com/j178/prek`, lefthook, .git/hooks/)
 - CI/CD (.github/workflows/, .gitlab-ci.yml, Jenkinsfile)
 - Editor config (.editorconfig, .vscode/, .idea/)
@@ -107,11 +107,13 @@ Create `.agents/` directory and seed `MEMORY.md` with:
 
 ## Personal Defaults
 
-- Use mise for task running when available
+- Check tools with `mise ls`, suggest user to manage tools with mise if not installed
+- Always store context and memory within local project (best accessibility for all Agents)
+- Always update docs PLAN/TODO/TRACKING files after implementing new features
+- Disable the line-length restriction of markdown files
+- Use `mise` to run task if `Makefile` didn't exist
 - Prefer language-native formatters (zig fmt, rustfmt, gofmt, prettier)
 - No emojis in git commit messages
-- Prose wrap at 80 characters
-- 2-space indentation for config files (JSON, YAML, TOML)
 - Always ask before committing or pushing
 - Format and lint before every commit
 - Run tests before creating PRs/MRs
@@ -143,7 +145,7 @@ quality:
   lint: true
   test: true
 tools:
-  task_runner: mise
+  task_runner: [mise or make]
   formatter: [detected]
   linter: [detected]
 conventions:

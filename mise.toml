@@ -1,5 +1,7 @@
 # mise.toml - Tool and task management for harus-skills
 # https://mise.jdx.dev/
+[env]
+VAULT_PATH = "/Users/azusachino/Documents/harusObsidian/journal/daily"
 
 [tools]
 # Formatters and linters
@@ -12,7 +14,7 @@ shfmt = "latest"                   # Format shell scripts
 "npm:commitizen" = "latest" # Standardized commit messages
 
 [tasks.fmt]
-description = "Format all files (markdown, JSON, YAML, TOML, shell scripts)"
+description = "Format all files (JSON, YAML with prettier; markdown with markdownlint; TOML with taplo)"
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
@@ -44,8 +46,8 @@ set -euo pipefail
 
 echo "Checking file formatting..."
 
-# Check markdown, JSON, YAML (config from .prettierrc.json)
-prettier --check "**/*.{md,json,yaml,yml}"
+# Check JSON, YAML only — markdown is handled by markdownlint, not prettier
+prettier --check "**/*.{json,yaml,yml}"
 
 # Check TOML
 taplo format --check "**/*.toml" 2>/dev/null || true
@@ -168,8 +170,8 @@ echo "🎨 Auto-formatting staged files..."
 STAGED_MD=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.md$' || true)
 
 if [ -n "$STAGED_MD" ]; then
-  echo "  📝 Formatting markdown files..."
-  echo "$STAGED_MD" | xargs prettier --write
+  echo "  📝 Linting markdown files..."
+  echo "$STAGED_MD" | xargs markdownlint-cli2 --fix
   echo "$STAGED_MD" | xargs git add
 fi
 
@@ -235,3 +237,11 @@ echo "  mise check        - Run all checks"
 echo "  mise list-skills  - List available skills"
 echo "  mise clean        - Remove generated lessons"
 """
+
+[tasks.lesson]
+description = "Generate today's language lesson to vault (or lessons/ fallback)"
+run = "claude '/lesson'"
+
+[tasks."lesson-date"]
+description = "Generate a lesson for a specific date. Usage: DATE=2026-03-01 mise run lesson-date"
+run = "claude '/lesson ${DATE}'"
