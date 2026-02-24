@@ -1,58 +1,102 @@
 # Daily Language Lesson Skill
 
-Generate comprehensive daily language learning lessons for English, Japanese, and Spanish at customized proficiency levels.
+Generate daily language learning lessons for English (advanced), Japanese (N1),
+and Spanish (B1–B2), saved directly to your Obsidian vault or a local
+`lessons/` folder.
 
 ## Features
 
-- **English lessons** at native level: Advanced literature, idioms, sophisticated grammar
-- **Japanese lessons** at native level: Advanced kanji, keigo, literary expressions
-- **Spanish lessons** at entry level: Basic vocabulary, simple grammar for beginners
+- **English** at IELTS Band 7+ / advanced level: academic writing, nuanced
+  idioms, rhetorical devices
+- **Japanese** at N1 / near-native: advanced kanji, keigo, literary and
+  journalistic expressions
+- **Spanish** at B1–B2: past/future tenses, subjunctive intro, opinion
+  expression
 
 Each lesson includes:
 
-- Reading passage appropriate for the level
-- Vocabulary extraction with definitions and examples
+- Reading passage at the appropriate level
+- Vocabulary with definitions, passage examples, and usage
 - Comprehension questions with answer key
-- Grammar point with explanations and practice exercises
+- Grammar point with explanation and practice exercises
+- Writing exercise (Spanish)
+
+## Setup
+
+### Vault integration (recommended)
+
+Create a `.env` file in the repo root (gitignored):
+
+```env
+VAULT_PATH=/path/to/your/vault/journal/daily
+```
+
+Lessons will be written to `$VAULT_PATH/YYYY/YYYY-MM-DD.md` — the year
+subfolder is created automatically. If the file already exists (Obsidian
+pre-creates daily notes), the lesson sections are appended.
+
+If `VAULT_PATH` is not set, lessons fall back to `lessons/YYYY-MM-DD.md` in
+this repo.
 
 ## Usage
 
-Run the skill using any of these commands:
+### Via Claude Code skill
 
 ```bash
-/daily-language-lesson
-/dll
-/lesson
+/daily-language-lesson       # today's lesson
+/lesson                      # alias
+/dll                         # alias
+/lesson 2026-03-01           # specific date
 ```
 
-## Output
+### Via mise
 
-Lessons are saved to dated folders:
-
-```text
-lessons/
-  2026-01-28/
-    english.md
-    japanese.md
-    spanish.md
+```bash
+mise run lesson                       # today's lesson
+DATE=2026-03-01 mise run lesson-date  # specific date
 ```
 
-## Customization
+## Output format
 
-You can modify the proficiency levels or lesson structure by editing `prompt.md`.
+Each lesson is written as a single markdown file with three sections using
+Obsidian `ad-note` callout blocks:
 
-## Example Workflow
+```markdown
+## writing
 
-1. Run `/lesson` each morning
-2. Open the generated markdown files
-3. Study one or all three languages
-4. Complete the exercises and check your answers
-5. Track your progress over time by reviewing past lessons
+\`\`\`ad-note
+# English Lesson — YYYY-MM-DD
+...
+\`\`\`
+
+## japanese
+
+\`\`\`ad-note
+# 日本語レッスン — YYYY-MM-DD
+...
+\`\`\`
+
+## spanish
+
+\`\`\`ad-note
+# Lección de Español — YYYY-MM-DD
+...
+\`\`\`
+```
+
+## Daily workflow
+
+1. Run `mise run lesson` each morning
+2. Open your vault — today's daily note will have the three lesson sections
+3. Complete the exercises and check your answers
+4. Vary: use `/lesson 2026-03-05` to prepare future lessons in advance
 
 ## Tips
 
-- The skill generates fresh content each day with diverse topics
-- Grammar points build progressively (though each lesson is standalone)
-- Spanish content is designed to be encouraging for beginners
+- Topics rotate across 8 domains (tech, crypto, music, psychology, books,
+  history, science, daily life) and link all three languages to a shared theme
+- The skill checks the last 7 lessons to avoid repeating recent topics
+- If today's lesson already exists in the file, the skill will ask before
+  overwriting
+- Spanish content is designed to be encouraging for B1–B2 learners
 - Japanese includes furigana references where helpful
-- You can regenerate lessons if you want different content
