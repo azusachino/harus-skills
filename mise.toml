@@ -235,3 +235,11 @@ echo "  mise check        - Run all checks"
 echo "  mise list-skills  - List available skills"
 echo "  mise clean        - Remove generated lessons"
 """
+
+[tasks.lesson]
+description = "Generate today's language lesson to vault (or lessons/ fallback)"
+run = "claude '/lesson'"
+
+[tasks."lesson-date"]
+description = "Generate a lesson for a specific date. Usage: DATE=2026-03-01 mise run lesson-date"
+run = "claude '/lesson ${DATE}'"
