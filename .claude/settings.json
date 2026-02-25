@@ -1,11 +1,7 @@
 {
-    "includeCoAuthoredBy": true,
-    "env": {
-        "BASH_DEFAULT_TIMEOUT_MS": "420000",
-        "BASH_MAX_TIMEOUT_MS": "420000"
-    },
-    "enabledPlugins": {
-        "typescript-lsp@claude-plugins-official": true,
-        "pyright-lsp@claude-plugins-official": true
-    }
+  "includeCoAuthoredBy": true,
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "420000",
+    "BASH_MAX_TIMEOUT_MS": "420000"
+  } 
 }

@@ -10,18 +10,19 @@
 
 ---
 
-### Task 1: Create the scripts directory and dll-status.sh
+## Task 1: Create the scripts directory and dll-status.sh
 
 **Files:**
+
 - Create: `skills/daily-language-lesson/scripts/dll-status.sh`
 
-**Step 1: Create the directory**
+### Step 1: Create the directory
 
 ```bash
 mkdir -p skills/daily-language-lesson/scripts
 ```
 
-**Step 2: Write the script**
+### Step 2: Write the script
 
 Create `skills/daily-language-lesson/scripts/dll-status.sh` with this exact content:
 
@@ -117,13 +118,13 @@ echo "MODE=$MODE"
 echo "RECENT_THEMES=$RECENT_THEMES"
 ```
 
-**Step 3: Make it executable**
+### Step 3: Make it executable
 
 ```bash
 chmod +x skills/daily-language-lesson/scripts/dll-status.sh
 ```
 
-**Step 4: Verify it runs without error**
+### Step 4: Verify it runs without error
 
 ```bash
 bash skills/daily-language-lesson/scripts/dll-status.sh 2026-03-01
@@ -141,7 +142,7 @@ RECENT_THEMES=2026-02-28: Distributed Systems & The Philosophy of Consensus | ..
 
 Check all five keys are present and MODE is one of `create/append/fill/warn`.
 
-**Step 5: Verify fallback (no VAULT_PATH)**
+### Step 5: Verify fallback (no VAULT_PATH)
 
 ```bash
 VAULT_PATH="" bash skills/daily-language-lesson/scripts/dll-status.sh 2099-01-01
@@ -149,7 +150,7 @@ VAULT_PATH="" bash skills/daily-language-lesson/scripts/dll-status.sh 2099-01-01
 
 Expected: `OUTPUT_PATH` ends in `lessons/2099-01-01.md`, `MODE=create` (file won't exist).
 
-**Step 6: Commit**
+### Step 6: Commit
 
 ```bash
 git add skills/daily-language-lesson/scripts/dll-status.sh
@@ -158,12 +159,13 @@ git commit -m "feat(dll): add dll-status.sh pre-flight helper script"
 
 ---
 
-### Task 2: Update SKILL.md — frontmatter and Step 0
+## Task 2: Update SKILL.md — frontmatter and Step 0
 
 **Files:**
+
 - Modify: `skills/daily-language-lesson/SKILL.md`
 
-**Step 1: Add `allowed-tools: bash` to frontmatter**
+### Step 1: Add `allowed-tools: bash` to frontmatter
 
 The current frontmatter (lines 1–9):
 
@@ -185,7 +187,7 @@ Add one line before the closing `---`:
 allowed-tools: bash
 ```
 
-**Step 2: Replace the entire Step 0 section**
+### Step 2: Replace the entire Step 0 section
 
 Find this block in SKILL.md (starts at `### Step 0: Vault status check`):
 
@@ -207,7 +209,7 @@ Find this block in SKILL.md (starts at `### Step 0: Vault status check`):
 
 Replace it entirely with:
 
-```markdown
+````markdown
 ### Step 0: Vault status check
 
 Run the helper script using the base directory shown at skill invocation:
@@ -225,21 +227,22 @@ Parse the `KEY=value` output lines:
   - `fill` — file exists with empty `ad-note` blocks (Obsidian pre-created template); replace each empty block with lesson content
   - `warn` — file has real content; ask user "A lesson for TARGET_DATE already exists. Overwrite?" and wait for confirmation before proceeding
 - `RECENT_THEMES` — pipe-separated list of recent themes; pass as "avoid repeating these topics" context when selecting today's theme
-```
+````
 
-**Step 3: Bump version in frontmatter**
+### Step 3: Bump version in frontmatter
 
 Change `version: 2.0.0` → `version: 2.1.0`
 
-**Step 4: Verify the SKILL.md looks correct**
+### Step 4: Verify the SKILL.md looks correct
 
 Read the file and confirm:
+
 - `allowed-tools: bash` is in the frontmatter
 - `version: 2.1.0`
 - Step 0 now references `dll-status.sh` instead of prose instructions
 - Steps 1, 2, 3 are unchanged
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add skills/daily-language-lesson/SKILL.md
@@ -248,9 +251,9 @@ git commit -m "feat(dll): update SKILL.md to use dll-status.sh in Step 0"
 
 ---
 
-### Task 3: Smoke test end-to-end
+## Task 3: Smoke test end-to-end
 
-**Step 1: Run the script for a date that has a real lesson**
+### Step 1: Run the script for a date that has a real lesson
 
 Pick a date you know has content (e.g. `2026-03-01`):
 
@@ -260,7 +263,7 @@ bash skills/daily-language-lesson/scripts/dll-status.sh 2026-03-01
 
 Expected: `MODE=warn` (file has content).
 
-**Step 2: Run for a future date that won't exist**
+### Step 2: Run for a future date that won't exist
 
 ```bash
 bash skills/daily-language-lesson/scripts/dll-status.sh 2099-12-31
@@ -268,7 +271,7 @@ bash skills/daily-language-lesson/scripts/dll-status.sh 2099-12-31
 
 Expected: `MODE=create`, `OUTPUT_PATH` points to vault or `lessons/`.
 
-**Step 3: Run for today's Obsidian pre-created file**
+### Step 3: Run for today's Obsidian pre-created file
 
 If today's file exists in the vault but is empty/pre-created:
 
@@ -278,7 +281,7 @@ bash skills/daily-language-lesson/scripts/dll-status.sh
 
 Expected: `MODE=fill` (empty ad-note blocks) or `MODE=create` if not pre-created.
 
-**Step 4: Run mise fmt on the script**
+### Step 4: Run mise fmt on the script
 
 ```bash
 mise fmt
@@ -286,7 +289,7 @@ mise fmt
 
 Expected: no errors (shfmt will format `dll-status.sh` in place).
 
-**Step 5: Final commit if fmt changed anything**
+### Step 5: Final commit if fmt changed anything
 
 ```bash
 git diff --stat

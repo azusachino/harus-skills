@@ -73,9 +73,9 @@ if [ -d "$SCAN_DIR" ]; then
     find "$SCAN_DIR" -maxdepth 1 -name '*.md' -type f ! -name "$TARGET_DATE.md" -print \
       | sort -r \
       | while IFS= read -r f; do
-          size=$(wc -c < "$f" 2>/dev/null || echo 0)
-          [ "$size" -gt 500 ] && echo "$f"
-        done \
+        size=$(wc -c <"$f" 2>/dev/null || echo 0)
+        [ "$size" -gt 500 ] && echo "$f"
+      done \
       | head -7
   )
   RECENT_THEMES="$THEMES"

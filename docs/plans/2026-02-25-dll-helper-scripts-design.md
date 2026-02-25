@@ -21,7 +21,7 @@ Accepts one optional argument (the target date, e.g. `2026-03-02`). If not provi
 
 Key=value lines printed to stdout, one per line:
 
-```
+```text
 TARGET_DATE=2026-03-02
 YYYY=2026
 OUTPUT_PATH=/Users/.../journal/daily/2026/2026-03-02.md
@@ -32,7 +32,7 @@ RECENT_THEMES=2026-03-01: The Piano as a Mirror | 2026-02-28: Distributed System
 ### MODE values
 
 | Mode | Condition |
-|------|-----------|
+| --- | --- |
 | `create` | File does not exist |
 | `append` | File exists, no `## writing` section found |
 | `fill` | File exists with `## writing` but all ad-note blocks are empty (Obsidian pre-created template) |

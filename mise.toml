@@ -67,7 +67,7 @@ run = """
 set -euo pipefail
 
 echo "🔎 Linting markdown files..."
-markdownlint-cli2 "**/*.md" "#lessons/**" --config .markdownlint.json
+markdownlint-cli2 "**/*.md" --config .markdownlint.json
 echo "Done."
 """
 
@@ -78,7 +78,7 @@ run = """
 set -euo pipefail
 
 echo "Linting and fixing markdown files..."
-markdownlint-cli2 "**/*.md" "#lessons/**" --fix --config .markdownlint.json
+markdownlint-cli2 "**/*.md" --fix --config .markdownlint.json
 echo "Done."
 """
 
@@ -240,8 +240,20 @@ echo "  mise clean        - Remove generated lessons"
 
 [tasks.lesson]
 description = "Generate today's language lesson to vault (or lessons/ fallback)"
-run = "claude '/lesson'"
+run = """
+#!/usr/bin/env bash
+claude "/daily-language-lesson"
+"""
 
 [tasks."lesson-date"]
-description = "Generate a lesson for a specific date. Usage: DATE=2026-03-01 mise run lesson-date"
-run = "claude '/lesson ${DATE}'"
+description = "Generate a lesson for a specific date. Usage: mise run lesson-date 2026-03-01  OR  DATE=2026-03-01 mise run lesson-date"
+run = """
+#!/usr/bin/env bash
+TARGET_DATE="${1:-${DATE:-}}"
+if [ -z "$TARGET_DATE" ]; then
+  echo "❌ Error: DATE not provided. Provide it as an argument or environment variable."
+  echo "Usage: mise run lesson-date 2026-03-01  OR  DATE=2026-03-01 mise run lesson-date"
+  exit 1
+fi
+claude "/daily-language-lesson $TARGET_DATE"
+"""
