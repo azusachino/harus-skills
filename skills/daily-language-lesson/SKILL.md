@@ -3,9 +3,10 @@ name: daily-language-lesson
 description: Generate daily language lessons for English (advanced), Japanese (N1), and Spanish (B1–B2) with reading passages, vocabulary, comprehension questions, grammar practice, and writing exercises — saved directly to your Obsidian vault.
 metadata:
   author: haru
-  version: 2.0.0
+  version: 2.1.0
   aliases: ["dll", "lesson"]
 disable-model-invocation: true
+allowed-tools: bash
 ---
 
 # Daily Language Lesson Generator
@@ -193,27 +194,21 @@ The final file must use this exact structure with Obsidian ad-note callout block
 
 ### Step 0: Vault status check
 
-1. **Resolve the target date**:
-   - If an argument was passed (e.g. `/lesson 2026-03-01`), use that date as TARGET_DATE
-   - Otherwise, run `date +%Y-%m-%d` to get today's date as TARGET_DATE
-   - Extract YYYY (year) from TARGET_DATE
+Run the helper script using the base directory shown at skill invocation:
 
-2. **Resolve the output path**:
-   - Read the `VAULT_PATH` environment variable
-   - If set: output path = `$VAULT_PATH/YYYY/TARGET_DATE.md`
-   - If not set: output path = `lessons/TARGET_DATE.md` in this repo
-   - Create the year directory if it does not exist
+```bash
+bash "<BASE_DIR>/scripts/dll-status.sh" [ARGUMENT]
+```
 
-3. **Check for existing lesson**:
-   - If the output file exists, read it
-   - If it contains `## writing`, warn the user: "A lesson for TARGET_DATE already exists. Overwrite?" and wait for confirmation before proceeding
-   - If the file exists but has no `## writing`, proceed in append mode
-   - If the file does not exist, proceed in create mode
+Parse the `KEY=value` output lines:
 
-4. **Scan recent topics for rotation**:
-   - List the last 7 date-named lesson files in the vault year directory (or `lessons/`) sorted by date descending
-   - For each file that exists, extract the `**Theme**:` line from its `## writing` section
-   - Pass the list of recent themes as "avoid repeating these topics" context to the generation step
+- `TARGET_DATE`, `YYYY`, `OUTPUT_PATH` — use in every section header and for all file writes; never substitute today's date when an argument was passed
+- `MODE` — determines how to write the file:
+  - `create` — file does not exist; create it with the three sections
+  - `append` — file exists but has no `## writing`; append the three sections after existing content
+  - `fill` — file exists with empty `ad-note` blocks (Obsidian pre-created template); replace each empty block with lesson content
+  - `warn` — file has real content; ask user "A lesson for TARGET_DATE already exists. Overwrite?" and wait for confirmation before proceeding
+- `RECENT_THEMES` — pipe-separated list of recent themes; pass as "avoid repeating these topics" context when selecting today's theme
 
 ### Step 1: Generate lessons
 
