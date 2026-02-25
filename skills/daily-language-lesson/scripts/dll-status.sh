@@ -40,7 +40,7 @@ else
   HAS_CONTENT=$(awk '
     /^```ad-note/{in_block=1; content=""; next}
     in_block && /^```/{
-      if (content ~ /[^ \t\n]/) { print "yes"; exit }
+      if (content ~ /[^[:space:]]/) { print "yes"; exit }
       in_block=0; next
     }
     in_block { content = content $0 "\n" }
@@ -60,7 +60,7 @@ RECENT_THEMES=""
 if [ -d "$SCAN_DIR" ]; then
   THEMES=""
   while IFS= read -r f; do
-    theme=$(grep '\*\*Theme\*\*:' "$f" 2>/dev/null | head -1 | sed 's/.*\*\*Theme\*\*: //')
+    theme=$(grep -m 1 '\*\*Theme\*\*:' "$f" 2>/dev/null | sed 's/.*\*\*Theme\*\*: //')
     if [ -n "$theme" ]; then
       date_str=$(basename "$f" .md)
       if [ -n "$THEMES" ]; then
@@ -70,8 +70,7 @@ if [ -d "$SCAN_DIR" ]; then
       fi
     fi
   done < <(
-    ls "$SCAN_DIR"/*.md 2>/dev/null \
-      | grep -v "$TARGET_DATE.md" \
+    find "$SCAN_DIR" -maxdepth 1 -name '*.md' -type f ! -name "$TARGET_DATE.md" -print \
       | sort -r \
       | while IFS= read -r f; do
           size=$(wc -c < "$f" 2>/dev/null || echo 0)
