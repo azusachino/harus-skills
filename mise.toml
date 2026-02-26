@@ -1,7 +1,7 @@
 # mise.toml - Tool and task management for harus-skills
 # https://mise.jdx.dev/
 [env]
-VAULT_PATH = "/Users/azusachino/Documents/harusObsidian/journal/daily"
+VAULT_PATH = ""
 
 [tools]
 # Formatters and linters

@@ -21,12 +21,10 @@ YYYY="${TARGET_DATE:0:4}"
 # Resolve output path
 if [ -n "${VAULT_PATH:-}" ]; then
   OUTPUT_DIR="$VAULT_PATH/$YYYY"
-  OUTPUT_PATH="$OUTPUT_DIR/$TARGET_DATE.md"
 else
-  REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null || echo ".")"
-  OUTPUT_DIR="$REPO_ROOT/lessons"
-  OUTPUT_PATH="$OUTPUT_DIR/$TARGET_DATE.md"
+  OUTPUT_DIR="$(pwd)/lessons/$YYYY"
 fi
+OUTPUT_PATH="$OUTPUT_DIR/$TARGET_DATE.md"
 
 mkdir -p "$OUTPUT_DIR"
 
