@@ -3,7 +3,7 @@ name: daily-language-lesson
 description: Generate daily language lessons for English (advanced), Japanese (N1), and Spanish (B1–B2) with reading passages, vocabulary, comprehension questions, grammar practice, and writing exercises — saved directly to your Obsidian vault.
 metadata:
   author: haru
-  version: 2.1.0
+  version: 2.1.1
   aliases: ["dll", "lesson"]
 disable-model-invocation: true
 allowed-tools: bash
