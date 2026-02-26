@@ -93,6 +93,10 @@ rm -rf lessons/
 echo "✅ Clean complete!"
 """
 
+[tasks.link]
+description = "Link this repository as a Gemini CLI extension"
+run = "gemini extensions link ."
+
 [tasks.verify]
 description = "Verify all skills are properly formatted"
 run = """
@@ -124,6 +128,13 @@ if [ ! -f "CLAUDE.md" ]; then
   exit 1
 fi
 echo "  ✓ CLAUDE.md exists"
+
+# Check gemini-extension.json
+if [ ! -f "gemini-extension.json" ]; then
+  echo "❌ Missing gemini-extension.json"
+  exit 1
+fi
+echo "  ✓ gemini-extension.json exists"
 
 echo "✅ Repository structure is valid!"
 """

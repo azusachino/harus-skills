@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A collection of custom Claude Code skills for productivity and learning. Skills are user-invocable commands that extend Claude Code's capabilities, following the Agent Skills Standard (agentskills.io). Published as a Claude plugin marketplace at `azusachino/harus-skills`.
+A collection of custom agent skills for productivity and learning, compatible with [Claude Code](https://claude.ai/code) and [Gemini CLI](https://geminicli.com). Skills are user-invocable commands that extend agent capabilities, following the [Agent Skills Standard](http://agentskills.io). Published as a Claude plugin marketplace at `azusachino/harus-skills` and a Gemini CLI extension.
 
 ## Architecture
 
@@ -17,6 +17,7 @@ harus-skills/
   lessons/                       # Generated lesson output (gitignored)
   .claude-plugin/
     marketplace.json             # Plugin marketplace registration
+  gemini-extension.json          # Gemini CLI extension manifest
 ```
 
 Each skill is a directory containing a `SKILL.md` with YAML frontmatter (name, description, metadata, allowed-tools) and a markdown body with execution instructions for Claude.

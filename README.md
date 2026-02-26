@@ -33,9 +33,10 @@ Each lesson includes reading passages, vocabulary, comprehension questions, and 
 
 ### Prerequisites
 
-- [Claude Code](https://claude.ai/code) CLI tool installed
+- [Claude Code](https://claude.ai/code) CLI tool installed (for Claude support)
+- [Gemini CLI](https://geminicli.com) installed (for Gemini support)
 
-### Method 1: Install as Marketplace (Recommended)
+### Method 1: Install as Claude Marketplace (Recommended)
 
 This method allows you to install individual plugins as needed.
 
@@ -89,6 +90,25 @@ If you prefer to make all skills available without the plugin system:
    ```
 
 3. Restart Claude Code
+
+### Method 3: Install as Gemini CLI Extension
+
+If you are using the [Gemini CLI](https://geminicli.com), you can install this repository as an extension.
+
+1. Clone this repository:
+
+   ```bash
+   git clone <your-repo-url>
+   cd harus-skills
+   ```
+
+2. Link the extension:
+
+   ```bash
+   gemini extensions link .
+   ```
+
+3. **Restart Gemini CLI** (or start a new session) to load the skills and context.
 
 ### Verify Installation
 
