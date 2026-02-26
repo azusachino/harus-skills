@@ -89,21 +89,17 @@ Creates merge requests from current branch to mainline branch. Workflow:
 
 Uses `allowed-tools: git gh glab` to restrict tool usage.
 
-### init-project Skill
+### session Skill
 
-Initializes any project with agent-agnostic infrastructure. Workflow:
+Manages the three-tier memory protocol (Global, Project, Session) to ensure continuity.
 
-1. Scan project: detect language, framework, build system, existing tooling
-2. Report findings and ask interactive questions for gaps
-3. Generate `AGENTS.md` (architecture overview + conventions)
-4. Create `.agents/MEMORY.md` (seeded with personal defaults)
-5. Create `.agents/config.yaml` (tool and quality preferences)
-6. Create `docs/` structure (architecture, requirements, design, setup, plan, todo, status)
-7. Offer to fill tooling gaps (editorconfig, git hooks, CI, mise tasks)
+- `/session start` - Resumes session from local and global context
+- `/session end` - Saves session state and syncs memory before closing
 
-Uses `allowed-tools: ls mkdir git mise` to restrict tool usage.
+## Agent Behavior
 
-## Installation Methods
+- **Session Management**: Always run `/session start` at the beginning of a session if a `.agents/` directory exists. Always run `/session end` before wrapping up.
+- All skills use SKILL.md format with YAML frontmatter
 
 ### Method 1: Marketplace Plugin Installation (Recommended)
 

@@ -4,8 +4,6 @@ description: Initialize project with agent infrastructure, documentation structu
 metadata:
   author: haru
   version: 0.0.1
-  aliases: ["init"]
-allowed-tools: Bash(ls *) Bash(mkdir *) Bash(git *) Bash(mise *)
 ---
 
 # Init Project
@@ -66,7 +64,7 @@ Ask permission before writing each file.
 
 ### AGENTS.md (project root)
 
-Generate a comprehensive agent briefing document with these sections:
+Generate a comprehensive project briefing document for both humans and agents. This is the **primary reference** for anyone (or any agent) starting work on the project.
 
 ```markdown
 # AGENTS
@@ -75,64 +73,96 @@ Generate a comprehensive agent briefing document with these sections:
 
 [description from scan + user input]
 
-## Architecture
+## Tech Stack & Architecture
 
-[project structure, key modules, data flow, tech stack]
+[detected tech stack, high-level structure, key patterns]
 
-## Build & Run
+## Build, Run & Test
 
-[detected build, test, run commands]
+[detected commands: mise run X, npm run Y, etc.]
 
-## Conventions
+## Coding Conventions
 
-[coding standards, naming, error handling, testing approach]
+[naming style, error handling, testing philosophy, formatting rules]
 
-## Key Files
+## Key Files & Entry Points
 
-[important entry points, configs, and directories]
+[important files and directories for quick orientation]
 
 ## Quality Standards
 
-[required checks: format, lint, test, etc.]
+[required checks: format, lint, test, coverage, etc.]
 ```
 
-Populate each section using scan results and user answers. Be concise but thorough. This file is the primary reference for any agent working on the project.
+### .agents/ Directory (Agent Memory & Session Protocol)
 
-### .agents/MEMORY.md
+Create `.agents/` directory and populate it with the following files to implement the **Agent Memory & Session Management Protocol**. Ask permission before writing each file.
 
-Create `.agents/` directory and seed `MEMORY.md` with:
+#### .agents/AGENT_README.md
+
+This file defines the rules for session management and memory. Use the content from `skills/init-project/MEMORY.md` (the protocol specification). **Crucially, instruct the agent to use the `/session` skill to manage this protocol.**
+
+#### .agents/CONTEXT.md
+
+Store **internal agent-specific rules** and state that doesn't belong in the public `AGENTS.md`.
 
 ```markdown
-# Agent Memory
+## Agent Rules (Hard DO / DON'T)
+- DO: Check Global Memory (`save_memory`) at session start for user preferences.
+- DO: Update `CURRENT_TASK.md` before session end.
+- DO: Sync any learned personal facts to Global Memory using `save_memory`.
+- DON'T: Commit without user confirmation.
 
-## Personal Defaults
-
-- Check tools with `mise ls`, suggest user to manage tools with mise if not installed
-- Always store context and memory within local project (best accessibility for all Agents)
-- Always update docs PLAN/TODO/TRACKING files after implementing new features
-- Disable the line-length restriction of markdown files
-- Use `mise` to run task if `Makefile` didn't exist
-- Prefer language-native formatters (zig fmt, rustfmt, gofmt, prettier)
-- No emojis in git commit messages
-- Always ask before committing or pushing
-- Format and lint before every commit
-- Run tests before creating PRs/MRs
-- Keep solutions simple - avoid over-engineering
-
-## Project Patterns
-
-[findings from the scan: detected patterns, tech stack notes, key paths]
-
-## Decisions
-
-[empty - to be filled as decisions are made]
-
-## Debugging Notes
-
-[empty - to be filled as issues are encountered]
+## Project Context (Internal)
+[specific technical notes, non-obvious patterns, or agent-only instructions]
 ```
 
-### .agents/config.yaml
+#### .agents/CURRENT_TASK.md
+
+Seed with the initial state:
+
+```markdown
+## Objective
+Initial project setup and agent infrastructure implementation.
+
+## Status
+DONE
+
+## Completed Steps
+- [x] Project scanned
+- [x] Agent infrastructure generated (.agents/, AGENTS.md, docs/)
+- [x] Tooling gaps identified
+
+## Remaining Steps
+- [ ] Begin development of the first feature
+
+## Open Questions / Blockers
+- None
+
+## Files Modified This Session
+- AGENTS.md
+- .agents/*
+- docs/*
+- [detected tool configs]
+
+## Next Action
+Wait for user instructions to begin the first development task.
+
+## Last Updated
+[current date]
+```
+
+#### .agents/MEMORY.md
+
+Seed with:
+
+```markdown
+# Decision Log
+
+---
+```
+
+#### .agents/config.yaml
 
 ```yaml
 version: 0.0.1
@@ -323,8 +353,11 @@ Print a summary of everything created:
 ```text
 Init complete! Created:
   AGENTS.md              - project briefing for agents
-  .agents/MEMORY.md      - shared agent memory
-  .agents/config.yaml    - agent configuration
+  .agents/AGENT_README.md - memory protocol rules
+  .agents/CONTEXT.md      - stable project knowledge
+  .agents/MEMORY.md       - append-only decision log
+  .agents/CURRENT_TASK.md - session save point
+  .agents/config.yaml     - agent configuration
   docs/architecture.md   - system architecture
   docs/requirements.md   - project requirements
   docs/project-design.md - design decisions

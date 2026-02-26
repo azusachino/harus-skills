@@ -4,9 +4,6 @@ description: create merge request to mainline branch based on current branch
 metadata:
   author: haru
   version: 1.0.0
-context: fork
-disable-model-invocation: true
-allowed-tools: Bash(git *) Bash(gh *) Bash(glab *)
 ---
 
 1. always ask for user's permission (before execute any task/command)

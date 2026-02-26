@@ -95,13 +95,13 @@ If you prefer to make all skills available without the plugin system:
 
 If you are using the [Gemini CLI](https://geminicli.com), you can install this repository as an extension.
 
-**Option A: Direct Install (Recommended)**
+#### Option A: Direct Install (Recommended)
 
 ```bash
 gemini extensions install https://github.com/azusachino/harus-skills
 ```
 
-**Option B: Local Link (For Development)**
+#### Option B: Local Link (For Development)
 
 1. Clone this repository:
 
