@@ -1,7 +1,7 @@
 # mise.toml - Tool and task management for harus-skills
 # https://mise.jdx.dev/
 [env]
-VAULT_PATH = ""
+_.file = ".env"
 
 [tools]
 # Formatters and linters
@@ -9,12 +9,14 @@ VAULT_PATH = ""
 "npm:markdownlint-cli2" = "latest" # Lint markdown files
 "npm:@taplo/cli" = "latest"        # Format TOML files
 shfmt = "latest"                   # Format shell scripts
+uv = "latest"                      # Python package and tool manager
+ruff = "latest"                    # Python linter and formatter
 
 # Git tools (optional, for enhanced workflows)
 "npm:commitizen" = "latest" # Standardized commit messages
 
 [tasks.fmt]
-description = "Format all files (JSON, YAML with prettier; markdown with markdownlint; TOML with taplo)"
+description = "Format all files (JSON, YAML with prettier; markdown with markdownlint; TOML with taplo; Python with ruff)"
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
@@ -33,6 +35,11 @@ taplo format "**/*.toml" 2>/dev/null || true
 # Format shell scripts (if any exist)
 if find . -name "*.sh" -o -name "*.bash" | grep -q .; then
   shfmt -w -i 2 -ci -bn $(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules)
+fi
+
+# Format Python files
+if find . -name "*.py" | grep -q .; then
+  ruff format .
 fi
 
 echo "Done."
@@ -57,28 +64,45 @@ if find . -name "*.sh" -o -name "*.bash" | grep -q .; then
   shfmt -d -i 2 -ci -bn $(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules)
 fi
 
+# Check Python
+if find . -name "*.py" | grep -q .; then
+  ruff format --check .
+fi
+
 echo "All files are properly formatted."
 """
 
 [tasks.lint]
-description = "Lint all markdown files"
+description = "Lint markdown and Python files"
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
 
 echo "🔎 Linting markdown files..."
 markdownlint-cli2 "**/*.md" --config .markdownlint.json
+
+echo "🔎 Linting Python files..."
+if find . -name "*.py" | grep -q .; then
+  ruff check .
+fi
+
 echo "Done."
 """
 
 [tasks.lint-fix]
-description = "Lint and fix markdown files"
+description = "Lint and fix markdown and Python files"
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
 
 echo "Linting and fixing markdown files..."
 markdownlint-cli2 "**/*.md" --fix --config .markdownlint.json
+
+echo "Linting and fixing Python files..."
+if find . -name "*.py" | grep -q .; then
+  ruff check . --fix
+fi
+
 echo "Done."
 """
 

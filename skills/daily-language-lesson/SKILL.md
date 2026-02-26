@@ -220,6 +220,12 @@ All three lessons must:
 
 ### Step 2: Write to file
 
+- **Fill mode** (file exists with empty template blocks): use the helper script for a robust update. First, write each lesson's content (the inner part of the `ad-note` block) to temporary files, then run:
+
+  ```bash
+  python3 "<BASE_DIR>/scripts/dll-fill.py" "OUTPUT_PATH" --en "TMP_EN" --ja "TMP_JA" --es "TMP_ES"
+  ```
+
 - **Append mode** (file exists, no `## writing` yet): append the three sections after all existing content
 - **Create mode** (file does not exist): create the file with the three sections directly (no frontmatter needed)
 
