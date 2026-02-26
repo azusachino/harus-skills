@@ -12,6 +12,7 @@ harus-skills/
     daily-language-lesson/       # Language lesson generator (en/ja/es)
     mkmr/                        # Merge request creation helper
     init-project/                # Project initialization (this skill)
+    session/                     # Session and memory management (three-tier protocol)
   docs/                          # Project documentation
     plans/                       # Design documents
   lessons/                       # Generated lesson output (gitignored)
@@ -60,6 +61,8 @@ mise clean            # Remove generated lessons
 | File                              | Purpose                                      |
 | --------------------------------- | -------------------------------------------- |
 | `CLAUDE.md`                       | Claude Code project instructions             |
+| `.agents/`                        | Project-local session & task memory          |
+| `~/.agents/`                      | Global agent memory (preferences, facts)     |
 | `.claude-plugin/marketplace.json` | Plugin marketplace config                    |
 | `mise.toml`                       | Task runner and tool management              |
 | `.prettierrc.json`                | Prettier formatter config                    |
