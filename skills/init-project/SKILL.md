@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.0.1
+  version: 0.1.0
 ---
 
 # Init Project
@@ -100,7 +100,93 @@ Create `.agents/` directory and populate it with the following files to implemen
 
 #### .agents/AGENT_README.md
 
-This file defines the rules for session management and memory. Use the content from `skills/init-project/MEMORY.md` (the protocol specification). **Crucially, instruct the agent to use the `/session` skill to manage this protocol.**
+Generate with the following content (adjust project name and date):
+
+```markdown
+# Agent Memory & Session Management Protocol
+
+> **Read this file at the start of every session. Then read `CURRENT_TASK.md` to resume work.**
+
+## Session Start Protocol
+
+1. **Invoke `/session start`** if the skill is available — it loads all tiers automatically.
+2. If `/session` is unavailable, do manually:
+   - *(Optional)* Read `~/.agents/preferences/` and `~/.agents/facts/` if accessible. **If access is denied or the directory does not exist, skip silently — do not error.**
+   - Read `AGENTS.md` and `.agents/CONTEXT.md` for project context.
+   - Read `.agents/CURRENT_TASK.md` to resume the last state.
+3. Confirm to user: current task, last completed step, next action.
+
+**Do not read the entire codebase upfront.** Read files on demand only when needed.
+
+## Session End Protocol
+
+1. **Invoke `/session end`** if the skill is available.
+2. If unavailable, do manually:
+   - Overwrite `CURRENT_TASK.md` with current state (see format below).
+   - Append new decisions to `MEMORY.md`.
+   - *(Optional)* Sync global memory via `save_memory` or `~/.agents/` if accessible. **Skip silently if not accessible.**
+3. Confirm: "Session saved. Next: [one-sentence handoff]."
+
+## File Formats
+
+### `CURRENT_TASK.md` — overwrite each session end
+
+```markdown
+## Objective
+[what we are trying to achieve]
+
+## Status
+IN_PROGRESS | BLOCKED | REVIEW | DONE
+
+## Completed Steps
+- [x] Step
+
+## Remaining Steps
+- [ ] Step
+
+## Open Questions / Blockers
+- [question or blocker]
+
+## Files Modified This Session
+- path/to/file — [what changed and why]
+
+## Next Action
+[single concrete next step]
+
+## Last Updated
+YYYY-MM-DD
+\```
+
+### `MEMORY.md` — append only, never rewrite existing entries
+
+```markdown
+## YYYY-MM-DD — [short title]
+**Decision:** [what was decided]
+**Reason:** [why]
+**Alternatives rejected:** [what else was considered]
+
+---
+\```
+
+## Token Budget
+
+| File | Read when | Max size |
+| --- | --- | --- |
+| `AGENT_README.md` | Session start | < 100 lines |
+| `CONTEXT.md` | Session start | < 200 lines |
+| `CURRENT_TASK.md` | Session start | < 80 lines |
+| `MEMORY.md` | On demand | grows over time |
+
+## User Commands
+
+| User says | Agent does |
+| --- | --- |
+| "start session" / "let's continue" | Load README + CONTEXT + CURRENT_TASK, confirm state |
+| "wrap up" / "end session" | Update CURRENT_TASK + append MEMORY + confirm done |
+| "what's the context?" | Summarize CONTEXT + CURRENT_TASK in plain language |
+| "log this decision: ..." | Append to MEMORY.md immediately |
+| "reset task" | Clear CURRENT_TASK.md, ask user for new objective |
+```
 
 #### .agents/CONTEXT.md
 
@@ -108,9 +194,9 @@ Store **internal agent-specific rules** and state that doesn't belong in the pub
 
 ```markdown
 ## Agent Rules (Hard DO / DON'T)
-- DO: Check Global Memory (`save_memory`) at session start for user preferences.
 - DO: Update `CURRENT_TASK.md` before session end.
-- DO: Sync any learned personal facts to Global Memory using `save_memory`.
+- DO: *(Optional)* Check `~/.agents/` or `save_memory` at session start for global preferences — skip silently if inaccessible.
+- DO: *(Optional)* Sync learned personal facts to global memory via `save_memory` or `~/.agents/` if accessible.
 - DON'T: Commit without user confirmation.
 
 ## Project Context (Internal)

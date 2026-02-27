@@ -26,7 +26,7 @@ When a new session begins, you **must**:
 
 1. Read `.agents/AGENT_README.md` (this file) — understand the rules
 2. **If available, use `/session start`** — this will:
-   - Check **Global Memory** via `save_memory` and `~/.agents/GLOBAL_MEMORY.md` — load user preferences and global facts
+   - *(Optional)* Check global memory via `save_memory` and/or `~/.agents/` — **skip silently if inaccessible or permission denied**
    - Read `AGENTS.md` and `.agents/CONTEXT.md` — load stable project knowledge
    - Read `.agents/CURRENT_TASK.md` — reconstruct where we left off
 3. If `/session` is not available, perform these reads manually and confirm state.
@@ -44,7 +44,7 @@ When a session ends (user says "wrap up", "end session", "stop here", or similar
    - **Update `CURRENT_TASK.md`** — overwrite with current state (see format below)
    - **Append to `MEMORY.md`** — log any decisions or discoveries made this session
    - **Optionally write `SESSION_LOG/YYYY-MM-DD.md`** — brief activity summary
-   - **Sync Global Memory** — if any personal facts or user-wide preferences were learned, save them using `save_memory` AND `~/.agents/GLOBAL_MEMORY.md`.
+   - *(Optional)* Sync global memory — if personal facts or user-wide preferences were learned, save via `save_memory` and/or `~/.agents/` if accessible. **Skip silently if inaccessible.**
 2. If `/session` is not available, perform these updates manually and confirm done.
 3. Confirm to the user that the session is saved and provide a 1-sentence "handoff summary".
 
