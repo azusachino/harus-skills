@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.0.1
+  version: 0.1.0
 ---
 
 # Init Project
