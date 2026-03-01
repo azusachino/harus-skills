@@ -4,24 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This repository contains custom Claude Code skills for productivity and learning. Skills are user-invocable commands that extend Claude Code's capabilities. The repository uses Claude's plugin marketplace system via `.claude-plugin/marketplace.json` configuration.
+This repository contains custom Claude Code skills for productivity, project management, and language learning. Skills are user-invocable commands that extend Claude Code's capabilities. The repository uses Claude's plugin marketplace system via `.claude-plugin/marketplace.json` configuration.
 
 ## Repository Structure
 
-```sh
-skills/                         # Custom skill definitions
-  daily-language-lesson/        # Language learning lesson generator
-    SKILL.md                   # Skill definition with YAML frontmatter
-    README.md                  # User documentation
-  mkmr/                        # Merge request creation skill
-    SKILL.md                   # Skill definition with YAML frontmatter
-  init-project/                # Project initialization skill
-    SKILL.md                   # Skill definition with YAML frontmatter
-docs/                          # Project documentation
-  plans/                       # Design documents
-lessons/YYYY-MM-DD/            # Generated lesson files (gitignored)
-.claude-plugin/                # Claude plugin configuration
-  marketplace.json             # Marketplace and plugin registration
+```text
+skills/                           # Custom skill definitions
+  daily-language-lesson/          # Language lesson generator (Obsidian vault output)
+    SKILL.md                      # Skill definition with YAML frontmatter
+    README.md                     # User documentation
+  notion-language-lesson/         # Language lesson generator (Notion output)
+    SKILL.md
+    README.md
+    scripts/                      # nll-push.py, nll-status.py
+  mkmr/                           # Merge request creation skill
+    SKILL.md
+  init-project/                   # Project initialization skill
+    SKILL.md
+  session/                        # Session and memory management
+    SKILL.md
+  next-session/                   # Lightweight context restore
+    SKILL.md
+docs/                             # Project documentation
+  plans/                          # Design documents
+.claude-plugin/
+  marketplace.json                # Plugin marketplace registration
+gemini-extension.json             # Gemini CLI extension manifest
 ```
 
 ## Architecture
@@ -30,137 +38,103 @@ lessons/YYYY-MM-DD/            # Generated lesson files (gitignored)
 
 All skills follow the [Agent Skills Standard](http://agentskills.io) format with `SKILL.md` files:
 
-- YAML frontmatter contains metadata (name, description, metadata block, allowed-tools)
-- Markdown body contains execution instructions for Claude
+- YAML frontmatter: `name`, `description`, `metadata` (author, version), optional `allowed-tools`
+- Markdown body: execution instructions for Claude
 - Optional `README.md` for user-facing documentation
 
 ### Plugin Configuration
 
-The `.claude-plugin/marketplace.json` file defines the marketplace structure:
+The `.claude-plugin/marketplace.json` defines a single plugin:
 
 - **Marketplace name**: `harus-skills`
-- **Two separate plugins**:
-  1. `code-skills` - Development and git workflow helpers (contains `mkmr`)
-  2. `language-skills` - Language learning tools (contains `daily-language-lesson`)
-- Skills can be invoked as `/skill-name` or `/plugin-name:skill-name`
-- Users can install individual plugins or all skills via skill directory method
+- **Plugin**: `harus-skills` — contains all skills
+- Skills invoked as `/skill-name` or `/harus-skills:skill-name`
 
 ### Skill Invocation
 
-Skills are invoked via the Skill tool:
+| Invocation | Skill |
+| --- | --- |
+| `/daily-language-lesson`, `/dll`, `/lesson` | Language lessons → Obsidian vault |
+| `/notion-language-lesson`, `/nll` | Language lessons → Notion database |
+| `/mkmr` | Create merge request |
+| `/init-project`, `/init` | Initialize project with agent infrastructure |
+| `/session` | Session and memory management |
+| `/next-session` | Lightweight context restore |
 
-- `/daily-language-lesson` (aliases: `/dll`, `/lesson`) or `/language-skills:daily-language-lesson`
-- `/mkmr` or `/code-skills:mkmr`
-- `/init-project` (alias: `/init`) or `/harus-skills:init-project`
+## Skill Reference
 
-## Skill Development
+### `session` (v1.2.0)
 
-### daily-language-lesson Skill (language-skills plugin)
+Manages the three-tier memory protocol (Global → Project → Session). `@modelcontextprotocol/server-memory` is the primary global tier — detected by checking for `search_nodes`, `create_entities`, and `add_observations` in the available tool list. Falls back to `save_memory` then `~/.agents/` filesystem.
 
-Generates markdown-based language lessons at different proficiency levels:
+- `/session start` — load all memory tiers and report current task
+- `/session end` — save session state, sync new facts to global memory
 
-- English: Native level (advanced literature, idioms, sophisticated grammar)
-- Japanese: Native level (advanced kanji, keigo, literary expressions)
-- Spanish: Entry level (basic vocabulary, simple grammar)
+### `init-project` (v0.2.0)
 
-Output structure: `lessons/YYYY-MM-DD/{english,japanese,spanish}.md`
+Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` memory files, documentation stubs, and tooling configs. Detects Claude Code (`.claude/`), Gemini CLI (`.gemini/`), and Codex (`.codex/`) and writes the MCP memory server config for each detected agent.
 
-Each lesson includes:
+### `daily-language-lesson`
 
-1. Reading passage (300-400 words/characters, 150-200 for Spanish)
-2. Vocabulary section (8-10 words with pronunciation, definitions, examples)
-3. Comprehension questions (5 questions with answer key)
-4. Grammar point with explanations, examples, and practice exercises
+Generates multi-language lessons saved directly to the Obsidian vault daily note (`$VAULT_PATH/YYYY/YYYY-MM-DD.md`) using `ad-note` callout blocks.
 
-The skill creates structured markdown files with emojis in section headers (📖, 📚, ❓, 📝, ✅) for visual organization.
+- English: advanced (native-level literature, idioms, sophisticated grammar)
+- Japanese: N1 level (advanced kanji, keigo, literary expressions)
+- Spanish: B1–B2 (intermediate vocabulary and grammar)
 
-### mkmr Skill (code-skills plugin)
+### `notion-language-lesson` (v1.1.0, alias: `/nll`)
 
-Creates merge requests from current branch to mainline branch. Workflow:
+Same lesson content as `daily-language-lesson`, pushed to a Notion database as structured toggle-block pages. Falls back to Obsidian vault if Notion push fails. Requires `NOTION_API_KEY` and `NOTION_DATABASE_ID` env vars — see `skills/notion-language-lesson/README.md`.
 
-1. Ask user permission before executing tasks
-2. Identify mainline branch (main or develop)
-3. Check gh/glab tool availability
-4. Verify not on mainline branch
-5. Check for unstaged changes and commit if necessary
-6. Review diff between current and mainline branch
-7. Push to remote if needed
-8. Create merge request with detailed description
+### `mkmr` (v1.0.0)
 
-Uses `allowed-tools: git gh glab` to restrict tool usage.
+Creates merge requests from current branch to mainline. Checks for unstaged changes, generates a diff-based description, creates via `gh` or `glab`. Uses `allowed-tools: git gh glab`.
 
-### session Skill
+### `next-session` (v1.0.0)
 
-Manages the three-tier memory protocol (Global, Project, Session) to ensure continuity.
-
-- `/session start` - Resumes session from local and global context
-- `/session end` - Saves session state and syncs memory before closing
+Lightweight fallback for context restore when `/session` is unavailable. Reads `.agents/CURRENT_TASK.md` and `.agents/MEMORY.md` only.
 
 ## Agent Behavior
 
-- **Session Management**: Always run `/session start` at the beginning of a session if a `.agents/` directory exists. Always run `/session end` before wrapping up.
-- All skills use SKILL.md format with YAML frontmatter
-
-### Method 1: Marketplace Plugin Installation (Recommended)
-
-```bash
-/plugin marketplace add <github-username>/harus-skills
-/plugin install code-skills@harus-skills
-/plugin install language-skills@harus-skills
-```
-
-### Method 2: Skill Directory (Legacy)
-
-Adds skills directory to `~/.config/claude/config.json`:
-
-```json
-{
-  "skillDirectories": ["/path/to/harus-skills/skills"]
-}
-```
-
-This makes all skills available without the plugin system.
+- **Session Management**: Run `/session start` at the start of any session if `.agents/` exists. Run `/session end` before wrapping up.
+- **Version Bump Rule**: After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's `metadata.version`, (2) `gemini-extension.json` version, (3) `.claude-plugin/marketplace.json` metadata.version. Current: both at `1.0.5`.
+- **Staging discipline**: Always `git add <specific files>`. Never `git add -A` or `git add .`.
 
 ## Development Workflow
 
-### Formatting and Linting
-
-This repository uses [mise](https://mise.jdx.dev/) for tool management and [Makefile](https://www.gnu.org/software/make/manual/make.html) for task automation.
-
-**Setup:**
+### Setup
 
 ```bash
-make install          # Install all tools via mise
-make dev              # Setup development environment (includes git hooks)
+make install    # Install all tools via mise
+make dev        # Setup development environment
 ```
 
-**Common commands:**
+### Common Commands
 
 ```bash
-make fmt              # Format all files (markdown, JSON, YAML, TOML, shell, Python)
-make fmt-check        # Check formatting without modifying
-make lint             # Lint markdown and Python files
-make lint-fix         # Lint and fix markdown and Python files
-make check            # Run all checks (format, lint, verify)
-make list-skills      # List all available skills
-make clean            # Remove generated lessons
-make verify           # Verify repository structure
+make fmt          # Format JSON, YAML, TOML (NOT markdown)
+make fmt-check    # Check formatting without modifying
+make lint         # Lint markdown (markdownlint-cli2) and Python (ruff)
+make lint-fix     # Lint and auto-fix
+make check        # Run all checks (format + lint + verify)
+make list-skills  # List all available skills
+make verify       # Verify repository structure
+make clean        # Remove generated lessons
 ```
-
-**IMPORTANT:** Always run `make fmt` after editing files. Git hooks are available to auto-format on commit.
 
 ### File Formatting
 
-- **Markdown**: Prettier with prose wrap at 80 characters
+- **Markdown**: markdownlint-cli2 only. Never run Prettier on `.md` files — it wraps prose and breaks formatting. Never manually wrap prose lines either.
 - **JSON/YAML**: Prettier with 2-space indentation
 - **TOML**: Taplo formatter
 - **Shell scripts**: shfmt with 2-space indentation
+- **Python**: ruff
 
 ## Key Conventions
 
 - All skills use SKILL.md format with YAML frontmatter
-- Skills should ask for user permission before executing commands (see mkmr workflow)
-- Generated content goes to `lessons/` directory which is gitignored
-- The mkmr skill explicitly avoids emojis in git commit messages and MR descriptions
-- The daily-language-lesson skill uses emojis for formatting lesson sections
-- Always format files with `mise fmt` before committing
+- Skills ask user permission before executing commands
+- No emojis in git commit messages or MR descriptions
+- Conventional commit style: `feat:`, `fix:`, `docs:`, `chore:`
+- Always run `make fmt` + `make lint` before committing
+- Never overwrite existing files without asking
