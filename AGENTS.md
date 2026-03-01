@@ -72,6 +72,6 @@ make clean            # Remove generated lessons
 
 ## Quality Standards
 
-1. `mise fmt` - all files formatted
-2. `mise lint` - markdown lint passes
-3. `mise verify` - repo structure valid (all skills have SKILL.md, marketplace.json exists)
+1. `make fmt` - all files formatted
+2. `make lint` - markdown lint passes
+3. `make verify` - repo structure valid (all skills have SKILL.md, marketplace.json exists)
