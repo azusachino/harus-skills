@@ -10,25 +10,26 @@
 
 ---
 
-### Task 1: Create skill directory structure
+## Task 1: Create skill directory structure
 
 **Files:**
+
 - Create: `skills/notion-language-lesson/scripts/.gitkeep`
 
-**Step 1: Create directories**
+### Step 1: Create directories
 
 ```bash
 mkdir -p skills/notion-language-lesson/scripts
 ```
 
-**Step 2: Verify structure**
+### Step 2: Verify structure
 
 ```bash
 ls skills/notion-language-lesson/
 # Expected: scripts/
 ```
 
-**Step 3: Commit**
+### Step 3: Commit
 
 ```bash
 git add skills/notion-language-lesson/
@@ -37,14 +38,15 @@ git commit -m "chore: scaffold notion-language-lesson skill directory"
 
 ---
 
-### Task 2: Write `nll-status.py`
+## Task 2: Write `nll-status.py`
 
 **Files:**
+
 - Create: `skills/notion-language-lesson/scripts/nll-status.py`
 
 **What it does:** Queries the Notion database for an existing row on the target date. Outputs `KEY=value` lines for the SKILL.md to parse: `TARGET_DATE`, `MODE` (`create` or `warn`), `RECENT_THEMES` (pipe-separated themes from last 7 rows).
 
-**Step 1: Write the script**
+### Step 1: Write the script
 
 ```python
 #!/usr/bin/env python3
@@ -150,27 +152,27 @@ if __name__ == "__main__":
     main()
 ```
 
-**Step 2: Make executable**
+### Step 2: Make executable
 
 ```bash
 chmod +x skills/notion-language-lesson/scripts/nll-status.py
 ```
 
-**Step 3: Smoke-test with missing env vars**
+### Step 3: Smoke-test with missing env vars
 
 ```bash
 python3 skills/notion-language-lesson/scripts/nll-status.py
 # Expected: ERROR: NOTION_API_KEY environment variable is not set (exit 1)
 ```
 
-**Step 4: Smoke-test with invalid date**
+### Step 4: Smoke-test with invalid date
 
 ```bash
 NOTION_API_KEY=fake NOTION_DATABASE_ID=fake python3 skills/notion-language-lesson/scripts/nll-status.py not-a-date
 # Expected: ERROR: Invalid date format: not-a-date. Use YYYY-MM-DD (exit 1)
 ```
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add skills/notion-language-lesson/scripts/nll-status.py
@@ -179,14 +181,15 @@ git commit -m "feat: add nll-status.py for Notion DB pre-flight check"
 
 ---
 
-### Task 3: Write `nll-push.py`
+## Task 3: Write `nll-push.py`
 
 **Files:**
+
 - Create: `skills/notion-language-lesson/scripts/nll-push.py`
 
 **What it does:** Reads three temp markdown files (one per language lesson), creates a new Notion database row with all properties set, then appends the lesson content as nested toggle-heading blocks to the row's page body. Outputs `NOTION_URL=<url>` on success.
 
-**Step 1: Write the script**
+### Step 1: Write the script
 
 ```python
 #!/usr/bin/env python3
@@ -416,20 +419,20 @@ if __name__ == "__main__":
     main()
 ```
 
-**Step 2: Make executable**
+### Step 2: Make executable
 
 ```bash
 chmod +x skills/notion-language-lesson/scripts/nll-push.py
 ```
 
-**Step 3: Smoke-test missing args**
+### Step 3: Smoke-test missing args
 
 ```bash
 python3 skills/notion-language-lesson/scripts/nll-push.py
 # Expected: error: the following arguments are required: target_date, theme, --en, --ja, --es
 ```
 
-**Step 4: Smoke-test missing env**
+### Step 4: Smoke-test missing env
 
 ```bash
 python3 skills/notion-language-lesson/scripts/nll-push.py 2026-03-01 "Test" \
@@ -437,7 +440,7 @@ python3 skills/notion-language-lesson/scripts/nll-push.py 2026-03-01 "Test" \
 # Expected: ERROR: NOTION_API_KEY environment variable is not set (exit 1)
 ```
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add skills/notion-language-lesson/scripts/nll-push.py
@@ -446,14 +449,15 @@ git commit -m "feat: add nll-push.py to push lessons to Notion"
 
 ---
 
-### Task 4: Write `SKILL.md`
+## Task 4: Write `SKILL.md`
 
 **Files:**
+
 - Create: `skills/notion-language-lesson/SKILL.md`
 
 **What it does:** Defines the skill. Mirrors the dll execution flow: env check → status → generate → write temp files → push to Notion → fallback to Obsidian → confirm.
 
-**Step 1: Write the skill**
+### Step 1: Write the skill
 
 ```markdown
 ---
@@ -517,7 +521,7 @@ Write each lesson's inner content (the body text — no outer wrappers) to temp 
 
 Each file should contain the lesson sections as plain markdown:
 
-```
+```markdown
 ## 📖 Reading Passage
 
 [passage text]
@@ -606,9 +610,12 @@ Report to the user:
 - Theme used
 - Mode (created / skipped)
 - One-line topic summary per language
+
+```markdown
+# Output summary
 ```
 
-**Step 2: Verify frontmatter is valid YAML**
+### Step 2: Verify frontmatter is valid YAML
 
 ```bash
 python3 -c "
@@ -622,7 +629,7 @@ print('OK')
 
 Expected: prints `OK` with no errors.
 
-**Step 3: Commit**
+### Step 3: Commit
 
 ```bash
 git add skills/notion-language-lesson/SKILL.md
@@ -631,19 +638,21 @@ git commit -m "feat: add notion-language-lesson SKILL.md"
 
 ---
 
-### Task 5: Register skill in marketplace and bump versions
+## Task 5: Register skill in marketplace and bump versions
 
 **Files:**
+
 - Modify: `.claude-plugin/marketplace.json`
 - Modify: `gemini-extension.json`
 - Modify: `skills/notion-language-lesson/SKILL.md` (version already set to 1.0.0 in Task 4)
 
 Per the Skill Edit Checklist in project memory, after adding a new skill:
+
 1. Bump `metadata.version` in the new SKILL.md (already 1.0.0 — new skill, so this is correct)
 2. Bump `version` in `gemini-extension.json` (currently `1.0.1` → `1.0.2`)
 3. Bump `metadata.version` in `.claude-plugin/marketplace.json` (currently `1.0.1` → `1.0.2`)
 
-**Step 1: Add skill to marketplace.json**
+### Step 1: Add skill to marketplace.json
 
 In `.claude-plugin/marketplace.json`, add `"./skills/notion-language-lesson"` to the `skills` array and bump the version:
 
@@ -677,11 +686,11 @@ In `.claude-plugin/marketplace.json`, add `"./skills/notion-language-lesson"` to
 }
 ```
 
-**Step 2: Bump gemini-extension.json**
+### Step 2: Bump gemini-extension.json
 
 Find the `version` field and change `1.0.1` → `1.0.2`.
 
-**Step 3: Verify JSON is valid**
+### Step 3: Verify JSON is valid
 
 ```bash
 python3 -m json.tool .claude-plugin/marketplace.json > /dev/null && echo "marketplace OK"
@@ -690,7 +699,7 @@ python3 -m json.tool gemini-extension.json > /dev/null && echo "gemini OK"
 
 Expected: both print `OK`.
 
-**Step 4: Commit**
+### Step 4: Commit
 
 ```bash
 git add .claude-plugin/marketplace.json gemini-extension.json
@@ -699,12 +708,13 @@ git commit -m "chore: register notion-language-lesson skill, bump versions to 1.
 
 ---
 
-### Task 6: Update `.env.example`
+## Task 6: Update `.env.example`
 
 **Files:**
+
 - Modify: `.env.example`
 
-**Step 1: Add Notion variables**
+### Step 1: Add Notion variables
 
 Append to `.env.example`:
 
@@ -721,7 +731,7 @@ NOTION_API_KEY=your_notion_integration_secret
 NOTION_DATABASE_ID=your_notion_database_id
 ```
 
-**Step 2: Commit**
+### Step 2: Commit
 
 ```bash
 git add .env.example
@@ -730,15 +740,15 @@ git commit -m "docs: add NOTION_API_KEY and NOTION_DATABASE_ID to .env.example"
 
 ---
 
-### Task 7: Format and final verification
+## Task 7: Format and final verification
 
-**Step 1: Run formatter (JSON/YAML only — never markdown)**
+### Step 1: Run formatter (JSON/YAML only — never markdown)
 
 ```bash
 mise fmt
 ```
 
-**Step 2: Run full check**
+### Step 2: Run full check
 
 ```bash
 mise check
@@ -746,7 +756,7 @@ mise check
 
 Expected: all checks pass.
 
-**Step 3: Verify skill appears in list**
+### Step 3: Verify skill appears in list
 
 ```bash
 mise list-skills
@@ -754,7 +764,7 @@ mise list-skills
 
 Expected: `notion-language-lesson` (or `nll`) appears in output.
 
-**Step 4: Final commit if fmt made changes**
+### Step 4: Final commit if fmt made changes
 
 ```bash
 git add -A
@@ -765,11 +775,11 @@ git commit -m "chore: format files after notion-language-lesson skill addition"
 
 ---
 
-### Task 8: Integration test (live Notion API)
+## Task 8: Integration test (live Notion API)
 
 > Only run this if `NOTION_API_KEY` and `NOTION_DATABASE_ID` are available in your shell.
 
-**Step 1: Run status check**
+### Step 1: Run status check
 
 ```bash
 python3 skills/notion-language-lesson/scripts/nll-status.py
@@ -779,30 +789,24 @@ python3 skills/notion-language-lesson/scripts/nll-status.py
 # RECENT_THEMES=...
 ```
 
-**Step 2: Create test temp files**
+### Step 2: Create test temp files
 
 ```bash
-echo "## 📖 Reading Passage\n\nTest passage.\n\n---\n\n## ✅ Answer Key\n\n1. Test answer." > /tmp/nll-en.md
+echo "## 📖 Reading Passage
+
+Test passage.
+
+---
+
+## ✅ Answer Key
+
+1. Test answer." > /tmp/nll-en.md
 cp /tmp/nll-en.md /tmp/nll-ja.md
 cp /tmp/nll-en.md /tmp/nll-es.md
 ```
 
-**Step 3: Push to Notion**
+### Step 3: Push to Notion
 
 ```bash
 python3 skills/notion-language-lesson/scripts/nll-push.py \
-  "$(date +%Y-%m-%d)-test" "Integration Test" \
-  --en /tmp/nll-en.md --ja /tmp/nll-ja.md --es /tmp/nll-es.md
-# Expected: NOTION_URL=https://www.notion.so/...
-```
-
-**Step 4: Verify in Notion**
-
-Open the URL in browser. Confirm:
-- Row appears in database with correct `Name`, `Date`, `Theme`, `Languages`, all checkboxes unchecked
-- Page body has three toggleable headings (🇺🇸 English, 🇯🇵 Japanese, 🇪🇸 Spanish)
-- Each toggle contains the callout + lesson sections
-
-**Step 5: Clean up test row**
-
-Delete the test row manually in Notion.
+  "$(date +

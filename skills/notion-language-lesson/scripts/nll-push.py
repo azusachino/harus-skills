@@ -48,6 +48,7 @@ def notion_request(api_key, method, path, payload=None):
 
 # --- Block builders ---
 
+
 def rich_text(content, bold=False):
     t = {"type": "text", "text": {"content": content}}
     if bold:
@@ -65,11 +66,17 @@ def heading_block(text, level=3):
 
 
 def bullet_block(text):
-    return {"type": "bulleted_list_item", "bulleted_list_item": {"rich_text": [rich_text(text)]}}
+    return {
+        "type": "bulleted_list_item",
+        "bulleted_list_item": {"rich_text": [rich_text(text)]},
+    }
 
 
 def numbered_block(text):
-    return {"type": "numbered_list_item", "numbered_list_item": {"rich_text": [rich_text(text)]}}
+    return {
+        "type": "numbered_list_item",
+        "numbered_list_item": {"rich_text": [rich_text(text)]},
+    }
 
 
 def divider_block():
@@ -112,6 +119,7 @@ def toggle_block(text, children=None):
 
 # --- Markdown parser ---
 
+
 def markdown_to_blocks(md_text):
     """
     Minimal markdown-to-Notion-blocks converter.
@@ -138,7 +146,7 @@ def markdown_to_blocks(md_text):
             blocks.append(bullet_block(stripped[2:]))
         elif stripped and stripped[0].isdigit() and ". " in stripped:
             idx = stripped.index(". ")
-            blocks.append(numbered_block(stripped[idx + 2:]))
+            blocks.append(numbered_block(stripped[idx + 2 :]))
         elif stripped == "---":
             blocks.append(divider_block())
         elif stripped == "":
@@ -161,9 +169,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("target_date", help="YYYY-MM-DD")
     parser.add_argument("theme", help="Unifying theme for this lesson")
-    parser.add_argument("--en", required=True, help="Path to English lesson markdown file")
-    parser.add_argument("--ja", required=True, help="Path to Japanese lesson markdown file")
-    parser.add_argument("--es", required=True, help="Path to Spanish lesson markdown file")
+    parser.add_argument(
+        "--en", required=True, help="Path to English lesson markdown file"
+    )
+    parser.add_argument(
+        "--ja", required=True, help="Path to Japanese lesson markdown file"
+    )
+    parser.add_argument(
+        "--es", required=True, help="Path to Spanish lesson markdown file"
+    )
     args = parser.parse_args()
 
     api_key = get_env("NOTION_API_KEY")
@@ -182,40 +196,68 @@ def main():
 
     # 1. Create database row with all properties
     try:
-        page = notion_request(api_key, "POST", "/pages", {
-            "parent": {"database_id": database_id},
-            "properties": {
-                "Name": {"title": [{"text": {"content": f"{args.target_date} — {args.theme}"}}]},
-                "Date": {"date": {"start": args.target_date}},
-                "Theme": {"rich_text": [{"text": {"content": args.theme}}]},
-                "Languages": {"multi_select": [
-                    {"name": "English"},
-                    {"name": "Japanese"},
-                    {"name": "Spanish"},
-                ]},
-                "English Reviewed": {"checkbox": False},
-                "Japanese Reviewed": {"checkbox": False},
-                "Spanish Reviewed": {"checkbox": False},
+        page = notion_request(
+            api_key,
+            "POST",
+            "/pages",
+            {
+                "parent": {"database_id": database_id},
+                "properties": {
+                    "Name": {
+                        "title": [
+                            {"text": {"content": f"{args.target_date} — {args.theme}"}}
+                        ]
+                    },
+                    "Date": {"date": {"start": args.target_date}},
+                    "Theme": {"rich_text": [{"text": {"content": args.theme}}]},
+                    "Languages": {
+                        "multi_select": [
+                            {"name": "English"},
+                            {"name": "Japanese"},
+                            {"name": "Spanish"},
+                        ]
+                    },
+                    "English Reviewed": {"checkbox": False},
+                    "Japanese Reviewed": {"checkbox": False},
+                    "Spanish Reviewed": {"checkbox": False},
+                },
             },
-        })
+        )
     except urllib.error.HTTPError as e:
-        print(f"ERROR: Failed to create Notion page: {e.code}: {e.read().decode()}", file=sys.stderr)
+        print(
+            f"ERROR: Failed to create Notion page: {e.code}: {e.read().decode()}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     page_id = page["id"]
     page_url = page["url"]
 
     # 2. Build lesson blocks and append to page
-    en_block = build_lesson_section("English Lesson", "🇺🇸", "Advanced / IELTS Band 7+", args.theme, en_md)
-    ja_block = build_lesson_section("Japanese Lesson", "🇯🇵", "N1 / ネイティブ近接レベル", args.theme, ja_md)
-    es_block = build_lesson_section("Spanish Lesson", "🇪🇸", "Intermediate B1–B2", args.theme, es_md)
+    en_block = build_lesson_section(
+        "English Lesson", "🇺🇸", "Advanced / IELTS Band 7+", args.theme, en_md
+    )
+    ja_block = build_lesson_section(
+        "Japanese Lesson", "🇯🇵", "N1 / ネイティブ近接レベル", args.theme, ja_md
+    )
+    es_block = build_lesson_section(
+        "Spanish Lesson", "🇪🇸", "Intermediate B1–B2", args.theme, es_md
+    )
 
     try:
-        notion_request(api_key, "PATCH", f"/blocks/{page_id}/children", {
-            "children": [en_block, ja_block, es_block],
-        })
+        notion_request(
+            api_key,
+            "PATCH",
+            f"/blocks/{page_id}/children",
+            {
+                "children": [en_block, ja_block, es_block],
+            },
+        )
     except urllib.error.HTTPError as e:
-        print(f"ERROR: Failed to append blocks: {e.code}: {e.read().decode()}", file=sys.stderr)
+        print(
+            f"ERROR: Failed to append blocks: {e.code}: {e.read().decode()}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     print(f"NOTION_URL={page_url}")

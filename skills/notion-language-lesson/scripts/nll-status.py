@@ -54,7 +54,10 @@ def main():
         try:
             datetime.date.fromisoformat(target_date)
         except ValueError:
-            print(f"ERROR: Invalid date format: {target_date}. Use YYYY-MM-DD", file=sys.stderr)
+            print(
+                f"ERROR: Invalid date format: {target_date}. Use YYYY-MM-DD",
+                file=sys.stderr,
+            )
             sys.exit(1)
     else:
         target_date = datetime.date.today().isoformat()
@@ -64,12 +67,11 @@ def main():
 
     # Check if a row already exists for target date
     try:
-        result = notion_query(api_key, database_id, {
-            "filter": {
-                "property": "Date",
-                "date": {"equals": target_date}
-            }
-        })
+        result = notion_query(
+            api_key,
+            database_id,
+            {"filter": {"property": "Date", "date": {"equals": target_date}}},
+        )
     except urllib.error.HTTPError as e:
         print(f"ERROR: Notion API error {e.code}: {e.read().decode()}", file=sys.stderr)
         sys.exit(1)
@@ -78,10 +80,14 @@ def main():
 
     # Fetch last 7 rows to extract recent themes (avoid repetition)
     try:
-        recent = notion_query(api_key, database_id, {
-            "sorts": [{"property": "Date", "direction": "descending"}],
-            "page_size": 7,
-        })
+        recent = notion_query(
+            api_key,
+            database_id,
+            {
+                "sorts": [{"property": "Date", "direction": "descending"}],
+                "page_size": 7,
+            },
+        )
     except urllib.error.HTTPError:
         recent = {"results": []}
 

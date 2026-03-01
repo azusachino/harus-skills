@@ -18,7 +18,7 @@ A new skill `notion-language-lesson` (alias `nll`) that generates daily language
 ## Notion Database Properties
 
 | Property | Notion Type | Notes |
-|---|---|---|
+| :--- | :--- | :--- |
 | `Name` | Title | Set to `YYYY-MM-DD — Theme` |
 | `Date` | Date | The lesson date |
 | `Theme` | Rich Text | Unifying theme across all three lessons |
@@ -32,7 +32,7 @@ A new skill `notion-language-lesson` (alias `nll`) that generates daily language
 
 Each database row's page body contains three top-level toggle headings, one per language:
 
-```
+```text
 Toggle Heading 2: "🇺🇸 English Lesson"
   ├── Callout: Theme + Level
   ├── Heading 3: "📖 Reading Passage"
@@ -51,7 +51,7 @@ Toggle Heading 2: "🇯🇵 Japanese Lesson"
 
 Toggle Heading 2: "🇪🇸 Spanish Lesson"
   └── [same structure + ✍️ Writing Exercise section]
-```
+```text
 
 Answer keys are wrapped in toggle blocks so they are hidden by default — the user must click to reveal them, enabling self-testing.
 
@@ -79,7 +79,7 @@ Accepts temp files for each lesson (en, ja, es) and:
 
 ## Execution Flow
 
-```
+```text
 Step 0: Environment check
   → Verify NOTION_API_KEY and NOTION_DATABASE_ID are set; abort with clear error if missing
   → Run nll-status.py [ARGUMENT] → parse TARGET_DATE, MODE, RECENT_THEMES
@@ -102,7 +102,7 @@ Step 4: Confirm to user
   → Theme used
   → Mode (created / skipped)
   → One-line topic summary per language
-```
+```text
 
 ## MODE Handling
 
@@ -111,26 +111,26 @@ Step 4: Confirm to user
 
 ## Skill Invocation
 
-```
+```text
 /notion-language-lesson          # today's lesson
 /notion-language-lesson 2026-03-05   # specific date
 /nll                             # alias
-```
+```text
 
 ## Files to Create
 
-```
+```text
 skills/notion-language-lesson/
   SKILL.md                       # skill definition
   scripts/
     nll-status.py                # DB query + status check
     nll-push.py                  # Notion API push
-```
+```text
 
 ## Environment Variables
 
 | Variable | Required | Description |
-|---|---|---|
+| :--- | :--- | :--- |
 | `NOTION_API_KEY` | Yes | Notion integration secret |
 | `NOTION_DATABASE_ID` | Yes | ID of the pre-created lessons database |
 | `VAULT_PATH` | No | Obsidian vault path (for fallback only) |

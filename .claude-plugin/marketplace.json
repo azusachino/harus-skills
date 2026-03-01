@@ -14,14 +14,7 @@
       "description": "harus useful skills",
       "source": "./",
       "strict": false,
-      "skills": [
-        "./skills/mkmr",
-        "./skills/next-session",
-        "./skills/daily-language-lesson",
-        "./skills/init-project",
-        "./skills/session",
-        "./skills/notion-language-lesson"
-      ]
+      "skills": ["./skills/mkmr", "./skills/next-session", "./skills/daily-language-lesson", "./skills/init-project", "./skills/session", "./skills/notion-language-lesson"]
     }
   ]
 }

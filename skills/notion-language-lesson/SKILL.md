@@ -48,7 +48,7 @@ Pick a unifying theme (avoiding RECENT_THEMES). Generate all three lessons follo
 
 Write each lesson's inner content (the body text — no outer wrappers) to temp files:
 
-```bash
+```markdown
 # Write plain markdown — no ad-note blocks, no frontmatter
 # Just the section content starting from the reading passage
 ```
@@ -59,7 +59,7 @@ Write each lesson's inner content (the body text — no outer wrappers) to temp 
 
 Each file should contain the lesson sections as plain markdown:
 
-```
+```markdown
 ## 📖 Reading Passage
 
 [passage text]
