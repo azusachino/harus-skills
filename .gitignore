@@ -69,3 +69,6 @@ coverage/
 notes.md
 TODO.md
 scratch/
+
+# Git Worktrees
+.worktrees/
