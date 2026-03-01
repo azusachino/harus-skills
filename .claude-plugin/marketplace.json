@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Custom Claude Code skills for productivity and learning",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   "plugins": [
     {
@@ -14,7 +14,14 @@
       "description": "harus useful skills",
       "source": "./",
       "strict": false,
-      "skills": ["./skills/mkmr", "./skills/next-session", "./skills/daily-language-lesson", "./skills/init-project", "./skills/session"]
+      "skills": [
+        "./skills/mkmr",
+        "./skills/next-session",
+        "./skills/daily-language-lesson",
+        "./skills/init-project",
+        "./skills/session",
+        "./skills/notion-language-lesson"
+      ]
     }
   ]
 }
