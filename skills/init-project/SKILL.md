@@ -3,7 +3,9 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.1.0
+  version: 0.1.1
+user-invokable: true
+disable-model-invocation: true
 ---
 
 # Init Project
@@ -30,12 +32,13 @@ Collect:
 
 ### Existing Tooling
 
+- Mise for tooling management (local, exclusively)
 - Formatters (prettier, markdownlint-cli2, zig fmt, rustfmt, gofmt, black, etc.)
 - Linters (eslint, markdownlint-cli2, clippy, golangci-lint, pylint, etc.)
 - Git hooks (husky, pre-commit, `github.com/j178/prek`, lefthook, .git/hooks/)
 - CI/CD (.github/workflows/, .gitlab-ci.yml, Jenkinsfile)
 - Editor config (.editorconfig, .vscode/, .idea/)
-- Task runner (mise.toml, Makefile, justfile, Taskfile.yml)
+- Task runner (Makefile, justfile, Taskfile.yml)
 
 ### Existing Documentation
 
@@ -79,7 +82,7 @@ Generate a comprehensive project briefing document for both humans and agents. T
 
 ## Build, Run & Test
 
-[detected commands: mise run X, npm run Y, etc.]
+[detected commands: make X, npm run Y, etc.]
 
 ## Coding Conventions
 
@@ -261,7 +264,7 @@ quality:
   lint: true
   test: true
 tools:
-  task_runner: [mise or make]
+  task_runner: [make]
   formatter: [detected]
   linter: [detected]
 conventions:

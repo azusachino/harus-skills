@@ -4,6 +4,8 @@ description: create merge request to mainline branch based on current branch
 metadata:
   author: haru
   version: 1.0.0
+user-invokable: true
+disable-model-invocation: true
 ---
 
 1. always ask for user's permission (before execute any task/command)
