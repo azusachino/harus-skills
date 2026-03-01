@@ -312,9 +312,12 @@ conventions:
   indent: [detected or asked]
 ```
 
-#### .claude/settings.json (MCP server config) — only if user accepted MCP setup
+#### MCP server config — only if user accepted MCP setup
 
-Read `.claude/settings.json` first if it exists. Merge the following `mcpServers.memory` key into the existing content without overwriting any other keys. If the file does not exist, create it with this content:
+Write to each agent config file detected in the Phase 1 scan. Skip any file that already has the `memory` server configured. For each detected agent:
+
+**Claude Code** (detected: `.claude/` exists):
+Read `.claude/settings.json` if it exists, merge `mcpServers.memory` without overwriting other keys, or create:
 
 ```json
 {
@@ -327,7 +330,19 @@ Read `.claude/settings.json` first if it exists. Merge the following `mcpServers
 }
 ```
 
-If the file already has `mcpServers.memory`, skip this step silently.
+**Gemini CLI** (detected: `.gemini/` exists):
+Read `.gemini/settings.json` if it exists, merge `mcpServers.memory` without overwriting other keys, or create with the same JSON structure as Claude Code above.
+
+**Codex** (detected: `.codex/` exists):
+Read `.codex/config.toml` if it exists, append the following block if `[mcp_servers.memory]` is not already present:
+
+```toml
+[mcp_servers.memory]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-memory"]
+```
+
+If no agent config directory is detected (project is freshly initialized), default to writing `.claude/settings.json` and ask the user to confirm or specify their agent.
 
 ## Phase 4: Generate Documentation
 
@@ -503,7 +518,9 @@ Init complete! Created:
   .agents/MEMORY.md       - append-only decision log
   .agents/CURRENT_TASK.md - session save point
   .agents/config.yaml     - agent configuration
-  .claude/settings.json  - MCP memory server config (if enabled)
+  .claude/settings.json  - MCP memory server config (Claude Code, if enabled)
+  .gemini/settings.json  - MCP memory server config (Gemini CLI, if enabled)
+  .codex/config.toml     - MCP memory server config (Codex, if enabled)
   docs/architecture.md   - system architecture
   docs/requirements.md   - project requirements
   docs/project-design.md - design decisions
