@@ -1,238 +1,145 @@
 # harus-skills
 
-leap higher
+A collection of custom Claude Code skills for productivity, project management, and language learning.
 
-A collection of custom Claude Code skills for productivity and learning.
+## Skills
 
-## Plugins
+### Session & Project Management
 
-This marketplace contains two plugin collections:
+**`/session`** (v1.2.0) — Three-tier memory management for continuous work sessions. Restores context at session start, saves state at session end. Supports MCP memory (`@modelcontextprotocol/server-memory`) as the primary global tier, with `save_memory` and `~/.agents/` as fallbacks.
 
-### 🛠️ code-skills
+- `/session start` — Load global preferences, project context, and last task state
+- `/session end` — Save session state and sync facts to global memory
 
-Development and git workflow helpers.
+**`/init-project`** (v0.2.0) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` memory files, documentation stubs, and tooling configs. Detects Claude Code, Gemini CLI, and Codex — writes MCP memory server config for each.
 
-**Skills:**
+**`/next-session`** (v1.0.0) — Lightweight context restore from local `.agents/` files when the full `/session` skill is not available.
 
-- `/mkmr` - Create merge requests from current branch to mainline with automated diff analysis and description generation
+### Git Workflow
 
-### 📚 language-skills
+**`/mkmr`** (v1.0.0) — Create merge requests from the current branch to mainline. Checks for unstaged changes, analyzes the diff, and generates a detailed MR description via `gh` or `glab`.
 
-Language learning and lesson generation tools.
+### Language Learning
 
-**Skills:**
+**`/daily-language-lesson`** (aliases: `/dll`, `/lesson`) — Generate multi-language lessons and save them directly to your Obsidian vault daily note.
 
-- `/daily-language-lesson` (aliases: `/dll`, `/lesson`) - Generate comprehensive daily language learning lessons
-  - **English**: Native level (advanced literature, idioms, sophisticated grammar)
-  - **Japanese**: Native level (advanced kanji, keigo, literary expressions)
-  - **Spanish**: Entry level (basic vocabulary, simple grammar)
+- **English**: Advanced level — literature, idioms, sophisticated grammar
+- **Japanese**: N1 level — advanced kanji, keigo, literary expressions
+- **Spanish**: B1–B2 level — intermediate vocabulary and grammar
 
-Each lesson includes reading passages, vocabulary, comprehension questions, and grammar practice. Lessons are saved as markdown files in dated folders.
+Each lesson includes a reading passage, vocabulary section, comprehension questions, a grammar point, and writing exercises.
+
+**`/notion-language-lesson`** (alias: `/nll`, v1.1.0) — Same lesson content as above, pushed directly to a Notion database as structured toggle-block pages. Falls back to Obsidian vault if Notion push fails. Requires `NOTION_API_KEY` and `NOTION_DATABASE_ID` — see [`skills/notion-language-lesson/README.md`](skills/notion-language-lesson/README.md) for setup.
 
 ## Installation
 
 ### Prerequisites
 
-- [Claude Code](https://claude.ai/code) CLI tool installed (for Claude support)
-- [Gemini CLI](https://geminicli.com) installed (for Gemini support)
+- [Claude Code](https://claude.ai/code) CLI installed
+- Node.js (for `npx`-based MCP servers)
 
-### Method 1: Install as Claude Marketplace (Recommended)
+### Method 1: Marketplace Plugin (Recommended)
 
-This method allows you to install individual plugins as needed.
+```bash
+/plugin marketplace add azusachino/harus-skills
+/plugin install harus-skills@harus-skills
+```
 
-1. **Add this repository as a marketplace:**
+Restart Claude Code for changes to take effect.
 
-   ```bash
-   /plugin marketplace add azusachino/harus-skills
-   ```
+### Method 2: Skill Directory (Legacy)
 
-2. **Install plugins:**
+Clone the repo and add to Claude Code config:
 
-   Option A - Via CLI:
+```bash
+git clone https://github.com/azusachino/harus-skills
+```
 
-   ```bash
-   # Install both plugins
-   /plugin install code-skills@harus-skills
-   /plugin install language-skills@harus-skills
+Edit `~/.config/claude/config.json`:
 
-   # Or install individually
-   /plugin install code-skills@harus-skills
-   /plugin install language-skills@harus-skills
-   ```
+```json
+{
+  "skillDirectories": ["/path/to/harus-skills/skills"]
+}
+```
 
-   Option B - Via Browse Interface:
-   1. Run `/plugin marketplace browse`
-   2. Select `harus-skills`
-   3. Choose which plugin(s) to install (`code-skills` and/or `language-skills`)
-   4. Select `Install now`
-
-3. **Restart Claude Code** for changes to take effect
-
-### Method 2: Install via Skill Directory (Legacy)
-
-If you prefer to make all skills available without the plugin system:
-
-1. Clone this repository:
-
-   ```bash
-   git clone <your-repo-url>
-   cd harus-skills
-   ```
-
-2. Add to Claude Code configuration:
-
-   Edit `~/.config/claude/config.json` (create if it doesn't exist):
-
-   ```json
-   {
-     "skillDirectories": ["/path/to/harus-skills/skills"]
-   }
-   ```
-
-3. Restart Claude Code
-
-### Method 3: Install as Gemini CLI Extension
-
-If you are using the [Gemini CLI](https://geminicli.com), you can install this repository as an extension.
-
-#### Option A: Direct Install (Recommended)
+### Method 3: Gemini CLI Extension
 
 ```bash
 gemini extensions install https://github.com/azusachino/harus-skills
 ```
 
-#### Option B: Local Link (For Development)
-
-1. Clone this repository:
-
-   ```bash
-   git clone <your-repo-url>
-   cd harus-skills
-   ```
-
-2. Link the extension:
-
-   ```bash
-   gemini extensions link .
-   ```
-
-3. **Restart Gemini CLI** (or start a new session) to load the skills and context.
-
-### Verify Installation
-
-In Claude Code, check available skills:
+Or for local development:
 
 ```bash
-/help
+gemini extensions link /path/to/harus-skills
 ```
 
-Your installed skills should appear in the skills section.
+## MCP Memory Setup (Optional)
 
-## Usage
+The `session` and `init-project` skills support `@modelcontextprotocol/server-memory` for persistent global memory across projects and sessions. User preferences and project-scoped facts are stored in a knowledge graph and loaded automatically at each session start.
 
-### mkmr - Create Merge Request
+Add to your agent config:
 
-```bash
-/mkmr
+**Claude Code** (`.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    }
+  }
+}
 ```
 
-The skill will guide you through:
+**Gemini CLI** (`.gemini/settings.json`): same JSON structure as above.
 
-1. Asking for permission to proceed
-2. Identifying mainline branch (main/develop)
-3. Checking for unstaged changes
-4. Analyzing diff and generating description
-5. Creating the merge request via gh/glab
+**Codex** (`.codex/config.toml`):
 
-### daily-language-lesson - Generate Language Lessons
-
-```bash
-# Generate today's language lessons
-/lesson
-# or
-/daily-language-lesson
-# or
-/dll
+```toml
+[mcp_servers.memory]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-memory"]
 ```
 
-Lessons are saved to `lessons/YYYY-MM-DD/` with three files:
-
-- `english.md` - Native level
-- `japanese.md` - Native level
-- `spanish.md` - Entry level
+`/init-project` will offer to write this config automatically during project setup.
 
 ## Development
 
-### Setup
-
-This repository uses [mise](https://mise.jdx.dev/) for tool management:
+This repository uses [mise](https://mise.jdx.dev/) for tool management.
 
 ```bash
-# Install mise (if not already installed)
-curl https://mise.run | sh
-
-# Install all tools and setup dev environment
-mise install
-mise run dev
+make install      # Install tools via mise
+make dev          # Setup dev environment and git hooks
+make fmt          # Format JSON, YAML, TOML files
+make lint         # Lint markdown and Python files
+make check        # Run all checks
+make verify       # Verify repository structure
+make list-skills  # List all available skills
 ```
-
-### Daily Commands
-
-```bash
-mise fmt              # Format all files (markdown, JSON, YAML, TOML)
-mise lint             # Lint markdown files
-mise check            # Run all checks before committing
-mise list-skills      # List all available skills
-mise clean            # Remove generated lessons
-```
-
-**Important:** Always run `mise fmt` after editing files. Git hooks will auto-format on commit if installed via `mise run dev`.
-
-### Available Tasks
-
-Run `mise tasks` to see all available commands, or check `mise.toml` for details.
 
 ## Skill Structure
 
 Each skill follows the [Agent Skills Standard](http://agentskills.io) format:
 
-```s
+```text
 skills/
   skill-name/
-    SKILL.md          # Skill definition with YAML frontmatter and instructions
-    README.md         # Optional: User documentation
-```
-
-### SKILL.md Format
-
-```yaml
----
-name: skill-name
-description: Clear description of what the skill does and when to use it
-metadata:
-  author: Your Name
-  version: "1.0.0"
-  aliases: ["alias1", "alias2"] # Optional
-allowed-tools: git gh glab # Optional: Restrict tool usage
----
-# Skill Name
-
-[Instructions for Claude on how to execute the skill]
+    SKILL.md    # Skill definition with YAML frontmatter and instructions
+    README.md   # Optional: User-facing documentation
 ```
 
 ## Contributing
 
-Feel free to add your own skills to this collection:
-
 1. Create a new directory under `skills/`
-2. Add a `SKILL.md` file following the format above
-3. Optionally add a `README.md` for user documentation
-4. Update `.claude-plugin/marketplace.json` to register the skill in the appropriate plugin
-5. Test the skill in Claude Code
-6. Submit a pull request
+2. Add a `SKILL.md` with YAML frontmatter (`name`, `description`, `metadata.version`)
+3. Register it in `.claude-plugin/marketplace.json`
+4. Run `make check` before submitting
+5. Open a pull request
 
 ## Resources
 
-- [Anthropic Skills Repository](https://github.com/anthropics/skills) - Official skills and examples
-- [Agent Skills Standard](http://agentskills.io) - Specification and documentation
-- [Claude Code Documentation](https://support.claude.com/en/articles/12512180-using-skills-in-claude) - Using skills in Claude
+- [Agent Skills Standard](http://agentskills.io)
+- [Claude Code Documentation](https://support.claude.com/en/articles/12512180-using-skills-in-claude)

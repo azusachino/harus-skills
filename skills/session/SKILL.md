@@ -3,7 +3,7 @@ name: session
 description: Use when starting or ending a work session, when a project has a .agents/ directory at the start of a conversation, or when user says "start session", "let's continue", "wrap up", or "end session" — restores prior context and saves session state
 metadata:
   author: haru
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # Session Skill
@@ -26,13 +26,18 @@ Run `/session end` automatically when:
 
 ### `/session start`
 
-1. **Global Tier** *(optional — skip silently if `~/.agents/` does not exist or access is denied)*:
-   - Try `save_memory` tool (if available) to read global facts.
-   - Try reading `~/.agents/preferences/` and `~/.agents/facts/` for user-wide preferences.
-   - If access fails for any reason, skip this step entirely without error.
+1. **Global Tier** *(optional — skip silently at any failure)*:
+   - Check if `search_nodes`, `create_entities`, and `add_observations` are all in the available tool list (indicates MCP `@modelcontextprotocol/server-memory` is active). If any are missing, skip MCP and proceed to the next fallback. (Check tool availability once at the start of `/session start`. Use MCP for all global tier operations in this session. If any MCP call fails at runtime, fall back silently to `save_memory` without retrying MCP.)
+   - If MCP available: call `read_graph()`, then filter and load:
+     - All category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`
+     - Project entity matching the current project name (basename of cwd)
+   - If MCP not available: try `save_memory` tool.
+   - If `save_memory` not available: try reading `~/.agents/preferences/` and `~/.agents/facts/`.
+   - If all fail: skip silently without error.
 2. **Project Tier**:
    - Read `AGENTS.md` for high-level project briefing.
    - Read `.agents/CONTEXT.md` for internal agent rules and context.
+   - If any file does not exist, skip it silently and continue.
 3. **Session Tier**:
    - Read `.agents/CURRENT_TASK.md` to see where the last session left off.
    - Read `.agents/MEMORY.md` to understand recent decisions.
@@ -43,9 +48,16 @@ Run `/session end` automatically when:
 1. **Update Session State**:
    - Overwrite `.agents/CURRENT_TASK.md` with current status, completed steps, and next actions.
    - Append new decisions or discoveries to `.agents/MEMORY.md`.
-2. **Sync Global Memory** *(optional — skip silently if inaccessible)*:
-   - If new personal facts or cross-project preferences were learned, try `save_memory` or update `~/.agents/preferences/` / `~/.agents/facts/` if accessible.
-   - If `~/.agents/` is not accessible, skip. Project-level memory is sufficient.
+2. **Sync Global Memory** *(optional — first success wins, skip silently on all failures)*:
+   - If MCP available (`search_nodes` in tools):
+     - For each new cross-project fact or preference learned this session:
+       - Call `search_nodes` with the target entity name to check if it exists.
+       - If exists: call `add_observations` with new facts only (avoid duplicates).
+       - If not exists: call `create_entities` then `add_observations`.
+     - Use category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) for user-wide facts.
+     - Use a project entity named after the current repo (cwd basename) for project-scoped facts.
+   - Else if `save_memory` available: write cross-project facts.
+   - Else if `~/.agents/` accessible: write to `preferences/` or `facts/` markdown files.
 3. **Confirm**: Tell the user the session is saved with a 1-sentence handoff summary.
 
 ## Memory Backend Support
@@ -54,11 +66,37 @@ Different agents support different persistence mechanisms. Use whatever is avail
 
 | Backend | Available in | Used for |
 | --- | --- | --- |
-| `save_memory` tool | Claude Code | Global facts auto-loaded every session without any explicit read |
-| `~/.agents/` filesystem | Any agent with home dir access | Global facts for non-Claude-Code agents |
-| `.agents/` project dir | Any agent | Project + session memory — always available, universal source of truth |
+| MCP `server-memory` | Any agent with MCP configured | Primary global tier — knowledge graph, cross-project and category facts |
+| `save_memory` tool | Claude Code | Fallback — auto-loaded facts, zero read-time cost |
+| `~/.agents/` filesystem | Any agent with home dir access | Last resort — markdown files for non-MCP agents |
+| `.agents/` project dir | Any agent | Project + session memory — always available |
 
-**Claude Code note:** `save_memory` writes to a memory file that is automatically injected into context at the start of every conversation. Facts stored here cost zero tokens at read time — the agent just "knows" them. Use it as the primary global tier whenever available.
+**MCP note:** When `@modelcontextprotocol/server-memory` is configured, use it as the primary global tier. It provides a knowledge graph for cross-project facts, user preferences, and category entities without filesystem I/O. Check for `search_nodes` in the available tool list to detect MCP availability.
+
+## MCP Knowledge Graph Entity Conventions
+
+When MCP `@modelcontextprotocol/server-memory` is the active global tier, use these entity naming conventions:
+
+### Category entities (cross-project user facts)
+
+| Entity name | Purpose |
+| --- | --- |
+| `UserPreferences` | Language, communication style, formatting preferences |
+| `CodingStyle` | Naming conventions, error handling, commit style |
+| `ToolPreferences` | Preferred CLIs, shells, task runners |
+
+### Project entities (repo-scoped facts)
+
+Named after the repository (e.g., `harus-skills`). Use the basename of the current working directory, lowercased, with spaces and special characters replaced by hyphens (e.g., `harus-skills`, `my-project`). Observations describe project-specific conventions:
+
+- "Uses mise for all tasks"
+- "Never run prettier on .md files — use markdownlint-cli2 only"
+
+Both category and project entities are supported and used together.
+
+### Deduplication rule
+
+Before adding any observation, call `search_nodes` with the entity name to retrieve its current observations. Compare the new fact against existing observations — only add if the concept is not already captured (exact wording need not match). When uncertain, prefer updating an existing observation over creating a duplicate.
 
 **`~/.agents/` filesystem structure** *(optional fallback for non-Claude-Code agents)*:
 
@@ -119,6 +157,8 @@ Before appending, scan recent entries. If a similar fact exists, **update it in 
 
 | Tier | Location | Required? | Purpose |
 | --- | --- | --- | --- |
-| **Global** | `~/.agents/{preferences,facts}/` | Optional | Cross-project facts, name, habits, tool preferences |
+| **Global — MCP** | `@modelcontextprotocol/server-memory` | Optional | Primary: cross-project facts, user preferences, knowledge graph |
+| **Global — Claude Code** | `save_memory` tool | Optional | Fallback: auto-loaded facts, zero read-time cost |
+| **Global — Filesystem** | `~/.agents/` | Optional | Last resort: markdown files for non-MCP agents |
 | **Project** | `AGENTS.md` + `.agents/CONTEXT.md` | Yes | Architecture, tech stack, hard rules, conventions |
 | **Session** | `.agents/CURRENT_TASK.md` + `MEMORY.md` | Yes | Active feature state, recent decisions, handoff data |

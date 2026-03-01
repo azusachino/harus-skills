@@ -1,5 +1,10 @@
 {
-    "experimental": {
-        "skills": true
-    }
+  "experimental": {
+    "skills": true
+  },
+  "skills": {
+    "disabled": [
+      "using-git-worktrees"
+    ]
+  }
 }
