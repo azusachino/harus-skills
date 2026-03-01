@@ -65,10 +65,10 @@ Possible questions (skip if already known):
 
 After presenting scan findings and asking tooling questions:
 
-1. Check if `search_nodes`, `create_entities`, and `add_observations` are all in the available tool list (MCP `@modelcontextprotocol/server-memory` already active).
+1. Check if `search_nodes`, `create_entities`, and `add_observations` are all in the available tool list (indicates MCP `@modelcontextprotocol/server-memory` is active).
 2. If **not** detected, ask: "No MCP memory server detected. Want me to add `@modelcontextprotocol/server-memory` to your Claude config? This enables persistent global memory (user preferences, cross-project facts) that persists across all projects and sessions."
 3. If user **accepts**: write the MCP server config in Phase 3 (see below).
-4. If user **declines** or MCP is already active: skip the config write, but still document MCP conventions in the generated `AGENT_README.md`.
+4. If user **declines** or if MCP **was** already detected in step 1: skip the config write, but still document MCP conventions in the generated `AGENT_README.md`.
 
 ## Phase 3: Generate Agent Infrastructure
 
