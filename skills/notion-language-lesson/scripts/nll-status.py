@@ -8,6 +8,7 @@ Usage: python3 nll-status.py [TARGET_DATE]
 Outputs KEY=value lines:
   TARGET_DATE=YYYY-MM-DD
   MODE=create|warn
+  EXISTING_PAGE_ID=<id>  (non-empty only when MODE=warn)
   RECENT_THEMES=theme1|theme2|...
 
 Reads from environment:
@@ -72,11 +73,17 @@ def main():
             database_id,
             {"filter": {"property": "Date", "date": {"equals": target_date}}},
         )
-    except urllib.error.HTTPError as e:
-        print(f"ERROR: Notion API error {e.code}: {e.read().decode()}", file=sys.stderr)
+    except (urllib.error.HTTPError, urllib.error.URLError) as e:
+        body = e.read().decode() if hasattr(e, "read") else str(e.reason)
+        print(f"ERROR: Notion API error: {body}", file=sys.stderr)
         sys.exit(1)
 
-    mode = "warn" if result.get("results") else "create"
+    existing_page_id = ""
+    if result.get("results"):
+        mode = "warn"
+        existing_page_id = result["results"][0]["id"]
+    else:
+        mode = "create"
 
     # Fetch last 7 rows to extract recent themes (avoid repetition)
     try:
@@ -88,7 +95,7 @@ def main():
                 "page_size": 7,
             },
         )
-    except urllib.error.HTTPError:
+    except (urllib.error.HTTPError, urllib.error.URLError):
         recent = {"results": []}
 
     themes = []
@@ -100,6 +107,7 @@ def main():
 
     print(f"TARGET_DATE={target_date}")
     print(f"MODE={mode}")
+    print(f"EXISTING_PAGE_ID={existing_page_id}")
     print(f"RECENT_THEMES={'|'.join(themes)}")
 
 

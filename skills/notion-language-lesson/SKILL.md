@@ -3,7 +3,7 @@ name: notion-language-lesson
 aliases: [nll]
 description: Generate daily language lessons (English advanced, Japanese N1, Spanish B1–B2) and push them directly to a Notion database as structured toggle-block pages. Falls back to Obsidian vault if Notion push fails.
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 allowed-tools: Bash Write
 ---
 
@@ -28,7 +28,9 @@ If either is missing, stop and tell the user:
 
 ### Step 1: Status check
 
-Run the status script using the base directory shown at skill invocation:
+`BASE_DIR` is the directory containing this SKILL.md file (provided at skill invocation). `DLL_BASE_DIR` is the `skills/daily-language-lesson` directory — find it by resolving `<BASE_DIR>/../../skills/daily-language-lesson` relative to `BASE_DIR`, or look it up from the repo root.
+
+Run the status script:
 
 ```bash
 python3 "<BASE_DIR>/scripts/nll-status.py" [ARGUMENT]
@@ -38,9 +40,10 @@ Parse `KEY=value` output:
 
 - `TARGET_DATE` — use in all headers and Notion row
 - `MODE` — `create` (proceed) or `warn` (ask user before overwriting)
+- `EXISTING_PAGE_ID` — non-empty when MODE=warn; the ID of the existing page
 - `RECENT_THEMES` — pipe-separated; avoid these when picking today's theme
 
-If `MODE=warn`: ask "A lesson for TARGET_DATE already exists in Notion. Overwrite?" and wait for confirmation.
+If `MODE=warn`: ask "A lesson for TARGET_DATE already exists in Notion. Overwrite?" and wait for confirmation. If confirmed, pass `--replace EXISTING_PAGE_ID` to nll-push.py in Step 3 so the old page is archived before a new one is created.
 
 ### Step 2: Generate lessons
 
@@ -120,8 +123,14 @@ Spanish lesson additionally includes a `## ✍️ Writing Exercise` section befo
 ### Step 3: Push to Notion (primary)
 
 ```bash
+# Normal create:
 python3 "<BASE_DIR>/scripts/nll-push.py" TARGET_DATE "THEME" \
   --en /tmp/nll-en.md --ja /tmp/nll-ja.md --es /tmp/nll-es.md
+
+# Overwrite (user confirmed, EXISTING_PAGE_ID from Step 1):
+python3 "<BASE_DIR>/scripts/nll-push.py" TARGET_DATE "THEME" \
+  --en /tmp/nll-en.md --ja /tmp/nll-ja.md --es /tmp/nll-es.md \
+  --replace EXISTING_PAGE_ID
 ```
 
 Parse output for `NOTION_URL=...`.
@@ -130,13 +139,13 @@ If the script exits with error, proceed to Step 4 (fallback).
 
 ### Step 4: Fallback to Obsidian vault (if Step 3 failed)
 
-Only run this step if Step 3 failed. Run the dll pipeline using its base directory:
+Only run this step if Step 3 failed. `DLL_BASE_DIR` is the `skills/daily-language-lesson` directory — resolve it as `<BASE_DIR>/../../skills/daily-language-lesson`. Run the dll pipeline:
 
 ```bash
 bash "<DLL_BASE_DIR>/scripts/dll-status.sh" [ARGUMENT]
 ```
 
-Then write the lessons using `dll-fill.py` or create/append as dll normally would.
+Then write the lessons using `dll-fill.py` or create/append as dll normally would (following the full dll SKILL.md flow from Step 2 onward, using the already-generated temp files at `/tmp/nll-en.md`, `/tmp/nll-ja.md`, `/tmp/nll-es.md`).
 
 Report the fallback path and the Notion error reason to the user.
 
