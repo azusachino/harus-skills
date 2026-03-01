@@ -25,7 +25,7 @@ Generate daily language learning lessons for English (advanced), Japanese (N1), 
 Create a new **full-page database** in Notion with these properties:
 
 | Property | Type | Notes |
-|---|---|---|
+| :--- | :--- | :--- |
 | `Name` | Title | Auto-filled as `YYYY-MM-DD — Theme` |
 | `Date` | Date | The lesson date |
 | `Theme` | Text | Unifying theme across all three lessons |
@@ -52,7 +52,7 @@ Grant access from the integration settings page:
 
 Open the database in Notion. The ID is in the URL:
 
-```
+```text
 https://www.notion.so/yourworkspace/3167242dc82180cba33fe7d620649eed?v=...
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                                     NOTION_DATABASE_ID (32-char hex before ?v=)
@@ -87,7 +87,7 @@ set -gx VAULT_PATH "/path/to/your/vault/journal/daily"
 
 Each database row's page body contains three toggleable sections:
 
-```
+```text
 🇺🇸 English Lesson          ← click to expand
   📅 Theme | Level callout
   📖 Reading Passage

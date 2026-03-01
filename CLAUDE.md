@@ -125,29 +125,29 @@ This makes all skills available without the plugin system.
 
 ### Formatting and Linting
 
-This repository uses [mise](https://mise.jdx.dev/) for tool management and task automation.
+This repository uses [mise](https://mise.jdx.dev/) for tool management and [Makefile](https://www.gnu.org/software/make/manual/make.html) for task automation.
 
 **Setup:**
 
 ```bash
-mise install          # Install all required tools
-mise run dev          # Setup development environment (includes git hooks)
+make install          # Install all tools via mise
+make dev              # Setup development environment (includes git hooks)
 ```
 
 **Common commands:**
 
 ```bash
-mise fmt              # Format all files (markdown, JSON, YAML, TOML, shell)
-mise fmt-check        # Check formatting without modifying
-mise lint             # Lint markdown files
-mise lint-fix         # Lint and fix markdown files
-mise check            # Run all checks (format, lint, verify)
-mise list-skills      # List all available skills
-mise clean            # Remove generated lessons
-mise verify           # Verify repository structure
+make fmt              # Format all files (markdown, JSON, YAML, TOML, shell, Python)
+make fmt-check        # Check formatting without modifying
+make lint             # Lint markdown and Python files
+make lint-fix         # Lint and fix markdown and Python files
+make check            # Run all checks (format, lint, verify)
+make list-skills      # List all available skills
+make clean            # Remove generated lessons
+make verify           # Verify repository structure
 ```
 
-**IMPORTANT:** Always run `mise fmt` after editing files. Git hooks are available to auto-format on commit.
+**IMPORTANT:** Always run `make fmt` after editing files. Git hooks are available to auto-format on commit.
 
 ### File Formatting
 

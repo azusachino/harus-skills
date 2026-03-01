@@ -22,9 +22,10 @@ import json
 import datetime
 import urllib.request
 import urllib.error
+from typing import Dict, Any
 
 
-def get_env(key):
+def get_env(key: str) -> str:
     val = os.environ.get(key)
     if not val:
         print(f"ERROR: {key} environment variable is not set", file=sys.stderr)
@@ -32,7 +33,9 @@ def get_env(key):
     return val
 
 
-def notion_query(api_key, database_id, payload):
+def notion_query(
+    api_key: str, database_id: str, payload: Dict[str, Any]
+) -> Dict[str, Any]:
     url = f"https://api.notion.com/v1/databases/{database_id}/query"
     data = json.dumps(payload).encode()
     req = urllib.request.Request(
@@ -49,7 +52,7 @@ def notion_query(api_key, database_id, payload):
         return json.loads(resp.read())
 
 
-def main():
+def main() -> None:
     if len(sys.argv) > 1:
         target_date = sys.argv[1]
         try:
@@ -73,15 +76,18 @@ def main():
             database_id,
             {"filter": {"property": "Date", "date": {"equals": target_date}}},
         )
-    except (urllib.error.HTTPError, urllib.error.URLError) as e:
-        body = e.read().decode() if hasattr(e, "read") else str(e.reason)
-        print(f"ERROR: Notion API error: {body}", file=sys.stderr)
+    except urllib.error.HTTPError as e:
+        print(f"ERROR: Notion API error {e.code}: {e.read().decode()}", file=sys.stderr)
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"ERROR: Network error: {e.reason}", file=sys.stderr)
         sys.exit(1)
 
     existing_page_id = ""
-    if result.get("results"):
+    results = result.get("results", [])
+    if results:
         mode = "warn"
-        existing_page_id = result["results"][0]["id"]
+        existing_page_id = results[0].get("id", "")
     else:
         mode = "create"
 

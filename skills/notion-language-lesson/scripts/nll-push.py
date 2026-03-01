@@ -24,9 +24,10 @@ import json
 import argparse
 import urllib.request
 import urllib.error
+from typing import Optional, Dict, List, Any
 
 
-def get_env(key):
+def get_env(key: str) -> str:
     val = os.environ.get(key)
     if not val:
         print(f"ERROR: {key} environment variable is not set", file=sys.stderr)
@@ -34,7 +35,9 @@ def get_env(key):
     return val
 
 
-def notion_request(api_key, method, path, payload=None):
+def notion_request(
+    api_key: str, method: str, path: str, payload: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     url = f"https://api.notion.com/v1{path}"
     data = json.dumps(payload).encode() if payload else None
     req = urllib.request.Request(
@@ -51,7 +54,7 @@ def notion_request(api_key, method, path, payload=None):
         return json.loads(resp.read())
 
 
-def archive_page(api_key, page_id):
+def archive_page(api_key: str, page_id: str) -> None:
     """Archive (soft-delete) a Notion page. Best-effort — never raises."""
     try:
         notion_request(api_key, "PATCH", f"/pages/{page_id}", {"archived": True})
@@ -64,7 +67,7 @@ def archive_page(api_key, page_id):
 _INLINE_PATTERN = re.compile(r"(\*\*[^*]+\*\*|`[^`]+`)")
 
 
-def parse_inline(text):
+def parse_inline(text: str) -> List[Dict[str, Any]]:
     """
     Parse **bold** and `code` inline markers into Notion rich_text objects.
     Plain text segments are returned as-is.
@@ -74,57 +77,61 @@ def parse_inline(text):
         if not seg:
             continue
         if seg.startswith("**") and seg.endswith("**") and len(seg) > 4:
-            parts.append({
-                "type": "text",
-                "text": {"content": seg[2:-2]},
-                "annotations": {"bold": True},
-            })
+            parts.append(
+                {
+                    "type": "text",
+                    "text": {"content": seg[2:-2]},
+                    "annotations": {"bold": True},
+                }
+            )
         elif seg.startswith("`") and seg.endswith("`") and len(seg) > 2:
-            parts.append({
-                "type": "text",
-                "text": {"content": seg[1:-1]},
-                "annotations": {"code": True},
-            })
+            parts.append(
+                {
+                    "type": "text",
+                    "text": {"content": seg[1:-1]},
+                    "annotations": {"code": True},
+                }
+            )
         else:
             parts.append({"type": "text", "text": {"content": seg}})
     return parts or [{"type": "text", "text": {"content": text}}]
 
 
-def plain_rich_text(content):
+def plain_rich_text(content: str) -> List[Dict[str, Any]]:
     return [{"type": "text", "text": {"content": content}}]
 
 
 # --- Block builders ---
 
 
-def paragraph_block(text):
+def paragraph_block(text: str) -> Dict[str, Any]:
     return {"type": "paragraph", "paragraph": {"rich_text": parse_inline(text)}}
 
 
-def heading_block(text, level=3):
+def heading_block(text: str, level: int = 3) -> Dict[str, Any]:
     bt = f"heading_{level}"
     return {bt: {"rich_text": plain_rich_text(text)}, "type": bt}
 
 
-def bullet_block(text):
+def bullet_block(text: str) -> Dict[str, Any]:
     return {
         "type": "bulleted_list_item",
         "bulleted_list_item": {"rich_text": parse_inline(text)},
     }
 
 
-def numbered_block(text):
+def numbered_block(text: str) -> Dict[str, Any]:
     return {
         "type": "numbered_list_item",
         "numbered_list_item": {"rich_text": parse_inline(text)},
     }
 
 
-def divider_block():
+def divider_block() -> Dict[str, Any]:
     return {"type": "divider", "divider": {}}
 
 
-def callout_block(text, emoji="📅"):
+def callout_block(text: str, emoji: str = "📅") -> Dict[str, Any]:
     return {
         "type": "callout",
         "callout": {
@@ -134,7 +141,7 @@ def callout_block(text, emoji="📅"):
     }
 
 
-def toggle_heading_block(text, level=2):
+def toggle_heading_block(text: str, level: int = 2) -> Dict[str, Any]:
     """Toggleable section heading. Children must be appended in a separate API call."""
     bt = f"heading_{level}"
     return {
@@ -146,12 +153,18 @@ def toggle_heading_block(text, level=2):
     }
 
 
-def answer_key_toggle(children):
+def answer_key_toggle(children: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Wrap answer key content in a plain toggle block (hidden by default)."""
     return {
         "type": "toggle",
         "toggle": {
-            "rich_text": [{"type": "text", "text": {"content": "✅ Answer Key"}, "annotations": {"bold": True}}],
+            "rich_text": [
+                {
+                    "type": "text",
+                    "text": {"content": "✅ Answer Key"},
+                    "annotations": {"bold": True},
+                }
+            ],
             "children": children,
         },
     }
@@ -160,7 +173,7 @@ def answer_key_toggle(children):
 # --- Markdown parser ---
 
 
-def markdown_to_blocks(md_text):
+def markdown_to_blocks(md_text: str) -> List[Dict[str, Any]]:
     """
     Convert lesson markdown to Notion blocks.
 
@@ -177,7 +190,7 @@ def markdown_to_blocks(md_text):
         stripped = line.rstrip()
 
         # Detect answer key section — collect remaining lines into toggle
-        if stripped.startswith("## ✅") or stripped.startswith("## ✅"):
+        if stripped.startswith("## ✅"):
             in_answer_key = True
             continue
 
@@ -195,7 +208,7 @@ def markdown_to_blocks(md_text):
             blocks.append(bullet_block(stripped[2:]))
         elif stripped and stripped[0].isdigit() and ". " in stripped:
             idx = stripped.index(". ")
-            blocks.append(numbered_block(stripped[idx + 2:]))
+            blocks.append(numbered_block(stripped[idx + 2 :]))
         elif stripped == "---":
             blocks.append(divider_block())
         elif stripped == "":
@@ -213,7 +226,7 @@ def markdown_to_blocks(md_text):
                 ak_blocks.append(heading_block(line[4:], 3))
             elif line and line[0].isdigit() and ". " in line:
                 idx = line.index(". ")
-                ak_blocks.append(numbered_block(line[idx + 2:]))
+                ak_blocks.append(numbered_block(line[idx + 2 :]))
             elif line.startswith("- "):
                 ak_blocks.append(bullet_block(line[2:]))
             else:
@@ -224,7 +237,9 @@ def markdown_to_blocks(md_text):
     return blocks
 
 
-def build_lesson_inner(level_label, theme, content_md):
+def build_lesson_inner(
+    level_label: str, theme: str, content_md: str
+) -> List[Dict[str, Any]]:
     """Build the inner content blocks for one language lesson."""
     return [
         callout_block(f"Theme: {theme}  |  Level: {level_label}"),
@@ -232,13 +247,19 @@ def build_lesson_inner(level_label, theme, content_md):
     ] + markdown_to_blocks(content_md)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("target_date", help="YYYY-MM-DD")
     parser.add_argument("theme", help="Unifying theme for this lesson")
-    parser.add_argument("--en", required=True, help="Path to English lesson markdown file")
-    parser.add_argument("--ja", required=True, help="Path to Japanese lesson markdown file")
-    parser.add_argument("--es", required=True, help="Path to Spanish lesson markdown file")
+    parser.add_argument(
+        "--en", required=True, help="Path to English lesson markdown file"
+    )
+    parser.add_argument(
+        "--ja", required=True, help="Path to Japanese lesson markdown file"
+    )
+    parser.add_argument(
+        "--es", required=True, help="Path to Spanish lesson markdown file"
+    )
     parser.add_argument(
         "--replace",
         metavar="PAGE_ID",
@@ -249,7 +270,7 @@ def main():
     api_key = get_env("NOTION_API_KEY")
     database_id = get_env("NOTION_DATABASE_ID")
 
-    def read_file(path):
+    def read_file(path: str) -> str:
         if not os.path.exists(path):
             print(f"ERROR: File not found: {path}", file=sys.stderr)
             sys.exit(1)
@@ -263,10 +284,17 @@ def main():
     # Archive existing page if overwriting
     if args.replace:
         try:
-            notion_request(api_key, "PATCH", f"/pages/{args.replace}", {"archived": True})
-        except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            body = e.read().decode() if hasattr(e, "read") else str(e.reason)
+            notion_request(
+                api_key, "PATCH", f"/pages/{args.replace}", {"archived": True}
+            )
+        except urllib.error.HTTPError as e:
+            body = e.read().decode()
             print(f"ERROR: Failed to archive existing page: {body}", file=sys.stderr)
+            sys.exit(1)
+        except urllib.error.URLError as e:
+            print(
+                f"ERROR: Failed to archive existing page: {e.reason}", file=sys.stderr
+            )
             sys.exit(1)
 
     # Step 1: Create database row with all properties
@@ -299,9 +327,12 @@ def main():
                 },
             },
         )
-    except (urllib.error.HTTPError, urllib.error.URLError) as e:
-        body = e.read().decode() if hasattr(e, "read") else str(e.reason)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
         print(f"ERROR: Failed to create Notion page: {body}", file=sys.stderr)
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"ERROR: Failed to create Notion page: {e.reason}", file=sys.stderr)
         sys.exit(1)
 
     page_id = page["id"]
@@ -322,9 +353,13 @@ def main():
             f"/blocks/{page_id}/children",
             {"children": headings},
         )
-    except (urllib.error.HTTPError, urllib.error.URLError) as e:
-        body = e.read().decode() if hasattr(e, "read") else str(e.reason)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
         print(f"ERROR: Failed to create section headings: {body}", file=sys.stderr)
+        archive_page(api_key, page_id)
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"ERROR: Failed to create section headings: {e.reason}", file=sys.stderr)
         archive_page(api_key, page_id)
         sys.exit(1)
 
@@ -344,9 +379,15 @@ def main():
                 f"/blocks/{heading_id}/children",
                 {"children": inner_blocks},
             )
-        except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            body = e.read().decode() if hasattr(e, "read") else str(e.reason)
+        except urllib.error.HTTPError as e:
+            body = e.read().decode()
             print(f"ERROR: Failed to append {label} content: {body}", file=sys.stderr)
+            archive_page(api_key, page_id)
+            sys.exit(1)
+        except urllib.error.URLError as e:
+            print(
+                f"ERROR: Failed to append {label} content: {e.reason}", file=sys.stderr
+            )
             archive_page(api_key, page_id)
             sys.exit(1)
 

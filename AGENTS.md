@@ -31,17 +31,17 @@ Each skill is a directory containing a `SKILL.md` with YAML frontmatter (name, d
 
 ## Build & Run
 
-No compilation. This is a content repository managed with mise.
+No compilation. This is a content repository managed with mise (tools) and Makefile (tasks).
 
 ```bash
-mise install          # Install tools (prettier, markdownlint-cli2, taplo, shfmt)
-mise run dev          # Setup dev environment + git hooks
-mise fmt              # Format all files
-mise lint             # Lint markdown
-mise check            # Run all checks (format + lint + verify)
-mise list-skills      # List available skills
-mise verify           # Verify repo structure
-mise clean            # Remove generated lessons
+make install          # Install tools via mise
+make dev              # Setup dev environment + git hooks
+make fmt              # Format all files
+make lint             # Lint markdown and Python files
+make check            # Run all checks (format + lint + verify)
+make list-skills      # List available skills
+make verify           # Verify repo structure
+make clean            # Remove generated lessons
 ```
 
 ## Conventions
@@ -51,9 +51,10 @@ mise clean            # Remove generated lessons
 - Taplo for TOML formatting
 - shfmt for shell scripts (2-space indent)
 - markdownlint-cli2 for markdown linting
+- ruff for Python formatting and linting
 - No emojis in git commit messages
 - Conventional commit style (`feat:`, `fix:`, `docs:`, etc.)
-- Always run `mise fmt` before committing
+- Always run `make fmt` before committing
 - Ask user permission before executing destructive operations in skills
 
 ## Key Files
