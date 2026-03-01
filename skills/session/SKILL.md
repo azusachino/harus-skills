@@ -27,7 +27,7 @@ Run `/session end` automatically when:
 ### `/session start`
 
 1. **Global Tier** *(optional — skip silently at any failure)*:
-   - Check if `search_nodes` is in the available tool list (indicates MCP `@modelcontextprotocol/server-memory` is active).
+   - Check if `search_nodes`, `create_entities`, and `add_observations` are all in the available tool list (indicates MCP `@modelcontextprotocol/server-memory` is active). If any are missing, skip MCP and proceed to the next fallback. (Check tool availability once at the start of `/session start`. Use MCP for all global tier operations in this session. If any MCP call fails at runtime, fall back silently to `save_memory` without retrying MCP.)
    - If MCP available: call `read_graph()`, then filter and load:
      - All category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`
      - Project entity matching the current project name (basename of cwd)
@@ -37,6 +37,7 @@ Run `/session end` automatically when:
 2. **Project Tier**:
    - Read `AGENTS.md` for high-level project briefing.
    - Read `.agents/CONTEXT.md` for internal agent rules and context.
+   - If any file does not exist, skip it silently and continue.
 3. **Session Tier**:
    - Read `.agents/CURRENT_TASK.md` to see where the last session left off.
    - Read `.agents/MEMORY.md` to understand recent decisions.
@@ -86,7 +87,7 @@ When MCP `@modelcontextprotocol/server-memory` is the active global tier, use th
 
 ### Project entities (repo-scoped facts)
 
-Named after the repository (e.g., `harus-skills`). Observations describe project-specific conventions:
+Named after the repository (e.g., `harus-skills`). Use the basename of the current working directory, lowercased, with spaces and special characters replaced by hyphens (e.g., `harus-skills`, `my-project`). Observations describe project-specific conventions:
 
 - "Uses mise for all tasks"
 - "Never run prettier on .md files — use markdownlint-cli2 only"
@@ -95,7 +96,7 @@ Both category and project entities are supported and used together.
 
 ### Deduplication rule
 
-Before adding any observation, call `search_nodes` with the entity name. Add only facts not already present in the existing observations. Never add the same observation twice.
+Before adding any observation, call `search_nodes` with the entity name to retrieve its current observations. Compare the new fact against existing observations — only add if the concept is not already captured (exact wording need not match). When uncertain, prefer updating an existing observation over creating a duplicate.
 
 **`~/.agents/` filesystem structure** *(optional fallback for non-Claude-Code agents)*:
 
@@ -157,6 +158,7 @@ Before appending, scan recent entries. If a similar fact exists, **update it in 
 | Tier | Location | Required? | Purpose |
 | --- | --- | --- | --- |
 | **Global — MCP** | `@modelcontextprotocol/server-memory` | Optional | Primary: cross-project facts, user preferences, knowledge graph |
-| **Global — native** | `save_memory` tool / `~/.agents/` | Optional | Fallback: cross-project facts, name, habits, tool preferences |
+| **Global — Claude Code** | `save_memory` tool | Optional | Fallback: auto-loaded facts, zero read-time cost |
+| **Global — Filesystem** | `~/.agents/` | Optional | Last resort: markdown files for non-MCP agents |
 | **Project** | `AGENTS.md` + `.agents/CONTEXT.md` | Yes | Architecture, tech stack, hard rules, conventions |
 | **Session** | `.agents/CURRENT_TASK.md` + `MEMORY.md` | Yes | Active feature state, recent decisions, handoff data |
