@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.1.1
+  version: 0.2.0
 user-invokable: true
 disable-model-invocation: true
 ---
@@ -60,6 +60,15 @@ Possible questions (skip if already known):
 3. "What are your key coding conventions?" (naming style, error handling approach, testing philosophy)
 4. "What quality checks must pass?" (format, lint, test, coverage threshold, etc.)
 5. For each detected tooling gap: "No [tool] found. Want me to add [suggested tool]?"
+
+### MCP Memory Check
+
+After presenting scan findings and asking tooling questions:
+
+1. Check if `search_nodes`, `create_entities`, and `add_observations` are all in the available tool list (MCP `@modelcontextprotocol/server-memory` already active).
+2. If **not** detected, ask: "No MCP memory server detected. Want me to add `@modelcontextprotocol/server-memory` to your Claude config? This enables persistent global memory (user preferences, cross-project facts) that persists across all projects and sessions."
+3. If user **accepts**: write the MCP server config in Phase 3 (see below).
+4. If user **declines** or MCP is already active: skip the config write, but still document MCP conventions in the generated `AGENT_README.md`.
 
 ## Phase 3: Generate Agent Infrastructure
 
@@ -129,6 +138,34 @@ Generate with the following content (adjust project name and date):
    - Append new decisions to `MEMORY.md`.
    - *(Optional)* Sync global memory via `save_memory` or `~/.agents/` if accessible. **Skip silently if not accessible.**
 3. Confirm: "Session saved. Next: [one-sentence handoff]."
+
+## Global Memory (MCP)
+
+If `@modelcontextprotocol/server-memory` is configured, it is the primary global memory tier. Check for `search_nodes`, `create_entities`, and `add_observations` in available tools at session start.
+
+### Entity conventions
+
+**Category entities** (cross-project user facts):
+- `UserPreferences` — language, formatting, communication style
+- `CodingStyle` — naming, error handling, commit conventions
+- `ToolPreferences` — preferred CLIs, shells, task runners
+
+**Project entities** (repo-scoped facts):
+- Named after this repository (cwd basename, lowercased, hyphens for spaces)
+- Observations: project-specific conventions Claude should remember
+
+Both category and project entities are supported and used together.
+
+### User commands
+
+| User says | Agent does |
+| --- | --- |
+| "log this globally: [fact]" | Writes observation to appropriate MCP category entity |
+| "remember for this project: [fact]" | Writes observation to project entity in MCP |
+
+### Fallback chain
+
+If MCP is not available: `save_memory` → `~/.agents/` → skip silently.
 
 ## File Formats
 
@@ -200,6 +237,8 @@ Store **internal agent-specific rules** and state that doesn't belong in the pub
 - DO: Update `CURRENT_TASK.md` before session end.
 - DO: *(Optional)* Check `~/.agents/` or `save_memory` at session start for global preferences — skip silently if inaccessible.
 - DO: *(Optional)* Sync learned personal facts to global memory via `save_memory` or `~/.agents/` if accessible.
+- DO: Check MCP memory at session start — if `search_nodes`, `create_entities`, and `add_observations` are all available, call `read_graph()` and load category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) plus the project entity matching the repo name.
+- DO: At session end, persist new cross-project facts to MCP. Use `search_nodes` to check for existing observations before adding new ones. Use category entities for user-wide facts and a project entity (named after repo) for project-scoped facts.
 - DON'T: Commit without user confirmation.
 
 ## Project Context (Internal)
@@ -272,6 +311,23 @@ conventions:
   naming: [detected or asked]
   indent: [detected or asked]
 ```
+
+#### .claude/settings.json (MCP server config) — only if user accepted MCP setup
+
+Read `.claude/settings.json` first if it exists. Merge the following `mcpServers.memory` key into the existing content without overwriting any other keys. If the file does not exist, create it with this content:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    }
+  }
+}
+```
+
+If the file already has `mcpServers.memory`, skip this step silently.
 
 ## Phase 4: Generate Documentation
 
@@ -447,6 +503,7 @@ Init complete! Created:
   .agents/MEMORY.md       - append-only decision log
   .agents/CURRENT_TASK.md - session save point
   .agents/config.yaml     - agent configuration
+  .claude/settings.json  - MCP memory server config (if enabled)
   docs/architecture.md   - system architecture
   docs/requirements.md   - project requirements
   docs/project-design.md - design decisions
