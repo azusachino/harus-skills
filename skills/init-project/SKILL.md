@@ -72,6 +72,14 @@ After presenting scan findings and asking tooling questions:
 
 ## Phase 3: Generate Agent Infrastructure
 
+If the `@modelcontextprotocol/server-memory` MCP is available, call `read_graph()` first to retrieve global facts.
+
+When generating the templates below, dynamically merge the retrieved facts naturally:
+
+- `CodingStyle` facts → merge into `AGENTS.md` (Coding Conventions) and `.agents/config.yaml`.
+- `ToolPreferences` facts → merge into `AGENTS.md` (Build, Run & Test) and `.agents/config.yaml`.
+- `UserPreferences` & `Standard` facts → merge into `.agents/CONTEXT.md` (Agent Rules) and `AGENTS.md` (Quality Standards).
+
 Ask permission before writing each file.
 
 ### AGENTS.md (project root)
@@ -104,6 +112,16 @@ Generate a comprehensive project briefing document for both humans and agents. T
 ## Quality Standards
 
 [required checks: format, lint, test, coverage, etc.]
+```
+
+### .markdownlint-cli2.yaml (project root)
+
+Generate this file to enforce standard markdown exclusions:
+
+```yaml
+ignores:
+  - ".agents/**"
+  - "docs/plans/**"
 ```
 
 ### .agents/ Directory (Agent Memory & Session Protocol)
