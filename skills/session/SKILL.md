@@ -3,7 +3,7 @@ name: session
 description: Use when starting or ending a work session, when a project has a .agents/ directory at the start of a conversation, or when user says "start session", "let's continue", "wrap up", or "end session" — restores prior context and saves session state
 metadata:
   author: haru
-  version: 1.2.0
+  version: 1.3.0
 ---
 
 # Session Skill

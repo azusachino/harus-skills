@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.2.0
+  version: 0.3.0
 user-invokable: true
 disable-model-invocation: true
 ---
