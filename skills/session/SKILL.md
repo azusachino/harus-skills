@@ -29,7 +29,7 @@ Run `/session end` automatically when:
 1. **Global Tier** *(optional — skip silently at any failure)*:
    - Check if `search_nodes`, `create_entities`, and `add_observations` are all in the available tool list (indicates MCP `@modelcontextprotocol/server-memory` is active). If any are missing, skip MCP and proceed to the next fallback. (Check tool availability once at the start of `/session start`. Use MCP for all global tier operations in this session. If any MCP call fails at runtime, fall back silently to `save_memory` without retrying MCP.)
    - If MCP available: call `read_graph()`, then filter and load:
-     - All category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`
+     - All category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`
      - Project entity matching the current project name (basename of cwd)
    - If MCP not available: try `save_memory` tool.
    - If `save_memory` not available: try reading `~/.agents/preferences/` and `~/.agents/facts/`.
@@ -54,7 +54,7 @@ Run `/session end` automatically when:
        - Call `search_nodes` with the target entity name to check if it exists.
        - If exists: call `add_observations` with new facts only (avoid duplicates).
        - If not exists: call `create_entities` then `add_observations`.
-     - Use category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) for user-wide facts.
+     - Use category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`) for user-wide facts.
      - Use a project entity named after the current repo (cwd basename) for project-scoped facts.
    - Else if `save_memory` available: write cross-project facts.
    - Else if `~/.agents/` accessible: write to `preferences/` or `facts/` markdown files.
@@ -84,6 +84,7 @@ When MCP `@modelcontextprotocol/server-memory` is the active global tier, use th
 | `UserPreferences` | Language, communication style, formatting preferences |
 | `CodingStyle` | Naming conventions, error handling, commit style |
 | `ToolPreferences` | Preferred CLIs, shells, task runners |
+| `Standard` | Cross-project system requirements, global configurations, tool exclusions |
 
 ### Project entities (repo-scoped facts)
 
