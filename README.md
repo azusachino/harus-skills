@@ -6,22 +6,16 @@ A collection of custom Claude Code skills for productivity, project management, 
 
 ### Session & Project Management
 
-**`/session`** (v1.2.0) — Three-tier memory management for continuous work sessions. Restores context at session start, saves state at session end. Supports MCP memory (`@modelcontextprotocol/server-memory`) as the primary global tier, with `save_memory` and `~/.agents/` as fallbacks.
+**`/session`** (v1.5.0) — MCP-primary session management. When `@modelcontextprotocol/server-memory` is available, session state lives in a `[project]:session` MCP entity — no local file writes. Syncs and trims `AGENTS.md`/`CONTEXT.md` at session boundaries. Context-mode aware.
 
-- `/session start` — Load global preferences, project context, and last task state
-- `/session end` — Save session state and sync facts to global memory
+- `/session start` — Load MCP entities + project context, flag stale docs
+- `/session end` — Write session state to MCP, sync docs
 
-**`/init-project`** (v0.2.0) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` memory files, documentation stubs, and tooling configs. Detects Claude Code, Gemini CLI, and Codex — writes MCP memory server config for each.
-
-**`/next-session`** (v1.0.0) — Lightweight context restore from local `.agents/` files when the full `/session` skill is not available.
-
-### Git Workflow
-
-**`/mkmr`** (v1.0.0) — Create merge requests from the current branch to mainline. Checks for unstaged changes, analyzes the diff, and generates a detailed MR description via `gh` or `glab`.
+**`/init-project`** (v0.5.0) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, docs, and tooling configs. Nix-first tool provisioning. Gitignores session-volatile files. Offers nix-run or npx for MCP server setup.
 
 ### Language Learning
 
-**`/daily-language-lesson`** (aliases: `/dll`, `/lesson`) — Generate multi-language lessons and save them directly to your Obsidian vault daily note.
+**`/daily-language-lesson`** (v1.0.0, aliases: `/dll`, `/lesson`) — Generate multi-language lessons and save them directly to your Obsidian vault daily note.
 
 - **English**: Advanced level — literature, idioms, sophisticated grammar
 - **Japanese**: N1 level — advanced kanji, keigo, literary expressions
@@ -81,7 +75,7 @@ The `session` and `init-project` skills support `@modelcontextprotocol/server-me
 
 Add to your agent config:
 
-**Claude Code** (`.claude/settings.json`):
+**Claude Code** (`.claude/settings.json`) and **Gemini CLI** (`.gemini/settings.json`):
 
 ```json
 {
@@ -94,7 +88,18 @@ Add to your agent config:
 }
 ```
 
-**Gemini CLI** (`.gemini/settings.json`): same JSON structure as above.
+Or via nix:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "nix",
+      "args": ["run", "nixpkgs#nodePackages_latest.@modelcontextprotocol/server-memory"]
+    }
+  }
+}
+```
 
 **Codex** (`.codex/config.toml`):
 
@@ -108,11 +113,9 @@ args = ["-y", "@modelcontextprotocol/server-memory"]
 
 ## Development
 
-This repository uses [mise](https://mise.jdx.dev/) for tool management.
+Tools via nix devShell (mise as fallback). Tasks via Makefile.
 
 ```bash
-make install      # Install tools via mise
-make dev          # Setup dev environment and git hooks
 make fmt          # Format JSON, YAML, TOML files
 make lint         # Lint markdown and Python files
 make check        # Run all checks

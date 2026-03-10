@@ -1,12 +1,12 @@
 # Feature Status
 
-| Feature               | Status  | Owner | Notes                  |
-| --------------------- | ------- | ----- | ---------------------- |
-| daily-language-lesson | done    | haru  | en/ja/es lessons       |
-| mkmr                  | done    | haru  | MR creation            |
-| init-project          | done    | haru  | Project initialization |
-| CI/CD                 | planned | -     | GitHub Actions         |
-| Additional skills     | planned | -     | -                      |
+| Feature                | Status      | Owner | Notes                                         |
+| ---------------------- | ----------- | ----- | --------------------------------------------- |
+| daily-language-lesson  | done        | haru  | en/ja/es lessons → Obsidian vault             |
+| notion-language-lesson | done        | haru  | en/ja/es lessons → Notion database            |
+| init-project           | in-progress | haru  | v0.5.0 — nix-first, slim templates, gitignore |
+| session                | in-progress | haru  | v1.5.0 — MCP-primary, doc sync, context-mode  |
+| CI/CD                  | planned     | -     | GitHub Actions                                |
 
 ## Status Legend
 
