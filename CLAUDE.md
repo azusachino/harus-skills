@@ -17,13 +17,9 @@ skills/                           # Custom skill definitions
     SKILL.md
     README.md
     scripts/                      # nll-push.py, nll-status.py
-  mkmr/                           # Merge request creation skill
-    SKILL.md
   init-project/                   # Project initialization skill
     SKILL.md
   session/                        # Session and memory management
-    SKILL.md
-  next-session/                   # Lightweight context restore
     SKILL.md
 docs/                             # Project documentation
   plans/                          # Design documents
@@ -56,23 +52,21 @@ The `.claude-plugin/marketplace.json` defines a single plugin:
 | --- | --- |
 | `/daily-language-lesson`, `/dll`, `/lesson` | Language lessons → Obsidian vault |
 | `/notion-language-lesson`, `/nll` | Language lessons → Notion database |
-| `/mkmr` | Create merge request |
 | `/init-project`, `/init` | Initialize project with agent infrastructure |
 | `/session` | Session and memory management |
-| `/next-session` | Lightweight context restore |
 
 ## Skill Reference
 
-### `session` (v1.2.0)
+### `session` (v1.5.0)
 
-Manages the three-tier memory protocol (Global → Project → Session). `@modelcontextprotocol/server-memory` is the primary global tier — detected by checking for `search_nodes`, `create_entities`, and `add_observations` in the available tool list. Falls back to `save_memory` then `~/.agents/` filesystem.
+MCP-primary session management. When `@modelcontextprotocol/server-memory` is available, session state lives in a `[project]:session` MCP entity — `CURRENT_TASK.md` is skipped entirely. Syncs docs (`AGENTS.md`, `CONTEXT.md`) at session boundaries. Integrates with context-mode (`ctx_batch_execute`, `ctx_search`) when available.
 
-- `/session start` — load all memory tiers and report current task
-- `/session end` — save session state, sync new facts to global memory
+- `/session start` — load MCP entities + project context, flag stale docs
+- `/session end` — write session state to MCP, sync/trim docs
 
-### `init-project` (v0.2.0)
+### `init-project` (v0.5.0)
 
-Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` memory files, documentation stubs, and tooling configs. Detects Claude Code (`.claude/`), Gemini CLI (`.gemini/`), and Codex (`.codex/`) and writes the MCP memory server config for each detected agent.
+Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, docs, and tooling configs. Nix-first tool provisioning (mise as fallback). Adds `CURRENT_TASK.md`/`MEMORY.md` to `.gitignore`. Offers nix-run or npx for MCP server invocation.
 
 ### `daily-language-lesson`
 
@@ -85,14 +79,6 @@ Generates multi-language lessons saved directly to the Obsidian vault daily note
 ### `notion-language-lesson` (v1.1.0, alias: `/nll`)
 
 Same lesson content as `daily-language-lesson`, pushed to a Notion database as structured toggle-block pages. Falls back to Obsidian vault if Notion push fails. Requires `NOTION_API_KEY` and `NOTION_DATABASE_ID` env vars — see `skills/notion-language-lesson/README.md`.
-
-### `mkmr` (v1.0.0)
-
-Creates merge requests from current branch to mainline. Checks for unstaged changes, generates a diff-based description, creates via `gh` or `glab`. Uses `allowed-tools: git gh glab`.
-
-### `next-session` (v1.0.0)
-
-Lightweight fallback for context restore when `/session` is unavailable. Reads `.agents/CURRENT_TASK.md` and `.agents/MEMORY.md` only.
 
 ## Agent Behavior
 

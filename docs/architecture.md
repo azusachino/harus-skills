@@ -12,28 +12,32 @@ harus-skills/
     daily-language-lesson/       # Generates language learning lessons
       SKILL.md                   # Skill definition
       README.md                  # User documentation
-    mkmr/                        # Creates merge requests
+    notion-language-lesson/      # Same lessons pushed to Notion
       SKILL.md
+      README.md
+      scripts/                   # nll-push.py, nll-status.py
     init-project/                # Project initialization
       SKILL.md
       CONFIGS.md                 # Reference configs for tooling setup
+    session/                     # MCP-primary session management
+      SKILL.md
   docs/                          # Project documentation
     plans/                       # Design documents and proposals
   lessons/                       # Generated output (gitignored)
   .claude-plugin/
     marketplace.json             # Plugin registry
   .agents/                       # Agent infrastructure
-    MEMORY.md                    # Shared agent memory
-    config.yaml                  # Agent configuration
+    CONTEXT.md                   # Living project context (always read)
 ```
 
 ## Module Map
 
-| Skill                 | Purpose                   | Invocation               |
-| --------------------- | ------------------------- | ------------------------ |
-| daily-language-lesson | Generate en/ja/es lessons | `/lesson`, `/dll`        |
-| mkmr                  | Create MRs from branch    | `/mkmr`                  |
-| init-project          | Initialize project infra  | `/init-project`, `/init` |
+| Skill                  | Purpose                      | Invocation                 |
+| ---------------------- | ---------------------------- | -------------------------- |
+| daily-language-lesson  | Generate en/ja/es lessons    | `/lesson`, `/dll`          |
+| notion-language-lesson | Same lessons → Notion DB     | `/nll`                     |
+| init-project           | Initialize project infra     | `/init-project`, `/init`   |
+| session                | Session state + memory mgmt  | `/session`                 |
 
 ## Data Flow
 
@@ -45,9 +49,9 @@ harus-skills/
 
 ## Dependencies
 
-- **mise**: Task runner and tool version manager
-- **prettier**: Markdown/JSON/YAML formatter
+- **nix**: Tool provisioning via devShell (mise as fallback)
+- **make**: Task runner (`fmt`, `lint`, `check`, `verify`)
+- **prettier**: JSON/YAML formatter
 - **markdownlint-cli2**: Markdown linter
 - **taplo**: TOML formatter
-- **shfmt**: Shell script formatter
-- **commitizen**: Standardized commit messages (optional)
+- **ruff**: Python linter/formatter

@@ -12,16 +12,14 @@ harus-skills/
     daily-language-lesson/       # Language lessons → Obsidian vault (en/ja/es)
     notion-language-lesson/      # Language lessons → Notion database (en/ja/es)
       scripts/                   # nll-push.py, nll-status.py
-    mkmr/                        # Merge request creation helper
     init-project/                # Project scaffolding and agent infrastructure
-    session/                     # Three-tier memory management (MCP/save_memory/.agents/)
-    next-session/                # Lightweight context restore fallback
+    session/                     # MCP-primary memory management, CONTEXT.md as living doc
   docs/
     plans/                       # Design documents
   .claude-plugin/
     marketplace.json             # Plugin marketplace registration
   gemini-extension.json          # Gemini CLI extension manifest
-  mise.toml                      # Tool management and task runner
+  Makefile                       # Task runner (fmt, lint, test, check, verify)
 ```
 
 Each skill is a directory with a `SKILL.md` (YAML frontmatter + markdown body) and an optional `README.md`.
@@ -37,20 +35,16 @@ Each skill is a directory with a `SKILL.md` (YAML frontmatter + markdown body) a
 
 | Skill | Version | Invocation | Purpose |
 | --- | --- | --- | --- |
-| `session` | 1.2.0 | `/session` | Three-tier memory: MCP → save_memory → ~/.agents/ |
-| `init-project` | 0.2.0 | `/init-project`, `/init` | Scaffold AGENTS.md, .agents/, docs, MCP config |
-| `next-session` | 1.0.0 | `/next-session` | Lightweight context restore from .agents/ only |
-| `mkmr` | 1.0.0 | `/mkmr` | Create merge requests via gh/glab |
-| `daily-language-lesson` | — | `/dll`, `/lesson` | Language lessons saved to Obsidian vault |
+| `session` | 1.5.0 | `/session` | MCP-primary session state; doc sync at start/end; context-mode aware |
+| `init-project` | 0.5.0 | `/init-project`, `/init` | Scaffold AGENTS.md, .agents/, docs, MCP config; nix-first tooling |
+| `daily-language-lesson` | 1.0.0 | `/dll`, `/lesson` | Language lessons saved to Obsidian vault |
 | `notion-language-lesson` | 1.1.0 | `/nll` | Language lessons pushed to Notion database |
 
 ## Build & Run
 
-No compilation. Content repository managed with mise (tools) and Makefile (tasks).
+No compilation. Content repository — tools via nix devShell (or mise as fallback), tasks via Makefile.
 
 ```bash
-make install      # Install tools via mise
-make dev          # Setup dev environment + git hooks
 make fmt          # Format JSON, YAML, TOML (not markdown)
 make lint         # Lint markdown (markdownlint-cli2) and Python (ruff)
 make check        # Run all checks (format + lint + verify)
@@ -81,7 +75,7 @@ make clean        # Remove generated lessons
 | `.agents/` | Project-local session memory (CURRENT_TASK.md, MEMORY.md, CONTEXT.md) |
 | `.claude-plugin/marketplace.json` | Plugin registration — bump version on every skill change |
 | `gemini-extension.json` | Gemini CLI manifest — bump version on every skill change |
-| `mise.toml` | All task definitions |
+| `Makefile` | All task definitions |
 | `.env.example` | Documents VAULT_PATH, NOTION_API_KEY, NOTION_DATABASE_ID |
 
 ## Global Memory (MCP)
@@ -90,10 +84,11 @@ The `session` skill uses `@modelcontextprotocol/server-memory` as the primary gl
 
 Entity conventions:
 
-- Category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`
+- Category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`
+- Session entities: `[project-name]:session` — volatile, deleted and recreated each session end
 - Project entities: named after repo (e.g. `harus-skills`), lowercased, hyphens for spaces
 
-Fallback chain: MCP → `save_memory` → `~/.agents/` → skip silently.
+When MCP is active, `CURRENT_TASK.md` is skipped entirely — session state lives in `[project]:session`. Fallback: `save_memory` → `~/.agents/` → skip silently.
 
 ## Quality Standards
 
