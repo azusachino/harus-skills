@@ -1,13 +1,14 @@
 # Makefile for managing harus-skills tasks
 
-.PHONY: help dev install install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link lesson lesson-date
+.PHONY: help install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link lesson lesson-date
 
 # Default target
 help:
-	@echo "📚 harus-skills development tasks:"
+	@echo "harus-skills development tasks:"
 	@echo ""
-	@echo "  make dev          - Setup development environment"
-	@echo "  make install      - Install all tools via mise"
+	@echo "  Setup: nix develop  (provides all tools via nixpkgs)"
+	@echo ""
+	@echo "  make install-hooks - Install git pre-commit hooks"
 	@echo "  make fmt          - Format all files"
 	@echo "  make lint         - Lint markdown and Python files"
 	@echo "  make check        - Run all checks (format, lint, verify)"
@@ -17,13 +18,6 @@ help:
 	@echo "  make link         - Link as a Gemini CLI extension"
 	@echo "  make lesson       - Generate today's lesson"
 	@echo "  make lesson-date DATE=YYYY-MM-DD - Generate lesson for specific date"
-
-dev: install install-hooks
-	@echo "✅ Development environment ready!"
-
-install:
-	@mise install
-	@echo "✅ All tools installed via mise"
 
 install-hooks:
 	@echo "🪝 Installing git hooks..."
