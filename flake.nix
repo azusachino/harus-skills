@@ -16,20 +16,12 @@
       {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            nodejs_22 # prettier, markdownlint-cli2 via npm
+            nodePackages.prettier # JSON/YAML formatter
+            nodePackages."markdownlint-cli2" # markdown linter
             taplo # TOML formatter
             shfmt # shell script formatter
             ruff # Python linter/formatter
-            uv # Python package manager
           ];
-
-          shellHook = ''
-            if [ ! -d node_modules ]; then
-              echo "Installing npm dev tools..."
-              npm install --silent
-            fi
-            export PATH="$PWD/node_modules/.bin:$PATH"
-          '';
         };
       }
     );
