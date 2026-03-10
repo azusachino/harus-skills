@@ -1,0 +1,8 @@
+{
+  "name": "harus-skills",
+  "private": true,
+  "devDependencies": {
+    "markdownlint-cli2": "latest",
+    "prettier": "latest"
+  }
+}
