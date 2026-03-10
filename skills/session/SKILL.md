@@ -3,12 +3,14 @@ name: session
 description: Use when starting or ending a work session, when a project has a .agents/ directory at the start of a conversation, or when user says "start session", "let's continue", "wrap up", or "end session" — restores prior context and saves session state
 metadata:
   author: haru
-  version: 1.3.0
+  version: 1.4.0
 ---
 
 # Session Skill
 
-Manage the three-tier memory system (Global, Project, Session) to ensure continuity across agents and sessions.
+Manage the memory system (Global via MCP, Project via local docs) to ensure continuity across agents and sessions.
+
+**Core principle**: When MCP `@modelcontextprotocol/server-memory` is available, it is the canonical source of truth for all session state. `.agents/CURRENT_TASK.md` is skipped entirely — it exists only for agents without MCP access.
 
 ## Auto-Trigger (invoke without being asked)
 
@@ -26,56 +28,53 @@ Run `/session end` automatically when:
 
 ### `/session start`
 
-1. **Global Tier** *(optional — skip silently at any failure)*:
-   - Check if `search_nodes`, `create_entities`, and `add_observations` are all in the available tool list (indicates MCP `@modelcontextprotocol/server-memory` is active). If any are missing, skip MCP and proceed to the next fallback. (Check tool availability once at the start of `/session start`. Use MCP for all global tier operations in this session. If any MCP call fails at runtime, fall back silently to `save_memory` without retrying MCP.)
-   - If MCP available: call `read_graph()`, then filter and load:
-     - All category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`
-     - Project entity matching the current project name (basename of cwd)
-   - If MCP not available: try `save_memory` tool.
-   - If `save_memory` not available: try reading `~/.agents/preferences/` and `~/.agents/facts/`.
-   - If all fail: skip silently without error.
-2. **Project Tier**:
-   - Read `AGENTS.md` for high-level project briefing.
-   - Read `.agents/CONTEXT.md` for internal agent rules and context.
-   - If any file does not exist, skip it silently and continue.
-3. **Session Tier**:
-   - Read `.agents/CURRENT_TASK.md` to see where the last session left off.
-   - Read `.agents/MEMORY.md` to understand recent decisions.
-4. **Report**: Summarize briefly — "Session resumed. Last task: [X]. Next step: [Y]." Add any relevant global preference notes if loaded.
+1. **Detect MCP availability**: Check if `search_nodes`, `create_entities`, and `add_observations` are all in the available tool list. Record result — use consistently throughout this session.
+2. **If MCP available** (primary path):
+   - Call `read_graph()`, then load:
+     - Category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`
+     - Project entity matching the current repo name (cwd basename, lowercased, hyphens)
+     - Session entity `[project-name]:session` — holds the last saved task state
+   - **Skip `.agents/CURRENT_TASK.md` entirely** — MCP is the session source of truth.
+3. **If MCP not available** (fallback path):
+   - Try `save_memory` tool for global preferences; skip silently on failure.
+   - Read `.agents/CURRENT_TASK.md` to resume the last task state.
+   - Read `.agents/MEMORY.md` for recent decisions.
+4. **Always load project context** (independent of MCP):
+   - Read `AGENTS.md` — project briefing, tech stack, commands.
+   - Read `.agents/CONTEXT.md` — living doc of internal rules, patterns, and architecture notes. This is updated whenever core features change and is always authoritative.
+   - Skip silently if either file does not exist.
+5. **Report**: "Session resumed. Last task: [X]. Next step: [Y]." Include relevant preferences loaded from MCP or global memory.
 
 ### `/session end`
 
-1. **Update Session State**:
-   - Overwrite `.agents/CURRENT_TASK.md` with current status, completed steps, and next actions.
-   - Append new decisions or discoveries to `.agents/MEMORY.md`.
-2. **Sync Global Memory** *(optional — first success wins, skip silently on all failures)*:
-   - If MCP available (`search_nodes` in tools):
-     - For each new cross-project fact or preference learned this session:
-       - Call `search_nodes` with the target entity name to check if it exists.
-       - If exists: call `add_observations` with new facts only (avoid duplicates).
-       - If not exists: call `create_entities` then `add_observations`.
-     - Use category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`) for user-wide facts.
-     - Use a project entity named after the current repo (cwd basename) for project-scoped facts.
-   - Else if `save_memory` available: write cross-project facts.
-   - Else if `~/.agents/` accessible: write to `preferences/` or `facts/` markdown files.
-3. **Confirm**: Tell the user the session is saved with a 1-sentence handoff summary.
+1. **If MCP available** (primary path — no local file writes for session state):
+   - Determine session entity: `[project-name]:session`.
+   - `search_nodes("[project-name]:session")` — check if it exists.
+   - If exists: `delete_entities(["[project-name]:session"])` to clear stale state.
+   - `create_entities` + `add_observations` with fresh session state:
+     - `objective: [current goal]`
+     - `status: IN_PROGRESS | BLOCKED | REVIEW | DONE`
+     - `completed: [comma-separated completed steps]`
+     - `remaining: [comma-separated remaining steps]`
+     - `next: [single concrete next action]`
+     - `last-updated: YYYY-MM-DD`
+   - For new cross-project facts: `search_nodes` → deduplicate → `add_observations` on category entities.
+   - For project-scoped decisions: `add_observations` on the project entity.
+   - **Do not write `.agents/CURRENT_TASK.md`** — writing it when MCP is available only creates git noise.
+2. **If MCP not available** (fallback path):
+   - Overwrite `.agents/CURRENT_TASK.md` with current task state (see format below).
+   - Append new decisions to `.agents/MEMORY.md`.
+   - If `save_memory` available: write cross-project preferences.
+3. **Update `.agents/CONTEXT.md`** if anything changed about the project's core behavior, architecture, or non-obvious conventions. This file is shared with all future sessions regardless of memory backend.
+4. **Confirm**: "Session saved. Next: [one-sentence handoff summary]."
 
-## Memory Backend Support
+## MCP Entity Conventions
 
-Different agents support different persistence mechanisms. Use whatever is available — the protocol works at any level.
+### Session entities (volatile — task state per project)
 
-| Backend | Available in | Used for |
-| --- | --- | --- |
-| MCP `server-memory` | Any agent with MCP configured | Primary global tier — knowledge graph, cross-project and category facts |
-| `save_memory` tool | Claude Code | Fallback — auto-loaded facts, zero read-time cost |
-| `~/.agents/` filesystem | Any agent with home dir access | Last resort — markdown files for non-MCP agents |
-| `.agents/` project dir | Any agent | Project + session memory — always available |
-
-**MCP note:** When `@modelcontextprotocol/server-memory` is configured, use it as the primary global tier. It provides a knowledge graph for cross-project facts, user preferences, and category entities without filesystem I/O. Check for `search_nodes` in the available tool list to detect MCP availability.
-
-## MCP Knowledge Graph Entity Conventions
-
-When MCP `@modelcontextprotocol/server-memory` is the active global tier, use these entity naming conventions:
+| Entity name | Purpose |
+| --- | --- |
+| `[project-name]:session` | Current task state — deleted and recreated each session end |
 
 ### Category entities (cross-project user facts)
 
@@ -86,58 +85,47 @@ When MCP `@modelcontextprotocol/server-memory` is the active global tier, use th
 | `ToolPreferences` | Preferred CLIs, shells, task runners |
 | `Standard` | Cross-project system requirements, global configurations, tool exclusions |
 
-### Project entities (repo-scoped facts)
+### Project entities (repo-scoped stable facts)
 
-Named after the repository (e.g., `harus-skills`). Use the basename of the current working directory, lowercased, with spaces and special characters replaced by hyphens (e.g., `harus-skills`, `my-project`). Observations describe project-specific conventions:
+Named after the repository (cwd basename, lowercased, hyphens). Observations describe stable project conventions that don't change session-to-session:
 
-- "Uses mise for all tasks"
+- "Uses nix devShell for all tool provisioning"
 - "Never run prettier on .md files — use markdownlint-cli2 only"
 
-Both category and project entities are supported and used together.
+**Deduplication rule**: before adding any observation, `search_nodes` the entity name, compare against existing observations, only add if not already captured.
 
-### Deduplication rule
+## Local Files Reference
 
-Before adding any observation, call `search_nodes` with the entity name to retrieve its current observations. Compare the new fact against existing observations — only add if the concept is not already captured (exact wording need not match). When uncertain, prefer updating an existing observation over creating a duplicate.
+### `.agents/CONTEXT.md` — living project context (always loaded, update when needed)
 
-**`~/.agents/` filesystem structure** *(optional fallback for non-Claude-Code agents)*:
+Holds internal agent-specific rules, architecture notes, and non-obvious patterns. Updated whenever core features or project conventions change. Every session reads this.
 
-```text
-~/.agents/
-├── preferences/
-│   ├── code-style.md    ← naming, linting, indentation
-│   └── tools.md         ← preferred CLI tools and shell settings
-├── facts/
-│   ├── identity.md      ← user name, role, background
-│   └── habits.md        ← preferred working hours, communication style
-└── projects/
-    └── registry.md      ← global list of managed projects and their status
+### `.agents/CURRENT_TASK.md` — fallback task state (only when MCP unavailable)
+
+```markdown
+## Objective
+[what we are trying to achieve]
+
+## Status
+IN_PROGRESS | BLOCKED | REVIEW | DONE
+
+## Completed Steps
+- [x] Step
+
+## Remaining Steps
+- [ ] Step
+
+## Open Questions / Blockers
+- [question or blocker]
+
+## Next Action
+[single concrete next step]
+
+## Last Updated
+YYYY-MM-DD
 ```
 
-## Memory Writing Protocol
-
-At session end, write in this order — skip any step that fails or is unavailable, no errors:
-
-1. **`save_memory` tool** *(if available)*: store user preferences, cross-project habits, and facts that should be present in every future session without explicit file reads. E.g. "User prefers British English", "Always use `mise run` for tasks in this repo".
-2. **`.agents/MEMORY.md`** *(always)*: append project-scoped decisions and discoveries. Universal — any agent can read this.
-3. **`~/.agents/preferences/` or `~/.agents/facts/`** *(if accessible)*: mirror the same global facts written to `save_memory` so non-Claude-Code agents can load them from the filesystem.
-
-### What to write
-
-Write an entry when you learn something that would change how you'd behave in a future session:
-
-- **Decisions with rationale** — "Chose X over Y because Z." Future agents won't re-litigate.
-- **User preferences discovered** — coding style, communication style, tool preferences.
-- **Non-obvious codebase patterns** — "This project skips error wrapping in handlers by convention."
-- **Things that went wrong** — "Running `mise fmt` on `.md` files breaks prose — skip it."
-
-### What NOT to write
-
-- Active task state → use `CURRENT_TASK.md` instead
-- Content already in `AGENTS.md` or `CONTEXT.md` → avoid duplication
-- Large code blocks or file contents → read source files on demand
-- Ephemeral observations → "currently editing src/foo.ts" is useless next session
-
-### Entry format
+### `.agents/MEMORY.md` — fallback decision log (only when MCP unavailable)
 
 ```markdown
 ## YYYY-MM-DD — [topic]
@@ -145,21 +133,22 @@ Write an entry when you learn something that would change how you'd behave in a 
 **Why it matters:** [one sentence — what changes if ignored]
 ```
 
-Before appending, scan recent entries. If a similar fact exists, **update it in place** rather than creating a duplicate.
-
-## Core Principles
-
-- **Agent-Led**: Don't wait for the user to ask. Detect `.agents/` at session start and run `/session start` automatically.
-- **Filesystem as Truth**: `.agents/` Markdown files are the universal source of truth any agent can read.
-- **Graceful Degradation**: Global tier (`~/.agents/`) is best-effort. If it fails for any reason, continue with project + session tiers.
-- **Minimal Noise**: Start/end summaries should be concise — focus on intent and continuity.
+Update in place if a similar fact exists; do not create duplicates.
 
 ## Memory Tier Reference
 
-| Tier | Location | Required? | Purpose |
+| Tier | Location | When used | Purpose |
 | --- | --- | --- | --- |
-| **Global — MCP** | `@modelcontextprotocol/server-memory` | Optional | Primary: cross-project facts, user preferences, knowledge graph |
-| **Global — Claude Code** | `save_memory` tool | Optional | Fallback: auto-loaded facts, zero read-time cost |
-| **Global — Filesystem** | `~/.agents/` | Optional | Last resort: markdown files for non-MCP agents |
-| **Project** | `AGENTS.md` + `.agents/CONTEXT.md` | Yes | Architecture, tech stack, hard rules, conventions |
-| **Session** | `.agents/CURRENT_TASK.md` + `MEMORY.md` | Yes | Active feature state, recent decisions, handoff data |
+| **MCP session** | `[project]:session` entity | MCP available | Canonical task state — no file I/O |
+| **MCP global** | Category + project entities | MCP available | User prefs, cross-project facts, project conventions |
+| **Claude Code** | `save_memory` tool | MCP fallback | Auto-loaded preferences |
+| **Project context** | `AGENTS.md` + `.agents/CONTEXT.md` | Always | Architecture, conventions — living docs |
+| **Local fallback** | `.agents/CURRENT_TASK.md` + `MEMORY.md` | MCP unavailable only | Task state and decisions for non-MCP agents |
+
+## Core Principles
+
+- **MCP as Truth**: When MCP is available, session state lives in MCP exclusively. `CURRENT_TASK.md` is not read or written.
+- **CONTEXT.md is living**: Update it whenever project behavior, architecture, or key conventions change. It is always authoritative regardless of memory backend.
+- **Agent-Led**: Detect `.agents/` at session start and run `/session start` automatically.
+- **Graceful Degradation**: Fall back to local files silently if MCP is not configured.
+- **Minimal Noise**: Start/end summaries concise — focus on intent and continuity.

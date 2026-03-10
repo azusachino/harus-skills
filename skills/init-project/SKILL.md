@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.3.0
+  version: 0.4.0
 user-invokable: true
 disable-model-invocation: true
 ---
@@ -32,13 +32,14 @@ Collect:
 
 ### Existing Tooling
 
-- Mise for tooling management (local, exclusively)
+- Nix environment (`flake.nix`, `shell.nix`, `default.nix`, `flake.lock`, `devenv.nix`) — preferred tool provisioning
+- Mise (`mise.toml`, `.mise.toml`) — fallback tool manager when nix is absent
 - Formatters (prettier, markdownlint-cli2, zig fmt, rustfmt, gofmt, black, etc.)
 - Linters (eslint, markdownlint-cli2, clippy, golangci-lint, pylint, etc.)
 - Git hooks (husky, pre-commit, `github.com/j178/prek`, lefthook, .git/hooks/)
 - CI/CD (.github/workflows/, .gitlab-ci.yml, Jenkinsfile)
 - Editor config (.editorconfig, .vscode/, .idea/)
-- Task runner (Makefile, justfile, Taskfile.yml)
+- Task runner (Makefile — primary; justfile, Taskfile.yml as alternatives)
 
 ### Existing Documentation
 
@@ -60,6 +61,8 @@ Possible questions (skip if already known):
 3. "What are your key coding conventions?" (naming style, error handling approach, testing philosophy)
 4. "What quality checks must pass?" (format, lint, test, coverage threshold, etc.)
 5. For each detected tooling gap: "No [tool] found. Want me to add [suggested tool]?"
+
+Note on tool provisioning: if nix is detected, recommend nix devShell/devenv as the source of tools. If nix is not detected and mise is absent, suggest one — ask which the user prefers. Do not suggest both.
 
 ### MCP Memory Check
 
@@ -248,19 +251,22 @@ YYYY-MM-DD
 
 #### .agents/CONTEXT.md
 
-Store **internal agent-specific rules** and state that doesn't belong in the public `AGENTS.md`.
+Store **internal agent rules and living project context**. This file is always read at session start and updated whenever core features, architecture, or non-obvious conventions change. It is the authoritative source for anything that doesn't fit in the public `AGENTS.md`.
 
 ```markdown
 ## Agent Rules (Hard DO / DON'T)
-- DO: Update `CURRENT_TASK.md` before session end.
-- DO: *(Optional)* Check `~/.agents/` or `save_memory` at session start for global preferences — skip silently if inaccessible.
-- DO: *(Optional)* Sync learned personal facts to global memory via `save_memory` or `~/.agents/` if accessible.
-- DO: Check MCP memory at session start — if `search_nodes`, `create_entities`, and `add_observations` are all available, call `read_graph()` and load category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) plus the project entity matching the repo name.
-- DO: At session end, persist new cross-project facts to MCP. Use `search_nodes` to check for existing observations before adding new ones. Use category entities for user-wide facts and a project entity (named after repo) for project-scoped facts.
+- DO: At session start — if MCP is available (`search_nodes` in tools), call `read_graph()` and load category entities + `[project]:session`. Skip `CURRENT_TASK.md` entirely when MCP is active.
+- DO: At session end — if MCP is available, write session state to `[project]:session` entity (delete old, recreate). Do not write `CURRENT_TASK.md` when MCP is active.
+- DO: Update this file (`CONTEXT.md`) when core project behavior, architecture, or conventions change.
+- DO: Use `make <target>` for all task execution (format, lint, test, check).
 - DON'T: Commit without user confirmation.
+- DON'T: Write `CURRENT_TASK.md` when MCP is active — it creates git noise.
 
 ## Project Context (Internal)
 [specific technical notes, non-obvious patterns, or agent-only instructions]
+
+## Tool Provisioning
+[nix devShell / mise / other — how tools are obtained in this project]
 ```
 
 #### .agents/CURRENT_TASK.md
@@ -334,33 +340,33 @@ conventions:
 
 Write to each agent config file detected in the Phase 1 scan. Skip any file that already has the `memory` server configured. For each detected agent:
 
-**Claude Code** (detected: `.claude/` exists):
-Read `.claude/settings.json` if it exists, merge `mcpServers.memory` without overwriting other keys, or create:
+**Invocation command**: use `npx -y @modelcontextprotocol/server-memory` by default. If nix is the primary tool manager, offer the nix alternative:
 
 ```json
 {
   "mcpServers": {
     "memory": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+      "command": "nix",
+      "args": ["run", "nixpkgs#nodePackages_latest.@modelcontextprotocol/server-memory"]
     }
   }
 }
 ```
 
+Ask the user which invocation style to use if nix is detected. Default to `npx` if unsure.
+
+**Claude Code** (detected: `.claude/` exists):
+Read `.claude/settings.json` if it exists, merge `mcpServers.memory` without overwriting other keys, or create the file with the chosen invocation.
+
 **Gemini CLI** (detected: `.gemini/` exists):
-Read `.gemini/settings.json` if it exists, merge `mcpServers.memory` without overwriting other keys, or create with the same JSON structure as Claude Code above.
+Read `.gemini/settings.json` if it exists, merge `mcpServers.memory` without overwriting other keys.
 
 **Codex** (detected: `.codex/` exists):
-Read `.codex/config.toml` if it exists, append the following block if `[mcp_servers.memory]` is not already present:
+Read `.codex/config.toml` if it exists, append `[mcp_servers.memory]` block if not already present.
 
-```toml
-[mcp_servers.memory]
-command = "npx"
-args = ["-y", "@modelcontextprotocol/server-memory"]
-```
+If no agent config directory is detected, default to writing `.claude/settings.json` and ask the user to confirm or specify their agent.
 
-If no agent config directory is detected (project is freshly initialized), default to writing `.claude/settings.json` and ask the user to confirm or specify their agent.
+**Also**: add `.agents/CURRENT_TASK.md` and `.agents/MEMORY.md` to `.gitignore` (or create `.agents/.gitignore`) so session-volatile files don't pollute git history. Ask permission before doing this.
 
 ## Phase 4: Generate Documentation
 
@@ -522,6 +528,12 @@ Populate from scan results.
 
 For each missing tool detected in the scan, offer to create the config. Ask permission for each one individually.
 
+**Tool provisioning priority**:
+
+1. **Nix** (`flake.nix` / `shell.nix` / `devenv.nix`) — preferred. Tools come from nix devShell. Do not suggest mise if nix is present.
+2. **Mise** (`mise.toml`) — only suggest if nix is absent and no other tool manager is detected.
+3. **Task runner**: always `make`. Generate a `Makefile` with standard targets (`fmt`, `lint`, `test`, `check`) if one doesn't exist.
+
 **Reference configs are in `CONFIGS.md`** (same directory as this file). Read `CONFIGS.md` for the index, then read `configs/common.md` and the language-specific config file (e.g., `configs/rust.md`) based on the detected language. Only read what is needed to minimize token usage.
 
 ## Phase 6: Summary
@@ -552,12 +564,13 @@ Init complete! Created:
 
 ## Important Rules
 
-- **Take token usage into consideration**: while running user scripts (lint, fmt, compile), if there was no explicit error, you should not read the output (reduce token usage)
+- **Token efficiency**: while running user scripts (lint, fmt, compile), if there was no explicit error, do not read the output.
 - **Never overwrite existing files** without asking. If `AGENTS.md` already exists, ask whether to merge, replace, or skip.
-- **Local first** while processing user prompt, any decision made shall store to local, as context, memory, new-plan, etc. both user and Agents could review these decisions.
 - **Ask permission** before writing each group of files.
 - **Be concise** in generated content. Avoid boilerplate filler.
 - **Populate from scan** wherever possible. Don't leave everything as TODO if the information is available.
 - **Language-aware**: adapt templates to the detected language and ecosystem.
 - **Respect existing conventions**: if the project already has patterns, follow them rather than imposing new ones.
-- **Code Quality**: make sure the project availablity (run `fmt`, `lint`, `compile` after finishing new feature implementation)
+- **Task runner is always `make`**: reference `make <target>` in all generated docs and configs. Never reference mise tasks.
+- **Nix-first tooling**: if nix is detected, all tool provisioning references should point to nix. Do not introduce mise alongside nix.
+- **Reduce git noise**: add `.agents/CURRENT_TASK.md` and `.agents/MEMORY.md` to `.gitignore` — session-volatile files should not pollute git history.
