@@ -17,7 +17,6 @@
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             nodePackages.prettier # JSON/YAML formatter
-            nodePackages."markdownlint-cli2" # markdown linter
             taplo # TOML formatter
             shfmt # shell script formatter
             ruff # Python linter/formatter

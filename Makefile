@@ -10,7 +10,7 @@ help:
 	@echo ""
 	@echo "  make install-hooks - Install git pre-commit hooks"
 	@echo "  make fmt          - Format all files"
-	@echo "  make lint         - Lint markdown and Python files"
+	@echo "  make lint         - Lint Python files"
 	@echo "  make check        - Run all checks (format, lint, verify)"
 	@echo "  make verify       - Verify repository structure"
 	@echo "  make list-skills  - List all available skills"
@@ -26,8 +26,6 @@ install-hooks:
 	@echo 'echo "🎨 Auto-formatting staged files..."' >> .git/hooks/pre-commit
 	@echo 'STAGED_MD=$$(git diff --cached --name-only --diff-filter=ACM | grep -E "\.md$$" || true)' >> .git/hooks/pre-commit
 	@echo 'if [ -n "$$STAGED_MD" ]; then' >> .git/hooks/pre-commit
-	@echo '  echo "  📝 Linting markdown files..."' >> .git/hooks/pre-commit
-	@echo '  echo "$$STAGED_MD" | xargs markdownlint-cli2 --fix' >> .git/hooks/pre-commit
 	@echo '  echo "$$STAGED_MD" | xargs git add' >> .git/hooks/pre-commit
 	@echo 'fi' >> .git/hooks/pre-commit
 	@echo 'STAGED_DATA=$$(git diff --cached --name-only --diff-filter=ACM | grep -E "\.(json|yaml|yml)$$" || true)' >> .git/hooks/pre-commit
@@ -43,7 +41,6 @@ install-hooks:
 fmt:
 	@echo "Formatting files..."
 	@prettier --write "**/*.{json,yaml,yml}"
-	@markdownlint-cli2 --fix "**/*.md"
 	@taplo format "**/*.toml" 2>/dev/null || true
 	@if find . -name "*.sh" -o -name "*.bash" | grep -q .; then \
 		shfmt -w -i 2 -ci -bn $$(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules); \
@@ -66,17 +63,13 @@ fmt-check:
 	@echo "All files are properly formatted."
 
 lint:
-	@echo "🔎 Linting markdown files..."
-	@markdownlint-cli2 "**/*.md" --config .markdownlint.json
-	@echo "🔎 Linting Python files..."
+	@echo "Linting Python files..."
 	@if find . -name "*.py" | grep -q .; then \
 		ruff check .; \
 	fi
 	@echo "Done."
 
 lint-fix:
-	@echo "Linting and fixing markdown files..."
-	@markdownlint-cli2 "**/*.md" --fix --config .markdownlint.json
 	@echo "Linting and fixing Python files..."
 	@if find . -name "*.py" | grep -q .; then \
 		ruff check . --fix; \

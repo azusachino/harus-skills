@@ -3,9 +3,8 @@
 
 [tools]
 # Formatters and linters
-"npm:prettier" = "latest"          # Format markdown, JSON, YAML
-"npm:markdownlint-cli2" = "latest" # Lint markdown files
-"npm:@taplo/cli" = "latest"        # Format TOML files
+"npm:prettier" = "latest"   # Format JSON, YAML
+"npm:@taplo/cli" = "latest" # Format TOML files
 shfmt = "latest"                   # Format shell scripts
 uv = "latest"                      # Python package and tool manager
 ruff = "latest"                    # Python linter and formatter

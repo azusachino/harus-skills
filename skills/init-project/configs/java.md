@@ -13,7 +13,6 @@ indent_size = 4
 [tools]
 java = "zulu-21"
 "npm:prettier" = "latest"
-"npm:markdownlint-cli2" = "latest"
 
 [tasks.fmt]
 description = "Format all files"
@@ -21,7 +20,7 @@ run = """
 #!/usr/bin/env bash
 set -euo pipefail
 ./gradlew spotlessApply
-prettier --write "**/*.{md,json,yaml,yml}"
+prettier --write "**/*.{json,yaml,yml}"
 """
 
 [tasks.fmt-check]
@@ -52,7 +51,6 @@ depends = ["fmt-check", "test"]
 [tools]
 java = "zulu-21"
 "npm:prettier" = "latest"
-"npm:markdownlint-cli2" = "latest"
 
 [tasks.fmt]
 description = "Format all files"
@@ -60,7 +58,7 @@ run = """
 #!/usr/bin/env bash
 set -euo pipefail
 mvn spotless:apply
-prettier --write "**/*.{md,json,yaml,yml}"
+prettier --write "**/*.{json,yaml,yml}"
 """
 
 [tasks.fmt-check]

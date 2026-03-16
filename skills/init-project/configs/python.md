@@ -7,103 +7,60 @@
 indent_size = 4
 ```
 
-## Ruff
+## Tooling: Nix (flake.nix)
 
-`ruff.toml`:
+Add to `devShells.default` packages:
+
+```nix
+packages = with pkgs; [
+  python312
+  ruff
+  uv
+  # Common
+  nodePackages.prettier
+];
+```
+
+## pyproject.toml (Lints & Settings)
+
+Inject into `pyproject.toml` if missing:
 
 ```toml
+[tool.ruff]
 line-length = 100
 target-version = "py312"
 
-[lint]
-select = [
-  "E",   # pycodestyle errors
-  "W",   # pycodestyle warnings
-  "F",   # pyflakes
-  "I",   # isort
-  "B",   # flake8-bugbear
-  "C4",  # flake8-comprehensions
-  "UP",  # pyupgrade
-  "SIM", # flake8-simplify
-]
-ignore = [
-  "E501", # line too long (handled by formatter)
-]
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
 
-[lint.isort]
-known-first-party = ["[detected-package-name]"]
-
-[format]
+[tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
-```
-
-## mise.toml
-
-```toml
-[tools]
-python = "3.12"
-"npm:prettier" = "latest"
-"npm:markdownlint-cli2" = "latest"
-
-[tasks.fmt]
-description = "Format all files"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-ruff format .
-ruff check --fix .
-prettier --write "**/*.{md,json,yaml,yml}"
-"""
-
-[tasks.fmt-check]
-description = "Check formatting"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-ruff format --check .
-ruff check .
-prettier --check "**/*.{md,json,yaml,yml}"
-"""
-
-[tasks.lint]
-description = "Lint source files"
-run = "ruff check ."
-
-[tasks.test]
-description = "Run tests"
-run = "pytest"
-
-[tasks.test-cov]
-description = "Run tests with coverage"
-run = "pytest --cov --cov-report=term-missing"
-
-[tasks.check]
-description = "Run all checks"
-depends = ["fmt-check", "lint", "test"]
 ```
 
 ## Makefile
 
 ```makefile
-.PHONY: fmt fmt-check lint test test-cov check clean
+NIX_RUN := $(if $(filter $(IN_NIX_SHELL),),nix develop --command ,)
+
+.PHONY: fmt fmt-check lint test check clean
 
 fmt:
-	ruff format .
-	ruff check --fix .
+	$(NIX_RUN) ruff format .
+	$(NIX_RUN) ruff check --fix .
+	$(NIX_RUN) prettier --write "**/*.{md,json,yaml,yml}"
 
 fmt-check:
-	ruff format --check .
-	ruff check .
+	$(NIX_RUN) ruff format --check .
+	$(NIX_RUN) ruff check .
+	$(NIX_RUN) prettier --check "**/*.{md,json,yaml,yml}"
 
 lint:
-	ruff check .
+	$(NIX_RUN) ruff check .
 
 test:
-	pytest
-
-test-cov:
-	pytest --cov --cov-report=term-missing
+	$(NIX_RUN) pytest
 
 check: fmt-check lint test
 
@@ -112,16 +69,36 @@ clean:
 	rm -rf .pytest_cache .ruff_cache .coverage htmlcov dist build *.egg-info
 ```
 
-## CI steps (non-mise)
+## mise.toml (Fallback)
+
+```toml
+[tools]
+python = "3.12"
+ruff = "latest"
+"npm:prettier" = "latest"
+
+[tasks.fmt]
+run = "ruff format . && ruff check --fix . && prettier --write '**/*.{md,json,yaml,yml}'"
+
+[tasks.lint]
+run = "ruff check ."
+
+[tasks.test]
+run = "pytest"
+
+[tasks.check]
+depends = ["fmt", "lint", "test"]
+```
+
+## CI steps (mise fallback)
+
+For Nix projects, use the Nix-native CI from `common.md` — no language setup step needed.
 
 ```yaml
 - uses: actions/setup-python@v5
   with:
     python-version: "3.12"
-- run: pip install ruff pytest
-- run: ruff check .
-- run: ruff format --check .
-- run: pytest
+- run: make check
 ```
 
 ## .gitignore additions

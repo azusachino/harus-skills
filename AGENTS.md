@@ -46,7 +46,7 @@ No compilation. Content repository — tools via nix devShell (or mise as fallba
 
 ```bash
 make fmt          # Format JSON, YAML, TOML (not markdown)
-make lint         # Lint markdown (markdownlint-cli2) and Python (ruff)
+make lint         # Lint Python (ruff)
 make check        # Run all checks (format + lint + verify)
 make list-skills  # List available skills
 make verify       # Verify repo structure
@@ -56,7 +56,7 @@ make clean        # Remove generated lessons
 ## Conventions
 
 - Skill files: YAML frontmatter + markdown body, no line length limit on prose
-- **Markdown**: markdownlint-cli2 only — never Prettier, never manual 80-char wrapping
+- **Markdown**: no linting — do not run markdownlint or Prettier on `.md` files
 - **JSON/YAML**: Prettier, 2-space indent
 - **TOML**: Taplo
 - **Python**: ruff

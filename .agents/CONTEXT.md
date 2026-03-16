@@ -6,7 +6,7 @@
 - DO: Use `make <target>` for all task execution (fmt, lint, check, verify).
 - DO: Bump `metadata.version` in the skill + `gemini-extension.json` + `.claude-plugin/marketplace.json` in the same commit after any skill edit.
 - DON'T: Commit without user confirmation.
-- DON'T: Run Prettier on `.md` files — use `markdownlint-cli2` only.
+- DON'T: Lint or format `.md` files — markdown linting is disabled in this repo.
 - DON'T: Use `git add -A` or `git add .` — stage files explicitly.
 
 ## Project Context (Internal)

@@ -64,33 +64,38 @@ coverage/
 
 Add language-specific ignores (e.g. `*.zig`, `target/`, `__pycache__/`).
 
-## Markdownlint
+## Tooling: Nix (flake.nix)
 
-**always use markdownlint-cli to format markdown files**, if user already configured prettier, suggest tool switch.
+Base template for `flake.nix`:
 
-`.markdownlint.json`:
-
-```json
+```nix
 {
-  "default": true,
-  "MD010": { "code_blocks": false },
-  "MD013": false,
-  "MD033": false,
-  "MD041": false,
-  "MD024": { "siblings_only": true }
+  description = "Project development environment";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs = { self, nixpkgs, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+      {
+        devShells.default = pkgs.mkShell {
+          packages = with pkgs; [
+            # Base tools
+            nodePackages.prettier
+            taplo
+            shfmt
+          ];
+        };
+      });
 }
 ```
 
-`.markdownlintignore`:
-
-```text
-node_modules/
-dist/
-build/
-CHANGELOG.md
-```
-
-## CI: GitHub Actions (generic with mise)
+## CI: GitHub Actions (Nix-native)
 
 `.github/workflows/ci.yml`:
 
@@ -108,28 +113,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
-      - run: mise run check
+      - uses: cachix/install-nix-action@v25
+      - run: make check
 ```
 
-## Git Hooks
+## Git Hooks (Nix-native)
 
-Offer to create a pre-commit hook. If the project uses mise, use `mise run`:
-
-`.git/hooks/pre-commit` (or via lefthook/husky):
+`.git/hooks/pre-commit`:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Format staged files
-mise run fmt
+# Format staged files using make (which uses nix if needed)
+make fmt
 
 # Re-add formatted files
 git diff --cached --name-only --diff-filter=ACM | xargs git add
 ```
-
-If not using mise, use language-native commands directly.
 
 ## .gitignore (common base)
 

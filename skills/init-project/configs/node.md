@@ -1,127 +1,102 @@
-# Node.js / TypeScript Configs
+# Node.js Configs
 
 ## Editor Config additions
 
 ```ini
-[*.{js,jsx,ts,tsx,mjs,cjs}]
+[*.{js,ts,tsx,jsx}]
 indent_size = 2
 ```
 
-## ESLint
+## Tooling: Nix (flake.nix)
 
-`eslint.config.js` (flat config):
+Add to `devShells.default` packages:
 
-```javascript
-import js from "@eslint/js";
-
-export default [
-  js.configs.recommended,
-  {
-    rules: {
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-      "no-console": "warn",
-      eqeqeq: "error",
-      curly: "error"
-    }
-  },
-  {
-    ignores: ["node_modules/", "dist/", "build/", "coverage/"]
-  }
+```nix
+packages = with pkgs; [
+  nodejs_20
+  pnpm
+  # Common
+  nodePackages.prettier
 ];
 ```
 
-For TypeScript, add `typescript-eslint`:
+## package.json (Lints & Settings)
 
-```javascript
-import js from "@eslint/js";
-import tseslint from "typescript-eslint";
+Inject into `package.json` if missing:
 
-export default tseslint.config(
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  {
-    rules: {
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-      "@typescript-eslint/explicit-function-return-type": "off",
-      "@typescript-eslint/no-explicit-any": "warn"
-    }
+```json
+{
+  "scripts": {
+    "fmt": "prettier --write '**/*.{js,ts,tsx,jsx,md,json,yaml,yml}'",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "npm run fmt && npm run lint && npm run test"
   },
-  {
-    ignores: ["node_modules/", "dist/", "build/", "coverage/"]
+  "prettier": {
+    "proseWrap": "always",
+    "printWidth": 120,
+    "tabWidth": 2,
+    "singleQuote": true
   }
-);
-```
-
-## mise.toml
-
-```toml
-[tools]
-node = "lts"
-"npm:prettier" = "latest"
-"npm:eslint" = "latest"
-"npm:markdownlint-cli2" = "latest"
-
-[tasks.fmt]
-description = "Format all files"
-run = "prettier --write ."
-
-[tasks.fmt-check]
-description = "Check formatting"
-run = "prettier --check ."
-
-[tasks.lint]
-description = "Lint source files"
-run = "eslint ."
-
-[tasks.lint-fix]
-description = "Lint and fix source files"
-run = "eslint --fix ."
-
-[tasks.test]
-description = "Run tests"
-run = "npm test"
-
-[tasks.check]
-description = "Run all checks"
-depends = ["fmt-check", "lint", "test"]
+}
 ```
 
 ## Makefile
 
 ```makefile
-.PHONY: fmt fmt-check lint lint-fix test check clean
+NIX_RUN := $(if $(filter $(IN_NIX_SHELL),),nix develop --command ,)
+
+.PHONY: fmt fmt-check lint test check clean
 
 fmt:
-	prettier --write .
+	$(NIX_RUN) npm run fmt
 
 fmt-check:
-	prettier --check .
+	$(NIX_RUN) npx prettier --check "**/*.{js,ts,tsx,jsx,md,json,yaml,yml}"
 
 lint:
-	eslint .
-
-lint-fix:
-	eslint --fix .
+	$(NIX_RUN) npm run lint
 
 test:
-	npm test
+	$(NIX_RUN) npm run test
 
-check: fmt-check lint test
+check:
+	$(NIX_RUN) npm run check
 
 clean:
-	rm -rf node_modules dist coverage
+	rm -rf node_modules dist build coverage
 ```
 
-## CI steps (non-mise)
+## mise.toml (Fallback)
+
+```toml
+[tools]
+node = "20"
+"npm:prettier" = "latest"
+
+[tasks.fmt]
+run = "npm run fmt"
+
+[tasks.lint]
+run = "npm run lint"
+
+[tasks.test]
+run = "npm run test"
+
+[tasks.check]
+depends = ["fmt", "lint", "test"]
+```
+
+## CI steps (mise fallback)
+
+For Nix projects, use the Nix-native CI from `common.md` — no language setup step needed.
 
 ```yaml
 - uses: actions/setup-node@v4
   with:
-    node-version: lts/*
-    cache: npm
-- run: npm ci
-- run: npm run lint
-- run: npm test
+    node-version: "20"
+- run: npm install
+- run: make check
 ```
 
 ## .gitignore additions
@@ -129,7 +104,8 @@ clean:
 ```gitignore
 node_modules/
 dist/
+build/
 coverage/
 .next/
-.nuxt/
+.turbo/
 ```

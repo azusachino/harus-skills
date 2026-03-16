@@ -8,9 +8,20 @@ indent_style = tab
 indent_size = 4
 ```
 
-## Formatter
+## Tooling: Nix (flake.nix)
 
-Go uses `gofmt`/`goimports` with no config file needed. Add to mise tasks instead.
+Add to `devShells.default` packages:
+
+```nix
+packages = with pkgs; [
+  go
+  gofumpt
+  goimports-reviser
+  golangci-lint
+  # Common
+  nodePackages.prettier
+];
+```
 
 ## golangci-lint
 
@@ -50,86 +61,69 @@ issues:
   max-same-issues: 0
 ```
 
-## mise.toml
+## Makefile
+
+```makefile
+MODULE := $(shell head -1 go.mod | cut -d' ' -f2)
+NIX_RUN := $(if $(filter $(IN_NIX_SHELL),),nix develop --command ,)
+
+.PHONY: fmt fmt-check lint test bench check clean
+
+fmt:
+	$(NIX_RUN) gofmt -w .
+	$(NIX_RUN) goimports-reviser -rm-unused -set-alias -format ./...
+	$(NIX_RUN) prettier --write "**/*.{md,json,yaml,yml}"
+
+fmt-check:
+	@$(NIX_RUN) gofmt -l . | grep . && exit 1 || true
+	$(NIX_RUN) prettier --check "**/*.{md,json,yaml,yml}"
+
+lint:
+	$(NIX_RUN) golangci-lint run ./...
+
+test:
+	$(NIX_RUN) go test ./...
+
+bench:
+	$(NIX_RUN) go test -bench=. -benchmem ./...
+
+check: fmt-check lint test
+
+clean:
+	$(NIX_RUN) go clean -cache -testcache
+```
+
+## mise.toml (Fallback)
 
 ```toml
 [tools]
 go = "latest"
 golangci-lint = "latest"
 "npm:prettier" = "latest"
-"npm:markdownlint-cli2" = "latest"
 
 [tasks.fmt]
-description = "Format all files"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-goimports -w .
-prettier --write "**/*.{md,json,yaml,yml}"
-"""
-
-[tasks.fmt-check]
-description = "Check formatting"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-test -z "$(goimports -l .)"
-prettier --check "**/*.{md,json,yaml,yml}"
-"""
+run = "goimports-reviser -rm-unused -set-alias -format ./... && prettier --write '**/*.{md,json,yaml,yml}'"
 
 [tasks.lint]
-description = "Lint source files"
 run = "golangci-lint run ./..."
 
 [tasks.test]
-description = "Run tests"
 run = "go test ./..."
 
-[tasks.bench]
-description = "Run benchmarks"
-run = "go test -bench=. -benchmem ./..."
-
 [tasks.check]
-description = "Run all checks"
-depends = ["fmt-check", "lint", "test"]
+depends = ["fmt", "lint", "test"]
 ```
 
-## Makefile
+## CI steps (mise fallback)
 
-```makefile
-MODULE := $(shell head -1 go.mod | cut -d' ' -f2)
-
-.PHONY: fmt fmt-check lint test bench check clean
-
-fmt:
-	goimports -w .
-
-fmt-check:
-	@test -z "$$(goimports -l .)" || (echo "files need formatting:" && goimports -l . && exit 1)
-
-lint:
-	golangci-lint run ./...
-
-test:
-	go test ./...
-
-bench:
-	go test -bench=. -benchmem ./...
-
-check: fmt-check lint test
-
-clean:
-	go clean -cache -testcache
-```
-
-## CI steps (non-mise)
+For Nix projects, use the Nix-native CI from `common.md` — no language setup step needed.
 
 ```yaml
 - uses: actions/setup-go@v5
   with:
     go-version: stable
 - uses: golangci/golangci-lint-action@v6
-- run: go test ./...
+- run: make check
 ```
 
 ## .gitignore additions
