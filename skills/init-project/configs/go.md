@@ -20,7 +20,6 @@ packages = with pkgs; [
   golangci-lint
   # Common
   nodePackages.prettier
-  nodePackages.markdownlint-cli2
 ];
 ```
 

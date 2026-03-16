@@ -10,7 +10,7 @@ quality:
 tools:
   task_runner: mise
   formatter: prettier
-  linter: markdownlint-cli2
+  linter: ruff
 conventions:
   commit_style: conventional
   naming: kebab-case

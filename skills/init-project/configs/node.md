@@ -17,7 +17,6 @@ packages = with pkgs; [
   pnpm
   # Common
   nodePackages.prettier
-  nodePackages.markdownlint-cli2
 ];
 ```
 

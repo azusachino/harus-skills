@@ -19,7 +19,6 @@ packages = with pkgs; [
   clippy
   # Common
   nodePackages.prettier
-  nodePackages.markdownlint-cli2
 ];
 ```
 
@@ -73,7 +72,6 @@ clean:
 [tools]
 rust = "stable"
 "npm:prettier" = "latest"
-"npm:markdownlint-cli2" = "latest"
 
 [tasks.fmt]
 run = "cargo fmt && prettier --write '**/*.{md,json,yaml,yml}'"

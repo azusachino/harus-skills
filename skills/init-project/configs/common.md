@@ -64,32 +64,6 @@ coverage/
 
 Add language-specific ignores (e.g. `*.zig`, `target/`, `__pycache__/`).
 
-## Markdownlint
-
-**always use markdownlint-cli to format markdown files**, if user already configured prettier, suggest tool switch.
-
-`.markdownlint.json`:
-
-```json
-{
-  "default": true,
-  "MD010": { "code_blocks": false },
-  "MD013": false,
-  "MD033": false,
-  "MD041": false,
-  "MD024": { "siblings_only": true }
-}
-```
-
-`.markdownlintignore`:
-
-```text
-node_modules/
-dist/
-build/
-CHANGELOG.md
-```
-
 ## Tooling: Nix (flake.nix)
 
 Base template for `flake.nix`:
@@ -113,7 +87,6 @@ Base template for `flake.nix`:
           packages = with pkgs; [
             # Base tools
             nodePackages.prettier
-            nodePackages."markdownlint-cli2"
             taplo
             shfmt
           ];

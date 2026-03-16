@@ -18,7 +18,6 @@ packages = with pkgs; [
   uv
   # Common
   nodePackages.prettier
-  nodePackages.markdownlint-cli2
 ];
 ```
 

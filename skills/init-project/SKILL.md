@@ -100,14 +100,6 @@ Fields: `Objective`, `Status`, `Completed Steps`, `Remaining Steps`, `Next Actio
 
 Seed with empty decision log header. Used only when MCP is unavailable. Add to `.gitignore`.
 
-### .markdownlint-cli2.yaml
-
-```yaml
-ignores:
-  - ".agents/**"
-  - "docs/plans/**"
-```
-
 ### .gitignore additions
 
 Add to `.gitignore` (or `.agents/.gitignore`):
@@ -175,7 +167,7 @@ Print a concise list of everything created, followed by the session workflow rem
 ```text
 Init complete:
   AGENTS.md, .agents/CONTEXT.md, .agents/CURRENT_TASK.md, .agents/MEMORY.md
-  .gitignore (updated), .markdownlint-cli2.yaml
+  .gitignore (updated)
   .claude/settings.json (MCP memory)
   docs/architecture.md, docs/setup.md, docs/plan.md, docs/todo.md
   Makefile, [other tooling configs]

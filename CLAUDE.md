@@ -100,7 +100,7 @@ make dev        # Setup development environment
 ```bash
 make fmt          # Format JSON, YAML, TOML (NOT markdown)
 make fmt-check    # Check formatting without modifying
-make lint         # Lint markdown (markdownlint-cli2) and Python (ruff)
+make lint         # Lint Python (ruff)
 make lint-fix     # Lint and auto-fix
 make check        # Run all checks (format + lint + verify)
 make list-skills  # List all available skills
@@ -110,7 +110,7 @@ make clean        # Remove generated lessons
 
 ### File Formatting
 
-- **Markdown**: markdownlint-cli2 only. Never run Prettier on `.md` files — it wraps prose and breaks formatting. Never manually wrap prose lines either.
+- **Markdown**: no linting. Never run Prettier on `.md` files — it wraps prose and breaks formatting. Never manually wrap prose lines either.
 - **JSON/YAML**: Prettier with 2-space indentation
 - **TOML**: Taplo formatter
 - **Shell scripts**: shfmt with 2-space indentation

@@ -17,7 +17,6 @@ packages = with pkgs; [
   zls
   # Common
   nodePackages.prettier
-  nodePackages.markdownlint-cli2
 ];
 ```
 
