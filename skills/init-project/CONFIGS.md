@@ -4,7 +4,7 @@ Configs are split by language to reduce token usage. Read only the files relevan
 
 ## Always read first
 
-- `configs/common.md` - editorconfig, prettier, markdownlint, CI (mise), git hooks, gitignore base
+- `configs/common.md` - editorconfig, prettier, markdownlint, CI (nix-native), git hooks, gitignore base
 
 ## Then read the language-specific file
 

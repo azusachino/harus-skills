@@ -7,28 +7,25 @@
 indent_size = 4
 ```
 
-## rustfmt.toml
+## Tooling: Nix (flake.nix)
 
-```toml
-edition = "2021"
-max_width = 100
-tab_spaces = 4
-use_field_init_shorthand = true
-use_try_shorthand = true
-imports_granularity = "Crate"
-group_imports = "StdExternalCrate"
+Add to `devShells.default` packages:
+
+```nix
+packages = with pkgs; [
+  rustc
+  cargo
+  rustfmt
+  clippy
+  # Common
+  nodePackages.prettier
+  nodePackages.markdownlint-cli2
+];
 ```
 
-## Clippy
+## Cargo.toml (Lints & Settings)
 
-`clippy.toml`:
-
-```toml
-too-many-arguments-threshold = 7
-type-complexity-threshold = 250
-```
-
-Cargo.toml lint section (suggest adding if missing):
+Inject into `Cargo.toml` if missing:
 
 ```toml
 [lints.clippy]
@@ -36,9 +33,41 @@ pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
 missing_errors_doc = "allow"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
 ```
 
-## mise.toml
+## Makefile
+
+```makefile
+NIX_RUN := $(if $(filter $(IN_NIX_SHELL),),nix develop --command ,)
+
+.PHONY: fmt fmt-check lint test check clean
+
+fmt:
+	$(NIX_RUN) cargo fmt
+	$(NIX_RUN) prettier --write "**/*.{md,json,yaml,yml}"
+
+fmt-check:
+	$(NIX_RUN) cargo fmt -- --check
+	$(NIX_RUN) prettier --check "**/*.{md,json,yaml,yml}"
+
+lint:
+	$(NIX_RUN) cargo clippy -- -D warnings
+
+test:
+	$(NIX_RUN) cargo test
+
+check: fmt-check lint test
+
+clean:
+	$(NIX_RUN) cargo clean
+```
+
+## mise.toml (Fallback)
 
 ```toml
 [tools]
@@ -47,68 +76,27 @@ rust = "stable"
 "npm:markdownlint-cli2" = "latest"
 
 [tasks.fmt]
-description = "Format all files"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-cargo fmt
-prettier --write "**/*.{md,json,yaml,yml}"
-"""
-
-[tasks.fmt-check]
-description = "Check formatting"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-cargo fmt -- --check
-prettier --check "**/*.{md,json,yaml,yml}"
-"""
+run = "cargo fmt && prettier --write '**/*.{md,json,yaml,yml}'"
 
 [tasks.lint]
-description = "Lint source files"
 run = "cargo clippy -- -D warnings"
 
 [tasks.test]
-description = "Run tests"
 run = "cargo test"
 
 [tasks.check]
-description = "Run all checks"
-depends = ["fmt-check", "lint", "test"]
+depends = ["fmt", "lint", "test"]
 ```
 
-## Makefile
+## CI steps (mise fallback)
 
-```makefile
-.PHONY: fmt fmt-check lint test check clean
-
-fmt:
-	cargo fmt
-
-fmt-check:
-	cargo fmt -- --check
-
-lint:
-	cargo clippy -- -D warnings
-
-test:
-	cargo test
-
-check: fmt-check lint test
-
-clean:
-	cargo clean
-```
-
-## CI steps (non-mise)
+For Nix projects, use the Nix-native CI from `common.md` — no language setup step needed.
 
 ```yaml
 - uses: dtolnay/rust-toolchain@stable
   with:
     components: clippy, rustfmt
-- run: cargo fmt -- --check
-- run: cargo clippy -- -D warnings
-- run: cargo test
+- run: make check
 ```
 
 ## .gitignore additions

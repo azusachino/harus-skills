@@ -3,9 +3,9 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.5.0
+  version: 0.7.0
 user-invokable: true
-disable-model-invocation: true
+disable-auto-invoke: true
 ---
 
 # Init Project
@@ -36,9 +36,10 @@ Present scan summary, then ask **one question at a time** for anything not infer
 2. "Architecture style?" — monolith / library / CLI / API / microservice
 3. "Key coding conventions?" — naming, error handling, testing philosophy
 4. "Quality checks that must pass?" — format, lint, test, coverage
-5. Per tooling gap: "No [tool] found. Want me to add [suggestion]?"
+5. "Prefer Nix + Makefile for tooling? (Opt-in)" — If yes, generate `flake.nix` and `Makefile`.
+6. Per tooling gap: "No [tool] found. Want me to add [suggestion]?"
 
-Tool provisioning: if nix detected, recommend nix devShell — do not suggest mise alongside it. If neither detected, ask which the user prefers.
+Tool provisioning: if Nix chosen or detected, recommend nix devShell — do not suggest mise alongside it. If neither detected, ask which the user prefers.
 
 If MCP not detected: "No MCP memory server found. Add `@modelcontextprotocol/server-memory`? It enables persistent cross-project memory." Write config in Phase 3 if accepted.
 
@@ -52,13 +53,20 @@ If MCP available, call `read_graph()` first. Merge retrieved facts into generate
 
 Ask permission before writing each file. Never overwrite without asking.
 
+After generating files, if MCP is available, seed the project entity (repo basename, lowercased, hyphens) with key observations so `session start` has meaningful context on first run:
+
+- Tech stack and architecture style
+- Tool provisioning method (nix devShell / mise / other)
+- Task runner and key make targets
+- Any non-obvious conventions captured during the scan
+
 ### AGENTS.md
 
 Public project briefing for humans and agents. Sections:
 
 - **Project Overview** — description, purpose
 - **Tech Stack & Architecture** — detected stack, structure, key patterns
-- **Build, Run & Test** — `make fmt`, `make lint`, `make test`, `make check`, etc.
+- **Build, Run & Test** — `make fmt`, `make lint`, `make test`, `make check`, etc. If Nix detected, add: enter dev shell with `nix develop`, or run any tool without entering via `nix develop --command <cmd>`. All daily operations go through `make <target>`.
 - **Coding Conventions** — naming, error handling, formatting rules
 - **Key Files & Entry Points** — important paths for quick orientation
 - **Quality Standards** — required checks before commit/merge
@@ -72,9 +80,15 @@ Internal living doc — always read at session start, updated when core things c
   - DO: At session start, load MCP entities if available; skip `CURRENT_TASK.md` when MCP active
   - DO: At session end, write state to `[project]:session` MCP entity; do not write `CURRENT_TASK.md` when MCP active
   - DO: Update this file when architecture or conventions change
+  - DO: Dispatch sub-agents for independent parallel tasks by default — don't run them sequentially when they can be parallelized
   - DON'T: Commit without user confirmation
+  - DON'T: Use plan mode (write-plan → execute-plan) for small, well-scoped tasks — plan only for complex multi-step features
+  - DON'T: Install tools globally (pip install, npm install -g, cargo install) — use nix devShell or `make <target>` instead (if nix detected)
 - **Project Context** — non-obvious patterns, technical notes, agent-only instructions
-- **Tool Provisioning** — how tools are obtained (nix devShell / mise / other)
+- **Tool Provisioning** — how tools are obtained. If nix:
+  - Enter dev shell: `nix develop`
+  - One-off command: `nix develop --command <cmd>` (or just `make <target>`, which handles this automatically via NIX_RUN)
+  - Never install tools outside the flake — add them to `devShells.default.packages` instead
 
 ### .agents/CURRENT_TASK.md (fallback only)
 
@@ -122,19 +136,6 @@ Write to each detected agent config, skipping any that already have `memory` con
 }
 ```
 
-**Nix alternative** (offer if nix detected):
-
-```json
-{
-  "mcpServers": {
-    "memory": {
-      "command": "nix",
-      "args": ["run", "nixpkgs#nodePackages_latest.@modelcontextprotocol/server-memory"]
-    }
-  }
-}
-```
-
 Targets: `.claude/settings.json` (Claude Code), `.gemini/settings.json` (Gemini CLI), `.codex/config.toml` (Codex). Default to `.claude/settings.json` if no agent config detected.
 
 ## Phase 4: Generate Documentation
@@ -154,15 +155,22 @@ For each gap found in Phase 1, offer to create the config. Ask permission indivi
 
 Tool provisioning priority:
 
-1. **Nix** — preferred; tools come from devShell. Don't add mise if nix present.
-2. **Mise** — only if nix absent and no other manager detected.
-3. **Makefile** — always generate if missing; include `fmt`, `lint`, `test`, `check` targets.
+1. **Nix + Makefile** — preferred; tools come from `flake.nix`, tasks from `Makefile`.
+2. **Mise** — only if Nix absent or declined, and no other manager detected.
+3. **Makefile** — always generate; include `fmt`, `lint`, `test`, `check` targets.
 
 Reference configs: read `CONFIGS.md` (same directory) for the index, then load only `configs/common.md` and the relevant language file. Read on demand — do not preload all configs.
 
+When generating the `Makefile` for a Nix project, use a fallback wrapper to ensure commands work outside the dev shell:
+
+```makefile
+NIX_RUN := $(if $(filter $(IN_NIX_SHELL),),nix develop --command ,)
+# Then use $(NIX_RUN) <cmd> in targets
+```
+
 ## Phase 6: Summary
 
-Print a concise list of everything created, e.g.:
+Print a concise list of everything created, followed by the session workflow reminder:
 
 ```text
 Init complete:
@@ -171,6 +179,9 @@ Init complete:
   .claude/settings.json (MCP memory)
   docs/architecture.md, docs/setup.md, docs/plan.md, docs/todo.md
   Makefile, [other tooling configs]
+
+Next: run `/session start` at the beginning of each future work session.
+      run `/session end` before wrapping up to save state.
 ```
 
 ## Rules

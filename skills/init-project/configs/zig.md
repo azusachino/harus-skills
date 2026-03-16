@@ -7,65 +7,40 @@
 indent_size = 4
 ```
 
-## mise.toml
+## Tooling: Nix (flake.nix)
 
-```toml
-[tools]
-zig = "0.15"
-"npm:prettier" = "latest"
-"npm:markdownlint-cli2" = "latest"
+Add to `devShells.default` packages:
 
-[tasks.fmt]
-description = "Format all files"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-zig fmt src/
-prettier --write "**/*.{md,json,yaml,yml}"
-"""
-
-[tasks.fmt-check]
-description = "Check formatting"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-zig fmt --check src/
-prettier --check "**/*.{md,json,yaml,yml}"
-"""
-
-[tasks.build]
-description = "Build the project"
-run = "zig build"
-
-[tasks.test]
-description = "Run tests"
-run = "zig build test"
-
-[tasks.lint]
-description = "Lint markdown files"
-run = 'markdownlint-cli2 "**/*.md"'
-
-[tasks.check]
-description = "Run all checks"
-depends = ["fmt-check", "lint", "build", "test"]
+```nix
+packages = with pkgs; [
+  zig
+  zls
+  # Common
+  nodePackages.prettier
+  nodePackages.markdownlint-cli2
+];
 ```
 
 ## Makefile
 
 ```makefile
+NIX_RUN := $(if $(filter $(IN_NIX_SHELL),),nix develop --command ,)
+
 .PHONY: fmt fmt-check build test lint check clean
 
 fmt:
-	zig fmt src/
+	$(NIX_RUN) zig fmt .
+	$(NIX_RUN) prettier --write "**/*.{md,json,yaml,yml}"
 
 fmt-check:
-	zig fmt --check src/
+	$(NIX_RUN) zig fmt --check .
+	$(NIX_RUN) prettier --check "**/*.{md,json,yaml,yml}"
 
 build:
-	zig build
+	$(NIX_RUN) zig build
 
 test:
-	zig build test
+	$(NIX_RUN) zig build test
 
 lint: fmt-check
 
@@ -75,15 +50,35 @@ clean:
 	rm -rf zig-out .zig-cache
 ```
 
-## CI steps (non-mise)
+## mise.toml (Fallback)
+
+```toml
+[tools]
+zig = "latest"
+"npm:prettier" = "latest"
+
+[tasks.fmt]
+run = "zig fmt . && prettier --write '**/*.{md,json,yaml,yml}'"
+
+[tasks.build]
+run = "zig build"
+
+[tasks.test]
+run = "zig build test"
+
+[tasks.check]
+depends = ["fmt", "build", "test"]
+```
+
+## CI steps (mise fallback)
+
+For Nix projects, use the Nix-native CI from `common.md` — no language setup step needed.
 
 ```yaml
 - uses: mlugg/setup-zig@v2
   with:
-    version: 0.15.2
-- run: zig fmt --check src/
-- run: zig build
-- run: zig build test
+    version: master
+- run: make check
 ```
 
 ## .gitignore additions

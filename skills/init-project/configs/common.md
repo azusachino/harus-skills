@@ -90,7 +90,39 @@ build/
 CHANGELOG.md
 ```
 
-## CI: GitHub Actions (generic with mise)
+## Tooling: Nix (flake.nix)
+
+Base template for `flake.nix`:
+
+```nix
+{
+  description = "Project development environment";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs = { self, nixpkgs, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+      {
+        devShells.default = pkgs.mkShell {
+          packages = with pkgs; [
+            # Base tools
+            nodePackages.prettier
+            nodePackages."markdownlint-cli2"
+            taplo
+            shfmt
+          ];
+        };
+      });
+}
+```
+
+## CI: GitHub Actions (Nix-native)
 
 `.github/workflows/ci.yml`:
 
@@ -108,28 +140,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
-      - run: mise run check
+      - uses: cachix/install-nix-action@v25
+      - run: make check
 ```
 
-## Git Hooks
+## Git Hooks (Nix-native)
 
-Offer to create a pre-commit hook. If the project uses mise, use `mise run`:
-
-`.git/hooks/pre-commit` (or via lefthook/husky):
+`.git/hooks/pre-commit`:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Format staged files
-mise run fmt
+# Format staged files using make (which uses nix if needed)
+make fmt
 
 # Re-add formatted files
 git diff --cached --name-only --diff-filter=ACM | xargs git add
 ```
-
-If not using mise, use language-native commands directly.
 
 ## .gitignore (common base)
 
