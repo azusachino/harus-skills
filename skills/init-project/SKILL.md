@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.7.0
+  version: 0.8.0
 user-invokable: true
 disable-auto-invoke: true
 ---
@@ -37,7 +37,8 @@ Present scan summary, then ask **one question at a time** for anything not infer
 3. "Key coding conventions?" — naming, error handling, testing philosophy
 4. "Quality checks that must pass?" — format, lint, test, coverage
 5. "Prefer Nix + Makefile for tooling? (Opt-in)" — If yes, generate `flake.nix` and `Makefile`.
-6. Per tooling gap: "No [tool] found. Want me to add [suggestion]?"
+6. "Does this project have config management (env files, secrets, migrations) or a release process (tagging, changelogs, CI gates)?" — if yes, generate `rules/config.md` and/or `rules/release.md` in Phase 3.
+7. Per tooling gap: "No [tool] found. Want me to add [suggestion]?"
 
 Tool provisioning: if Nix chosen or detected, recommend nix devShell — do not suggest mise alongside it. If neither detected, ask which the user prefers.
 
@@ -99,6 +100,44 @@ Fields: `Objective`, `Status`, `Completed Steps`, `Remaining Steps`, `Next Actio
 ### .agents/MEMORY.md (fallback only)
 
 Seed with empty decision log header. Used only when MCP is unavailable. Add to `.gitignore`.
+
+### `.claude/` directory
+
+Load `configs/claude-infra.md` for all templates below. Ask permission once for the whole group before writing.
+
+#### CLAUDE.md (root)
+
+Generate if not already present. Populate from scan:
+- Project description from README or detected purpose
+- Key `make` targets from Makefile
+- Rule file references (always `core.md`; add `config.md`/`release.md` if those were confirmed in Phase 2)
+- Key files / entry points from scan
+
+Never overwrite an existing CLAUDE.md — offer to merge instead.
+
+#### `.claude/rules/core.md`
+
+Always generate. Contains hard DO/DON'T rules for all agents. Use the template from `configs/claude-infra.md`, adapting the tool provisioning section to the detected stack (nix/mise/other).
+
+#### `.claude/rules/config.md`
+
+Generate only if user confirmed config management in Phase 2.
+
+#### `.claude/rules/release.md`
+
+Generate only if user confirmed a release process in Phase 2.
+
+#### `.claude/agents/reviewer.md` and `.claude/agents/explorer.md`
+
+Always generate both. Use templates from `configs/claude-infra.md` verbatim — they are generic enough to apply to any project.
+
+#### `.claude/commands/help.md`
+
+Offer optionally: "Want a `/help` slash command stub?" Generate if accepted.
+
+#### `.claude/settings.json`
+
+Already handled above (MCP config). No change needed here.
 
 ### .gitignore additions
 
@@ -167,8 +206,12 @@ Print a concise list of everything created, followed by the session workflow rem
 ```text
 Init complete:
   AGENTS.md, .agents/CONTEXT.md, .agents/CURRENT_TASK.md, .agents/MEMORY.md
-  .gitignore (updated)
+  CLAUDE.md
+  .claude/rules/core.md [+ config.md, release.md if applicable]
+  .claude/agents/reviewer.md, .claude/agents/explorer.md
+  .claude/commands/help.md [if accepted]
   .claude/settings.json (MCP memory)
+  .gitignore (updated)
   docs/architecture.md, docs/setup.md, docs/plan.md, docs/todo.md
   Makefile, [other tooling configs]
 

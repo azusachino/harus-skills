@@ -11,7 +11,7 @@ A collection of custom Claude Code skills for productivity, project management, 
 - `/session start` — Load MCP entities + project context, flag stale docs
 - `/session end` — Write session state to MCP, sync docs
 
-**`/init-project`** (v0.5.0) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, docs, and tooling configs. Nix-first tool provisioning. Gitignores session-volatile files. Offers nix-run or npx for MCP server setup.
+**`/init-project`** (v0.8.0) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, a root `CLAUDE.md`, `.claude/rules/` (core + optional config/release), `.claude/agents/` (reviewer + explorer), `.claude/commands/`, docs, and tooling configs. Nix-first tool provisioning. Gitignores session-volatile files. Offers nix-run or npx for MCP server setup.
 
 ### Language Learning
 

@@ -5,6 +5,7 @@ Configs are split by language to reduce token usage. Read only the files relevan
 ## Always read first
 
 - `configs/common.md` - editorconfig, prettier, CI (nix-native), git hooks, gitignore base
+- `configs/claude-infra.md` - `.claude/` directory templates (rules, agents, commands, CLAUDE.md)
 
 ## Then read the language-specific file
 
