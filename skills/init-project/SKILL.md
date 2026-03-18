@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.8.0
+  version: 0.9.0
 user-invokable: true
 disable-auto-invoke: true
 ---
@@ -107,11 +107,17 @@ Load `configs/claude-infra.md` for all templates below. Ask permission once for 
 
 #### CLAUDE.md (root)
 
-Generate if not already present. Populate from scan:
-- Project description from README or detected purpose
-- Key `make` targets from Makefile
-- Rule file references (always `core.md`; add `config.md`/`release.md` if those were confirmed in Phase 2)
-- Key files / entry points from scan
+Generate if not already present. Keep minimal — `AGENTS.md` is the single source of truth:
+
+```markdown
+@AGENTS.md
+
+## Rules
+
+- See `.claude/rules/core.md` for agent DO/DON'T rules
+[- See `.claude/rules/config.md` for config management rules  # only if config.md generated]
+[- See `.claude/rules/release.md` for release process rules   # only if release.md generated]
+```
 
 Never overwrite an existing CLAUDE.md — offer to merge instead.
 
@@ -127,9 +133,9 @@ Generate only if user confirmed config management in Phase 2.
 
 Generate only if user confirmed a release process in Phase 2.
 
-#### `.claude/agents/reviewer.md` and `.claude/agents/explorer.md`
+#### `.claude/agents/` — skip
 
-Always generate both. Use templates from `configs/claude-infra.md` verbatim — they are generic enough to apply to any project.
+Do NOT generate any `.claude/agents/` files. Global agents (`haiku-developer`, `gemini-developer`, `codex-developer`, `dispatch-debugger`, `repo-scout`) are managed in `~/.claude/agents/` via home-manager and apply to every project automatically.
 
 #### `.claude/commands/help.md`
 
@@ -138,6 +144,17 @@ Offer optionally: "Want a `/help` slash command stub?" Generate if accepted.
 #### `.claude/settings.json`
 
 Already handled above (MCP config). No change needed here.
+
+#### Gemini bootstrap
+
+Generate `GEMINI.md` (derived from `AGENTS.md`) and `.gemini/system.md` (executor behavior):
+
+- **`GEMINI.md`**: extract from `AGENTS.md` — language+version, task runner, conventions, API gotchas, upstream references. Keep under 80 lines. This is read-only / regenerable; note at top: `<!-- Generated from AGENTS.md — edit AGENTS.md, not this file -->`.
+- **`.gemini/system.md`**: copy from `~/.gemini/system.md` if it exists, else skip. Do not generate from scratch.
+
+#### Codex bootstrap
+
+No file needed — Codex reads `AGENTS.md` natively. Ensure `AGENTS.md` contains the full project context.
 
 ### .gitignore additions
 
@@ -205,15 +222,20 @@ Print a concise list of everything created, followed by the session workflow rem
 
 ```text
 Init complete:
-  AGENTS.md, .agents/CONTEXT.md, .agents/CURRENT_TASK.md, .agents/MEMORY.md
-  CLAUDE.md
+  AGENTS.md                          ← single source of truth for all agents
+  CLAUDE.md                          ← @AGENTS.md + .claude/rules refs only
   .claude/rules/core.md [+ config.md, release.md if applicable]
-  .claude/agents/reviewer.md, .claude/agents/explorer.md
   .claude/commands/help.md [if accepted]
   .claude/settings.json (MCP memory)
+  GEMINI.md                          ← generated from AGENTS.md
+  .gemini/system.md                  ← copied from ~/.gemini/system.md
+  .agents/CONTEXT.md, .agents/CURRENT_TASK.md, .agents/MEMORY.md
   .gitignore (updated)
   docs/architecture.md, docs/setup.md, docs/plan.md, docs/todo.md
   Makefile, [other tooling configs]
+
+Global agents (haiku-developer, gemini-developer, codex-developer,
+dispatch-debugger, repo-scout) apply automatically — no per-project setup.
 
 Next: run `/session start` at the beginning of each future work session.
       run `/session end` before wrapping up to save state.
