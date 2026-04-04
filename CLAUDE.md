@@ -10,21 +10,24 @@ This repository contains custom Claude Code skills for productivity, project man
 
 ```text
 skills/                           # Custom skill definitions
-  daily-language-lesson/          # Language lesson generator (Obsidian vault output)
-    SKILL.md                      # Skill definition with YAML frontmatter
-    README.md                     # User documentation
-  notion-language-lesson/         # Language lesson generator (Notion output)
-    SKILL.md
-    README.md
-    scripts/                      # nll-push.py, nll-status.py
-  init-project/                   # Project initialization skill
-    SKILL.md
-  session/                        # Session and memory management
-    SKILL.md
+  code-skills/                    # Project and session management skills
+    init-project/                 # Project initialization skill
+      SKILL.md
+      configs/                    # Bundled config templates
+    session/                      # Session and memory management
+      SKILL.md
+  lang-skills/                    # Language learning skills
+    daily-language-lesson/        # Language lesson generator (Obsidian vault output)
+      SKILL.md                    # Skill definition with YAML frontmatter
+      README.md                   # User documentation
+    notion-language-lesson/       # Language lesson generator (Notion output)
+      SKILL.md
+      README.md
+      scripts/                    # nll-push.py, nll-status.py
 docs/                             # Project documentation
   plans/                          # Design documents
 .claude-plugin/
-  marketplace.json                # Plugin marketplace registration
+  marketplace.json                # Plugin marketplace registration (two plugins: code-skills, lang-skills)
 gemini-extension.json             # Gemini CLI extension manifest
 ```
 
@@ -40,20 +43,20 @@ All skills follow the [Agent Skills Standard](http://agentskills.io) format with
 
 ### Plugin Configuration
 
-The `.claude-plugin/marketplace.json` defines a single plugin:
+The `.claude-plugin/marketplace.json` defines two plugins under the `harus-skills` marketplace:
 
 - **Marketplace name**: `harus-skills`
-- **Plugin**: `harus-skills` — contains all skills
-- Skills invoked as `/skill-name` or `/harus-skills:skill-name`
+- **Plugin `code-skills`**: `init-project`, `session`
+- **Plugin `lang-skills`**: `daily-language-lesson`, `notion-language-lesson`
 
 ### Skill Invocation
 
-| Invocation | Skill |
-| --- | --- |
-| `/daily-language-lesson`, `/dll`, `/lesson` | Language lessons → Obsidian vault |
-| `/notion-language-lesson`, `/nll` | Language lessons → Notion database |
-| `/init-project`, `/init` | Initialize project with agent infrastructure |
-| `/session` | Session and memory management |
+| Invocation | Plugin | Skill |
+| --- | --- | --- |
+| `/daily-language-lesson`, `/dll`, `/lesson` | `lang-skills` | Language lessons → Obsidian vault |
+| `/notion-language-lesson`, `/nll` | `lang-skills` | Language lessons → Notion database |
+| `/init-project`, `/init` | `code-skills` | Initialize project with agent infrastructure |
+| `/session` | `code-skills` | Session and memory management |
 
 ## Skill Reference
 
@@ -64,7 +67,7 @@ MCP-primary session management. When `@modelcontextprotocol/server-memory` is av
 - `/session start` — load MCP entities + project context, flag stale docs
 - `/session end` — write session state to MCP, sync/trim docs
 
-### `init-project` (v0.5.0)
+### `init-project` (v1.0.0)
 
 Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, docs, and tooling configs. Nix-first tool provisioning (mise as fallback). Adds `CURRENT_TASK.md`/`MEMORY.md` to `.gitignore`. Offers nix-run or npx for MCP server invocation.
 
@@ -83,7 +86,7 @@ Same lesson content as `daily-language-lesson`, pushed to a Notion database as s
 ## Agent Behavior
 
 - **Session Management**: Run `/session start` at the start of any session if `.agents/` exists. Run `/session end` before wrapping up.
-- **Version Bump Rule**: After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's `metadata.version`, (2) `gemini-extension.json` version, (3) `.claude-plugin/marketplace.json` metadata.version. Current: both at `1.0.5`.
+- **Version Bump Rule**: After editing any `skills/*/*/SKILL.md`, bump in the same commit: (1) the skill's `metadata.version`, (2) `gemini-extension.json` version, (3) `.claude-plugin/marketplace.json` metadata.version. Check the actual files for current versions — do not rely on a cached value here.
 - **Staging discipline**: Always `git add <specific files>`. Never `git add -A` or `git add .`.
 
 ## Development Workflow
@@ -91,8 +94,8 @@ Same lesson content as `daily-language-lesson`, pushed to a Notion database as s
 ### Setup
 
 ```bash
-make install    # Install all tools via mise
-make dev        # Setup development environment
+nix develop       # Enter dev shell (provides all tools via nixpkgs)
+make install-hooks  # Install git pre-commit hooks
 ```
 
 ### Common Commands

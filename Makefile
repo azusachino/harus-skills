@@ -83,7 +83,7 @@ clean:
 
 verify:
 	@echo "✅ Verifying repository structure..."
-	@for skill_dir in skills/*/; do \
+	@for skill_dir in skills/*/*/; do \
 		skill_name=$$(basename "$$skill_dir"); \
 		if [ ! -f "$$skill_dir/SKILL.md" ]; then \
 			echo "❌ Missing SKILL.md in $$skill_name"; \
@@ -111,11 +111,12 @@ verify:
 list-skills:
 	@echo "📚 Available skills:"
 	@echo ""
-	@for skill_dir in skills/*/; do \
+	@for skill_dir in skills/*/*/; do \
 		if [ -f "$$skill_dir/SKILL.md" ]; then \
+			category=$$(basename "$$(dirname "$$skill_dir")"); \
 			skill_name=$$(basename "$$skill_dir"); \
 			description=$$(grep "^description:" "$$skill_dir/SKILL.md" | cut -d':' -f2- | xargs); \
-			echo "  • $$skill_name"; \
+			echo "  • [$$category] $$skill_name"; \
 			if [ -n "$$description" ]; then \
 				echo "    $$description"; \
 			fi; \

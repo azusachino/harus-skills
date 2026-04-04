@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 0.9.0
+  version: 1.0.0
 user-invokable: true
 disable-auto-invoke: true
 ---
@@ -18,7 +18,7 @@ Silently collect before asking anything:
 
 - **Language/framework**: file extensions, config files, dependency manifests
 - **Build system**: `Makefile`, `Cargo.toml`, `go.mod`, `package.json`, `build.zig`, etc.
-- **Existing agent infra**: `AGENTS.md`, `.agents/`, `CLAUDE.md`, `.cursor/`, `.aider/`
+- **Existing agent infra**: `AGENTS.md`, `.agents/`, `CLAUDE.md`, `.cursor/`, `.aider/`, `.mcp.json`, `.worktreeinclude`
 - **Tooling**:
   - Nix: `flake.nix`, `shell.nix`, `default.nix`, `devenv.nix`, `flake.lock` — preferred
   - Mise: `mise.toml`, `.mise.toml` — fallback when nix absent
@@ -42,7 +42,24 @@ Present scan summary, then ask **one question at a time** for anything not infer
 
 Tool provisioning: if Nix chosen or detected, recommend nix devShell — do not suggest mise alongside it. If neither detected, ask which the user prefers.
 
-If MCP not detected: "No MCP memory server found. Add `@modelcontextprotocol/server-memory`? It enables persistent cross-project memory." Write config in Phase 3 if accepted.
+**Do not re-scaffold MCPs that are already global.** First check `~/.claude/settings.json` (and `~/.claude.json`) for existing `mcpServers`. Servers already configured there (memory, sequential-thinking, fetch, git, context7, etc.) are available in every project — do not add them to `.mcp.json`.
+
+`.mcp.json` is for **project-specific** servers only: services, credentials, or tools scoped to this repository. Ask only if the project has one of these:
+
+```
+Does this project need any project-specific MCP servers in .mcp.json?
+(Servers already in ~/.claude/settings.json are available globally — skip those.)
+
+  [ ] github     @modelcontextprotocol/server-github  — if this repo uses GitHub and PAT is project-scoped
+  [ ] postgres   (connection string for this project's DB)
+  [ ] supabase   @supabase/mcp-server-supabase        — if project uses Supabase
+  [ ] sqlite     mcp-server-sqlite                    — if project has a local SQLite DB
+  [ ] filesystem @modelcontextprotocol/server-filesystem — if project accesses paths outside the repo
+
+If none apply, skip .mcp.json entirely.
+```
+
+Write selected servers to `.mcp.json` in Phase 3.
 
 ## Phase 3: Generate Agent Infrastructure
 
@@ -125,6 +142,8 @@ Never overwrite an existing CLAUDE.md — offer to merge instead.
 
 Always generate. Contains hard DO/DON'T rules for all agents. Use the template from `configs/claude-infra.md`, adapting the tool provisioning section to the detected stack (nix/mise/other).
 
+Rules without `paths:` frontmatter load at every session start (like CLAUDE.md). Rules with `paths:` frontmatter load only when Claude reads a file matching those globs — use this for topic-scoped conventions.
+
 #### `.claude/rules/config.md`
 
 Generate only if user confirmed config management in Phase 2.
@@ -132,6 +151,24 @@ Generate only if user confirmed config management in Phase 2.
 #### `.claude/rules/release.md`
 
 Generate only if user confirmed a release process in Phase 2.
+
+#### `.claude/rules/testing.md` (optional, path-scoped)
+
+Offer if a test directory or test file pattern is detected. Use `paths:` frontmatter so it only loads when Claude touches test files:
+
+```markdown
+---
+paths:
+  - "**/*.test.*"
+  - "**/*_test.*"
+  - "test/**"
+  - "tests/**"
+---
+
+# Testing conventions
+
+[project-specific testing rules]
+```
 
 #### `.claude/agents/` — skip
 
@@ -143,7 +180,86 @@ Offer optionally: "Want a `/help` slash command stub?" Generate if accepted.
 
 #### `.claude/settings.json`
 
-Already handled above (MCP config). No change needed here.
+Scaffold with permissions and hooks. Ask permission before writing. Adapt `allow` list to detected task runner and tooling.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(make *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git status *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)"
+    ]
+  }
+}
+```
+
+If Nix detected, add `"Bash(nix develop *)"` to the allow list.
+
+Always include the `block-no-verify` hook — it is lightweight and protects git hooks on every project:
+
+```json
+"hooks": {
+  "PreToolUse": [{
+    "matcher": "Bash",
+    "hooks": [{ "type": "command", "command": "npx -y block-no-verify" }],
+    "description": "Block --no-verify flag to protect pre-commit/commit-msg/pre-push hooks"
+  }]
+}
+```
+
+Use `npx -y block-no-verify` (no version pin) — npm caches the resolved version, so repeated invocations are fast. A pinned version silently becomes stale and adds cold-cache latency on every Bash tool call.
+
+If OS is macOS (detected via `uname` = `Darwin` in Phase 1), also offer a desktop notification hook:
+
+```json
+"Stop": [{
+  "matcher": "*",
+  "hooks": [{ "type": "command", "command": "bash -c 'command -v osascript >/dev/null && osascript -e '\"'\"'display notification \"Claude finished\" with title \"Claude Code\"'\"'\"''", "async": true, "timeout": 5 }],
+  "description": "macOS desktop notification when Claude finishes a response"
+}]
+```
+
+The `command -v osascript` guard ensures it degrades silently if run on Linux/WSL. Do not scaffold this hook unconditionally — only offer it when macOS is confirmed.
+
+If a formatter is detected (prettier, ruff, taplo, etc.), also offer a `PostToolUse` hook scoped to the edited file path. Use this template, adapting the formatter command:
+
+```json
+"PostToolUse": [{
+  "matcher": "Edit|Write",
+  "hooks": [{
+    "type": "command",
+    "command": "jq -r '.tool_input.file_path // empty' | xargs -I{} prettier --write {} 2>/dev/null || true"
+  }],
+  "description": "Auto-format file after each edit (prettier)"
+}]
+```
+
+Scope to the specific file path (`tool_input.file_path`) — never run the formatter on the whole project on every edit, as this causes unexpected diffs and performance regression.
+
+Do not put MCP config here — MCP goes in `.mcp.json` at the project root.
+
+Note: tell the user they can create `.claude/settings.local.json` (gitignored automatically) for personal permission overrides on top of this shared config.
+
+#### `.worktreeinclude`
+
+Generate at the project root (not inside `.claude/`). Lists gitignored files that Claude should copy into new worktrees when using `isolation: worktree` or the `EnterWorktree` tool. Uses `.gitignore` syntax.
+
+Cross-reference the project's `.gitignore` during Phase 1 to find actual ignored files that exist locally (`.env`, `.envrc`, `secrets.yaml`, `config/credentials.*`, etc.) and pre-populate real entries — not stubs. Fall back to the common template only when no gitignored dev files are found:
+
+```text
+# Local environment — copied into every new worktree
+.env
+.env.local
+
+# Add project-specific gitignored secrets/config here
+```
+
+Ask permission before writing.
 
 #### Gemini bootstrap
 
@@ -169,22 +285,32 @@ These are session-volatile — keeping them tracked creates git noise.
 
 ### MCP server config (if user accepted)
 
-Write to each detected agent config, skipping any that already have `memory` configured.
+Write to each detected agent config, skipping any that already have the server configured.
 
-**Default invocation** (npx):
+**Claude Code** — write to `.mcp.json` at project root (team-shared, committed). Only include servers the user selected; omit any already configured globally. Use `${ENV_VAR}` references for secrets — never hardcode values. Example for a project using GitHub + Postgres:
 
 ```json
 {
   "mcpServers": {
-    "memory": {
+    "github": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}" }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"]
     }
   }
 }
 ```
 
-Targets: `.claude/settings.json` (Claude Code), `.gemini/settings.json` (Gemini CLI), `.codex/config.toml` (Codex). Default to `.claude/settings.json` if no agent config detected.
+If no project-specific servers were selected, **skip `.mcp.json` entirely** — do not create an empty file.
+
+**Gemini CLI** — write to `.gemini/settings.json` (same `mcpServers` structure). Note: verify whether Gemini CLI gitignores this file by default — if so, inform the user it will not be shared with teammates automatically.
+**Codex** — Codex reads `AGENTS.md` natively; no separate MCP config file needed. Skip Codex MCP scaffolding.
+
+Default to `.mcp.json` if no agent config detected. Do NOT write MCP config into `.claude/settings.json` — that file is for permissions and hooks only.
 
 ## Phase 4: Generate Documentation
 
@@ -212,8 +338,11 @@ Reference configs: read `CONFIGS.md` (same directory) for the index, then load o
 When generating the `Makefile` for a Nix project, use a fallback wrapper to ensure commands work outside the dev shell:
 
 ```makefile
-NIX_RUN := $(if $(filter $(IN_NIX_SHELL),),nix develop --command ,)
-# Then use $(NIX_RUN) <cmd> in targets
+NIX_RUN := $(if $(IN_NIX_SHELL),,nix develop --command )
+# $(IN_NIX_SHELL) is non-empty inside the shell, empty outside.
+# $(if var, true, false): if inside shell → empty prefix (run directly);
+#                          if outside shell → prefix with "nix develop --command "
+# Then use: $(NIX_RUN)<cmd>  (no space before cmd when NIX_RUN is empty)
 ```
 
 ## Phase 6: Summary
@@ -224,15 +353,20 @@ Print a concise list of everything created, followed by the session workflow rem
 Init complete:
   AGENTS.md                          ← single source of truth for all agents
   CLAUDE.md                          ← @AGENTS.md + .claude/rules refs only
-  .claude/rules/core.md [+ config.md, release.md if applicable]
+  .mcp.json                          ← project-specific MCP servers only (omit if none needed)
+  .worktreeinclude                   ← gitignored files copied into worktrees
+  .claude/settings.json              ← permissions + hooks (no MCP here)
+  .claude/rules/core.md [+ config.md, release.md, testing.md if applicable]
   .claude/commands/help.md [if accepted]
-  .claude/settings.json (MCP memory)
   GEMINI.md                          ← generated from AGENTS.md
   .gemini/system.md                  ← copied from ~/.gemini/system.md
   .agents/CONTEXT.md, .agents/CURRENT_TASK.md, .agents/MEMORY.md
   .gitignore (updated)
   docs/architecture.md, docs/setup.md, docs/plan.md, docs/todo.md
   Makefile, [other tooling configs]
+
+Personal overrides: create .claude/settings.local.json (auto-gitignored) for
+permissions that apply only to your machine.
 
 Global agents (haiku-developer, gemini-developer, codex-developer,
 dispatch-debugger, repo-scout) apply automatically — no per-project setup.

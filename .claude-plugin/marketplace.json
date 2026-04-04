@@ -6,15 +6,22 @@
   },
   "metadata": {
     "description": "Custom Claude Code skills for productivity and learning",
-    "version": "1.6.0"
+    "version": "1.7.0"
   },
   "plugins": [
     {
-      "name": "harus-skills",
-      "description": "harus useful skills",
+      "name": "code-skills",
+      "description": "Project and session management skills",
       "source": "./",
       "strict": false,
-      "skills": ["./skills/daily-language-lesson", "./skills/init-project", "./skills/session", "./skills/notion-language-lesson"]
+      "skills": ["./skills/code-skills/init-project", "./skills/code-skills/session"]
+    },
+    {
+      "name": "lang-skills",
+      "description": "Language learning skills",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/lang-skills/daily-language-lesson", "./skills/lang-skills/notion-language-lesson"]
     }
   ]
 }
