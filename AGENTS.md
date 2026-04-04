@@ -9,15 +9,17 @@ A collection of custom agent skills for productivity, project management, and la
 ```text
 harus-skills/
   skills/
-    daily-language-lesson/       # Language lessons → Obsidian vault (en/ja/es)
-    notion-language-lesson/      # Language lessons → Notion database (en/ja/es)
-      scripts/                   # nll-push.py, nll-status.py
-    init-project/                # Project scaffolding and agent infrastructure
-    session/                     # MCP-primary memory management, CONTEXT.md as living doc
+    code-skills/                 # Project and session management skills
+      init-project/              # Project scaffolding and agent infrastructure
+      session/                   # MCP-primary memory management, CONTEXT.md as living doc
+    lang-skills/                 # Language learning skills
+      daily-language-lesson/     # Language lessons → Obsidian vault (en/ja/es)
+      notion-language-lesson/    # Language lessons → Notion database (en/ja/es)
+        scripts/                 # nll-push.py, nll-status.py
   docs/
     plans/                       # Design documents
   .claude-plugin/
-    marketplace.json             # Plugin marketplace registration
+    marketplace.json             # Plugin marketplace registration (two plugins: code-skills, lang-skills)
   gemini-extension.json          # Gemini CLI extension manifest
   Makefile                       # Task runner (fmt, lint, test, check, verify)
 ```
@@ -27,8 +29,8 @@ Each skill is a directory with a `SKILL.md` (YAML frontmatter + markdown body) a
 ### Plugin Structure
 
 - **Marketplace**: `azusachino/harus-skills`
-- **Plugin**: `harus-skills` (single plugin — all skills)
-- Install: `/plugin marketplace add azusachino/harus-skills` → `/plugin install harus-skills@harus-skills`
+- **Plugins**: `code-skills` (init-project, session) and `lang-skills` (daily-language-lesson, notion-language-lesson)
+- Install: `/plugin marketplace add azusachino/harus-skills` → `/plugin install harus-skills@code-skills` or `harus-skills@lang-skills`
 - Invocation: `/skill-name` or `/harus-skills:skill-name`
 
 ## Skills

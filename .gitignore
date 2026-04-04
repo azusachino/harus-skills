@@ -72,3 +72,8 @@ scratch/
 
 # Git Worktrees
 .worktrees/
+
+# Agent session files (local memory — not tracked)
+.agents/CONTEXT.md
+.agents/CURRENT_TASK.md
+.agents/MEMORY.md
