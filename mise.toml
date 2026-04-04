@@ -6,9 +6,6 @@
 "npm:prettier" = "latest"   # Format JSON, YAML
 "npm:@taplo/cli" = "latest" # Format TOML files
 shfmt = "latest"            # Format shell scripts
-uv = "latest"               # Python package and tool manager
-ruff = "latest"             # Python linter and formatter
-pytest = "latest"           # Python test runner
 
 # Git tools (optional, for enhanced workflows)
 "npm:commitizen" = "latest" # Standardized commit messages
