@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-nll-push.py — Push generated lessons to a Notion database row.
+nll_push.py — Push generated lessons to a Notion database row.
 
 Usage:
-  python3 nll-push.py TARGET_DATE THEME --en EN_FILE --ja JA_FILE --es ES_FILE
+  uv run python nll_push.py TARGET_DATE THEME --en EN_FILE --ja JA_FILE --es ES_FILE
                       [--replace PAGE_ID]
 
   --replace PAGE_ID  Archive this existing page before creating a new one

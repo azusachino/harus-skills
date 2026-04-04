@@ -3,7 +3,7 @@ name: session
 description: Use when starting or ending a work session, when a project has a .agents/ directory at the start of a conversation, or when user says "start session", "let's continue", "wrap up", or "end session" — restores prior context and saves session state
 metadata:
   author: haru
-  version: 1.5.0
+  version: 1.9.0
 ---
 
 # Session Skill
@@ -24,7 +24,7 @@ Run `/session end` when the user says "wrap up", "end session", "save context", 
 
 **Step 2 — Load global memory**:
 
-- If MCP: call `read_graph()`. Load category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`), the project entity (cwd basename, lowercased, hyphens), and the session entity `[project-name]:session`.
+- If MCP: use `search_nodes` or `open_nodes` for targeted retrieval of category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`), the project entity (cwd basename, lowercased, hyphens), and the session entity `[project-name]:session`. Avoid `read_graph()` for large projects.
 - If no MCP: try `save_memory` tool for preferences; fall back silently.
 
 **Step 3 — Load project context** (always, regardless of MCP):

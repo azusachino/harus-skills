@@ -1,6 +1,6 @@
 # Makefile for managing harus-skills tasks
 
-.PHONY: help install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link lesson lesson-date test
+.PHONY: help install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link lesson lesson-date test lint-links bump-version
 
 # Default target
 help:
@@ -11,14 +11,16 @@ help:
 	@echo "  make install-hooks - Install git pre-commit hooks"
 	@echo "  make fmt          - Format all files"
 	@echo "  make lint         - Lint Python files"
-	@echo "  make check        - Run all checks (format, lint, verify, test)"
 	@echo "  make test         - Run pytest suite"
+	@echo "  make lint-links   - Verify all internal documentation links"
+	@echo "  make check        - Run all checks (format, lint, verify, test, links)"
 	@echo "  make verify       - Verify repository structure"
 	@echo "  make list-skills  - List all available skills"
 	@echo "  make clean        - Remove generated lesson files"
 	@echo "  make link         - Link as a Gemini CLI extension"
 	@echo "  make lesson       - Generate today's lesson"
 	@echo "  make lesson-date DATE=YYYY-MM-DD - Generate lesson for specific date"
+	@echo "  make bump-version VERSION=x.y.z - Synchronize versions across manifests"
 
 install-hooks:
 	@echo "🪝 Installing git hooks..."
@@ -77,6 +79,10 @@ lint-fix:
 	fi
 	@echo "Done."
 
+lint-links:
+	@echo "Checking markdown links..."
+	@find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" | xargs -I{} grep -o '\[.*\](.*)' {} | grep -o '(.*)' | tr -d '()' | grep -v '^http' | grep -v '^#' | xargs -I{} ls {} > /dev/null
+
 clean:
 	@echo "🧹 Cleaning generated lessons..."
 	@rm -rf lessons/
@@ -129,7 +135,7 @@ test:
 	@echo "Running tests..."
 	@uv run pytest tests/
 
-check: fmt-check lint verify test
+check: fmt-check lint verify test lint-links
 	@echo "✅ All checks passed!"
 
 link:
@@ -144,3 +150,11 @@ lesson-date:
 		exit 1; \
 	fi
 	@claude "/daily-language-lesson $(DATE)"
+
+bump-version:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "❌ Error: VERSION not provided. Usage: make bump-version VERSION=1.9.0"; \
+		exit 1; \
+	fi
+	@uv run scripts/bump_version.py $(VERSION)
+	@echo "✅ Bumped version to $(VERSION)"

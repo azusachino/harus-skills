@@ -3,7 +3,7 @@ name: notion-language-lesson
 aliases: [nll]
 description: Generate daily language lessons (English advanced, Japanese N1, Spanish B1–B2) and push them directly to a Notion database as structured toggle-block pages. Falls back to Obsidian vault if Notion push fails.
 metadata:
-  version: 1.1.0
+  version: 1.9.0
 allowed-tools: Bash Write
 ---
 
@@ -33,7 +33,7 @@ If either is missing, stop and tell the user:
 Run the status script:
 
 ```bash
-python3 "<BASE_DIR>/scripts/nll_status.py" [ARGUMENT]
+uv run "<BASE_DIR>/scripts/nll_status.py" [ARGUMENT]
 ```
 
 Parse `KEY=value` output:
@@ -124,11 +124,11 @@ Spanish lesson additionally includes a `## ✍️ Writing Exercise` section befo
 
 ```bash
 # Normal create:
-python3 "<BASE_DIR>/scripts/nll_push.py" TARGET_DATE "THEME" \
+uv run "<BASE_DIR>/scripts/nll_push.py" TARGET_DATE "THEME" \
   --en /tmp/nll-en.md --ja /tmp/nll-ja.md --es /tmp/nll-es.md
 
 # Overwrite (user confirmed, EXISTING_PAGE_ID from Step 1):
-python3 "<BASE_DIR>/scripts/nll_push.py" TARGET_DATE "THEME" \
+uv run "<BASE_DIR>/scripts/nll_push.py" TARGET_DATE "THEME" \
   --en /tmp/nll-en.md --ja /tmp/nll-ja.md --es /tmp/nll-es.md \
   --replace EXISTING_PAGE_ID
 ```

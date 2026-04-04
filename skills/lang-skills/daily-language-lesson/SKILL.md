@@ -3,7 +3,7 @@ name: daily-language-lesson
 description: Generate daily language lessons for English (advanced), Japanese (N1), and Spanish (B1–B2) with reading passages, vocabulary, comprehension questions, grammar practice, and writing exercises — saved directly to your Obsidian vault.
 metadata:
   author: haru
-  version: 1.0.0
+  version: 1.9.0
 user-invokable: true
 disable-model-invocation: true
 ---
@@ -228,7 +228,7 @@ All three lessons must:
 - **Fill mode** (file exists with empty template blocks): use the helper script for a robust update. First, write each lesson's content (the inner part of the `ad-note` block) to temporary files, then run:
 
   ```bash
-  python3 "<BASE_DIR>/scripts/dll-fill.py" "OUTPUT_PATH" --en "TMP_EN" --ja "TMP_JA" --es "TMP_ES"
+  uv run "<BASE_DIR>/scripts/dll_fill.py" "OUTPUT_PATH" --en "TMP_EN" --ja "TMP_JA" --es "TMP_ES"
   ```
 
 - **Append mode** (file exists, no `## writing` yet): append the three sections after all existing content

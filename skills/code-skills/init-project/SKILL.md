@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 1.0.0
+  version: 1.9.0
 user-invokable: true
 disable-auto-invoke: true
 ---
@@ -32,13 +32,13 @@ Silently collect before asking anything:
 
 Present scan summary, then ask **one question at a time** for anything not inferable:
 
-1. "What does this project do?" — for AGENTS.md overview
+1. "What does this project do?" — Before asking, draft a suggested description by summarizing `README.md` if available.
 2. "Architecture style?" — monolith / library / CLI / API / microservice
 3. "Key coding conventions?" — naming, error handling, testing philosophy
-4. "Quality checks that must pass?" — format, lint, test, coverage
-5. "Prefer Nix + Makefile for tooling? (Opt-in)" — If yes, generate `flake.nix` and `Makefile`.
+...
 6. "Does this project have config management (env files, secrets, migrations) or a release process (tagging, changelogs, CI gates)?" — if yes, generate `rules/config.md` and/or `rules/release.md` in Phase 3.
-7. Per tooling gap: "No [tool] found. Want me to add [suggestion]?"
+7. "Add a GitHub Action for quality checks (make check)?" — If yes, scaffold `.github/workflows/check.yml`.
+8. Per tooling gap: "No [tool] found. Want me to add [suggestion]?"
 
 Tool provisioning: if Nix chosen or detected, recommend nix devShell — do not suggest mise alongside it. If neither detected, ask which the user prefers.
 
