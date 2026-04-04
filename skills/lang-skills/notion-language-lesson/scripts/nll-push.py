@@ -36,22 +36,40 @@ def get_env(key: str) -> str:
 
 
 def notion_request(
-    api_key: str, method: str, path: str, payload: Optional[Dict[str, Any]] = None
+    api_key: str,
+    method: str,
+    path: str,
+    payload: Optional[Dict[str, Any]] = None,
+    max_retries: int = 5,
 ) -> Dict[str, Any]:
     url = f"https://api.notion.com/v1{path}"
     data = json.dumps(payload).encode() if payload else None
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "Notion-Version": "2022-06-28",
-        },
-        method=method,
-    )
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read())
+
+    for i in range(max_retries):
+        try:
+            req = urllib.request.Request(
+                url,
+                data=data,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "Notion-Version": "2022-06-28",
+                },
+                method=method,
+            )
+            with urllib.request.urlopen(req) as resp:
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            if e.code in [429, 502, 503, 504] and i < max_retries - 1:
+                import time
+                import random
+
+                wait = (2**i) + random.random()
+                print(f"Retrying in {wait:.2f}s... ({e.code})", file=sys.stderr)
+                time.sleep(wait)
+                continue
+            raise
+    raise Exception(f"Max retries exceeded for {path}")
 
 
 def archive_page(api_key: str, page_id: str) -> None:
