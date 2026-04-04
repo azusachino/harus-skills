@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Custom Claude Code skills for productivity and learning",
-    "version": "1.7.0"
+    "version": "1.8.0"
   },
   "plugins": [
     {
