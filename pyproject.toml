@@ -1,0 +1,10 @@
+[project]
+name = "harus-skills"
+version = "1.8.0"
+description = "Custom Claude Code skills for productivity and learning"
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]

@@ -20,6 +20,7 @@
             taplo # TOML formatter
             shfmt # shell script formatter
             ruff # Python linter/formatter
+            uv # Python package and tool manager
           ];
         };
       }

@@ -33,7 +33,7 @@ If either is missing, stop and tell the user:
 Run the status script:
 
 ```bash
-python3 "<BASE_DIR>/scripts/nll-status.py" [ARGUMENT]
+python3 "<BASE_DIR>/scripts/nll_status.py" [ARGUMENT]
 ```
 
 Parse `KEY=value` output:
@@ -43,7 +43,7 @@ Parse `KEY=value` output:
 - `EXISTING_PAGE_ID` — non-empty when MODE=warn; the ID of the existing page
 - `RECENT_THEMES` — pipe-separated; avoid these when picking today's theme
 
-If `MODE=warn`: ask "A lesson for TARGET_DATE already exists in Notion. Overwrite?" and wait for confirmation. If confirmed, pass `--replace EXISTING_PAGE_ID` to nll-push.py in Step 3 so the old page is archived before a new one is created.
+If `MODE=warn`: ask "A lesson for TARGET_DATE already exists in Notion. Overwrite?" and wait for confirmation. If confirmed, pass `--replace EXISTING_PAGE_ID` to nll_push.py in Step 3 so the old page is archived before a new one is created.
 
 ### Step 2: Generate lessons
 
@@ -124,11 +124,11 @@ Spanish lesson additionally includes a `## ✍️ Writing Exercise` section befo
 
 ```bash
 # Normal create:
-python3 "<BASE_DIR>/scripts/nll-push.py" TARGET_DATE "THEME" \
+python3 "<BASE_DIR>/scripts/nll_push.py" TARGET_DATE "THEME" \
   --en /tmp/nll-en.md --ja /tmp/nll-ja.md --es /tmp/nll-es.md
 
 # Overwrite (user confirmed, EXISTING_PAGE_ID from Step 1):
-python3 "<BASE_DIR>/scripts/nll-push.py" TARGET_DATE "THEME" \
+python3 "<BASE_DIR>/scripts/nll_push.py" TARGET_DATE "THEME" \
   --en /tmp/nll-en.md --ja /tmp/nll-ja.md --es /tmp/nll-es.md \
   --replace EXISTING_PAGE_ID
 ```

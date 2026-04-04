@@ -1,6 +1,6 @@
 # Makefile for managing harus-skills tasks
 
-.PHONY: help install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link lesson lesson-date
+.PHONY: help install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link lesson lesson-date test
 
 # Default target
 help:
@@ -11,7 +11,8 @@ help:
 	@echo "  make install-hooks - Install git pre-commit hooks"
 	@echo "  make fmt          - Format all files"
 	@echo "  make lint         - Lint Python files"
-	@echo "  make check        - Run all checks (format, lint, verify)"
+	@echo "  make check        - Run all checks (format, lint, verify, test)"
+	@echo "  make test         - Run pytest suite"
 	@echo "  make verify       - Verify repository structure"
 	@echo "  make list-skills  - List all available skills"
 	@echo "  make clean        - Remove generated lesson files"
@@ -46,7 +47,7 @@ fmt:
 		shfmt -w -i 2 -ci -bn $$(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules); \
 	fi
 	@if find . -name "*.py" | grep -q .; then \
-		ruff format .; \
+		uv run ruff format .; \
 	fi
 	@echo "Done."
 
@@ -58,21 +59,21 @@ fmt-check:
 		shfmt -d -i 2 -ci -bn $$(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules); \
 	fi
 	@if find . -name "*.py" | grep -q .; then \
-		ruff format --check .; \
+		uv run ruff format --check .; \
 	fi
 	@echo "All files are properly formatted."
 
 lint:
 	@echo "Linting Python files..."
 	@if find . -name "*.py" | grep -q .; then \
-		ruff check .; \
+		uv run ruff check .; \
 	fi
 	@echo "Done."
 
 lint-fix:
 	@echo "Linting and fixing Python files..."
 	@if find . -name "*.py" | grep -q .; then \
-		ruff check . --fix; \
+		uv run ruff check . --fix; \
 	fi
 	@echo "Done."
 
@@ -124,7 +125,11 @@ list-skills:
 		fi; \
 	done
 
-check: fmt-check lint verify
+test:
+	@echo "Running tests..."
+	@uv run pytest tests/
+
+check: fmt-check lint verify test
 	@echo "✅ All checks passed!"
 
 link:
