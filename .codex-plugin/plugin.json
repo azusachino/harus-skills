@@ -1,0 +1,14 @@
+{
+  "name": "harus-skills",
+  "version": "1.9.0",
+  "description": "Project scaffolding and session management skills for Codex workflows.",
+  "author": {
+    "name": "haru",
+    "email": "azusachino@duck.com"
+  },
+  "repository": "https://github.com/azusachino/harus-skills",
+  "license": "MIT",
+  "keywords": ["skills", "session", "init-project", "productivity"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

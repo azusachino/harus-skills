@@ -39,26 +39,17 @@ Or for local development:
 gemini extensions link /path/to/harus-skills
 ```
 
-## MCP Memory Setup
+## MCP Servers
 
-The `session` and `init-project` skills use `@modelcontextprotocol/server-memory` for persistent global memory across projects. Configure it globally so it's available in every project — do not add it to per-project `.mcp.json`.
+This repo ships a `.mcp.json` with three servers used by the skills:
 
-**Claude Code** — add to `~/.claude/settings.json`:
+| Server | Purpose |
+| --- | --- |
+| `memory` (`@modelcontextprotocol/server-memory`) | Persistent session state across conversations |
+| `fetch` (`mcp-server-fetch` via uvx) | HTTP fetching for skills that need web access |
+| `sequential-thinking` (`@modelcontextprotocol/server-sequential-thinking`) | Structured reasoning for complex tasks |
 
-```json
-{
-  "mcpServers": {
-    "memory": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
-    }
-  }
-}
-```
-
-**Gemini CLI** — add to `~/.gemini/settings.json` (same `mcpServers` structure).
-
-`/init-project` checks for existing global MCP config and skips re-scaffolding servers you already have. It only writes `.mcp.json` for project-specific servers (databases, GitHub PATs, etc.).
+When installed as a plugin, these are picked up automatically. To use globally, copy the `mcpServers` entries to `~/.claude/settings.json` (Claude Code) or `~/.gemini/settings.json` (Gemini CLI).
 
 ## Development
 
