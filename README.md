@@ -49,7 +49,9 @@ This repo ships a `.mcp.json` with three servers used by the skills:
 | `fetch` (`mcp-server-fetch` via uvx) | HTTP fetching for skills that need web access |
 | `sequential-thinking` (`@modelcontextprotocol/server-sequential-thinking`) | Structured reasoning for complex tasks |
 
-When installed as a plugin, these are picked up automatically. To use globally, copy the `mcpServers` entries to `~/.claude/settings.json` (Claude Code) or `~/.gemini/settings.json` (Gemini CLI).
+When installed as a Claude Code plugin, server names are namespaced to `plugin:harus-skills:<name>` — but tool function names (`search_nodes`, `fetch`, `sequentialthinking`) are unchanged, so skill detection logic works regardless. For Codex, `.mcp.json` is read directly with no prefix.
+
+**Recommended**: configure these globally in `~/.claude/settings.json` (Claude Code) or `~/.gemini/settings.json` (Gemini CLI) to avoid duplicates and the namespace prefix.
 
 ## Development
 

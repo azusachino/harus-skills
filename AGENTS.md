@@ -79,6 +79,8 @@ make clean        # Remove generated lessons
 
 Three MCP servers are bundled in `.mcp.json`. Detect availability by checking the tool list at session start.
 
+**Namespacing**: when installed as a Claude Code plugin, server names are scoped to `plugin:harus-skills:<name>` (e.g. `plugin:harus-skills:memory`). Tool *function* names (`search_nodes`, `fetch`, `sequentialthinking`) are unaffected — detection by function name works regardless. For Codex, `.mcp.json` is read directly with no namespacing. Recommend users configure these servers globally (`~/.claude/settings.json`) to avoid duplicates and the namespace prefix.
+
 ### `memory` (`@modelcontextprotocol/server-memory`)
 
 **Detect**: `search_nodes`, `create_entities`, `add_observations` present in tool list.

@@ -68,6 +68,8 @@ Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` 
 
 Three servers are bundled in `.mcp.json`. Detect by checking the tool list.
 
+**Namespacing**: when installed as a Claude Code plugin, server names become `plugin:harus-skills:<name>`. Tool function names (`search_nodes`, `fetch`, `sequentialthinking`) are unaffected — always detect by function name, not server name. For Codex, `.mcp.json` is read directly with no prefix. Users with these servers already in `~/.claude/settings.json` will get duplicate instances — recommend global config over relying on the plugin-bundled MCPs.
+
 | Server | Detect via | When to use |
 | --- | --- | --- |
 | `memory` | `search_nodes`, `create_entities`, `add_observations` | Persisting session state and facts across conversations |
