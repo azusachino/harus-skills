@@ -4,32 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This repository contains custom Claude Code skills for productivity, project management, and language learning. Skills are user-invocable commands that extend Claude Code's capabilities. The repository uses Claude's plugin marketplace system via `.claude-plugin/marketplace.json` configuration.
+This repository contains custom Claude Code skills for productivity and project management. Skills are user-invocable commands that extend Claude Code's capabilities. The repository uses Claude's plugin marketplace system via `.claude-plugin/marketplace.json` configuration.
 
 ## Repository Structure
 
 ```text
-skills/                           # Custom skill definitions
-  code-skills/                    # Project and session management skills
-    init-project/                 # Project initialization skill
-      SKILL.md
-      configs/                    # Bundled config templates
-    session/                      # Session and memory management
-      SKILL.md
-  lang-skills/                    # Language learning skills
-    daily-language-lesson/        # Language lesson generator (Obsidian vault output)
-      SKILL.md                    # Skill definition with YAML frontmatter
-      README.md                   # User documentation
-    notion-language-lesson/       # Language lesson generator (Notion output)
-      SKILL.md
-      README.md
-      scripts/                    # nll-push.py, nll-status.py
+skills/                           # Custom skill definitions (flat)
+  init-project/                   # Project initialization skill
+    SKILL.md
+    configs/                      # Bundled config templates
+  session/                        # Session and memory management
+    SKILL.md
 docs/                             # Project documentation
   plans/                          # Design documents
 .claude-plugin/
-  marketplace.json                # Plugin marketplace registration (two plugins: code-skills, lang-skills)
+  marketplace.json                # Plugin marketplace registration
+.codex-plugin/
+  plugin.json                     # Codex plugin manifest
+.mcp.json                         # Bundled MCP servers
 gemini-extension.json             # Gemini CLI extension manifest
 ```
+
+Note: language learning skills (`notion-language-lesson`) live in `harus-nix/.claude/skills/` as personal-only skills.
 
 ## Architecture
 
@@ -43,20 +39,17 @@ All skills follow the [Agent Skills Standard](http://agentskills.io) format with
 
 ### Plugin Configuration
 
-The `.claude-plugin/marketplace.json` defines two plugins under the `harus-skills` marketplace:
+The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-skills` marketplace. Skills are auto-discovered from `skills/` — no explicit listing required.
 
 - **Marketplace name**: `harus-skills`
-- **Plugin `code-skills`**: `init-project`, `session`
-- **Plugin `lang-skills`**: `daily-language-lesson`, `notion-language-lesson`
+- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`)
 
 ### Skill Invocation
 
-| Invocation | Plugin | Skill |
-| --- | --- | --- |
-| `/daily-language-lesson`, `/dll`, `/lesson` | `lang-skills` | Language lessons → Obsidian vault |
-| `/notion-language-lesson`, `/nll` | `lang-skills` | Language lessons → Notion database |
-| `/init-project`, `/init` | `code-skills` | Initialize project with agent infrastructure |
-| `/session` | `code-skills` | Session and memory management |
+| Invocation | Skill |
+| --- | --- |
+| `/init-project`, `/init` | Initialize project with agent infrastructure |
+| `/session` | Session and memory management |
 
 ## Skill Reference
 
@@ -71,22 +64,30 @@ MCP-primary session management. When `@modelcontextprotocol/server-memory` is av
 
 Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, docs, and tooling configs. Nix-first tool provisioning (mise as fallback). Adds `CURRENT_TASK.md`/`MEMORY.md` to `.gitignore`. Offers nix-run or npx for MCP server invocation.
 
-### `daily-language-lesson`
+## MCP Servers
 
-Generates multi-language lessons saved directly to the Obsidian vault daily note (`$VAULT_PATH/YYYY/YYYY-MM-DD.md`) using `ad-note` callout blocks.
+Three servers are bundled in `.mcp.json`. Detect by checking the tool list.
 
-- English: advanced (native-level literature, idioms, sophisticated grammar)
-- Japanese: N1 level (advanced kanji, keigo, literary expressions)
-- Spanish: B1–B2 (intermediate vocabulary and grammar)
+**Namespacing**: when installed as a Claude Code plugin, server names become `plugin:harus-skills:<name>`. Tool function names (`search_nodes`, `fetch`, `sequentialthinking`) are unaffected — always detect by function name, not server name. For Codex, `.mcp.json` is read directly with no prefix. Users with these servers already in `~/.claude/settings.json` will get duplicate instances — recommend global config over relying on the plugin-bundled MCPs.
 
-### `notion-language-lesson` (v1.1.0, alias: `/nll`)
+| Server | Detect via | When to use |
+| --- | --- | --- |
+| `memory` | `search_nodes`, `create_entities`, `add_observations` | Persisting session state and facts across conversations |
+| `fetch` | `fetch` | Retrieving live URLs, docs, or external references |
+| `sequential-thinking` | `sequentialthinking` | Complex multi-step planning before acting on large changes |
 
-Same lesson content as `daily-language-lesson`, pushed to a Notion database as structured toggle-block pages. Falls back to Obsidian vault if Notion push fails. Requires `NOTION_API_KEY` and `NOTION_DATABASE_ID` env vars — see `skills/notion-language-lesson/README.md`.
+**`memory` usage**: `search_nodes` before starting work to load prior context; `create_entities` / `add_observations` to save; `delete_entities` on stale session nodes at session end. Entity naming: `[project-name]:session` for session state, `UserPreferences` / `CodingStyle` / `ToolPreferences` for global facts.
+
+**`fetch` usage**: prefer over `WebFetch` when available — pass a URL and get back the page content. Do not use for local file reads.
+
+**`sequential-thinking` usage**: invoke at the start of complex tasks with a clear problem statement; follow the returned steps in order. Skip for simple well-scoped tasks.
+
+> Note: AGENTS.md (loaded by Gemini CLI and Codex) and individual SKILL.md files carry the same guidance for skill users. Keep all three in sync when updating MCP instructions.
 
 ## Agent Behavior
 
 - **Session Management**: Run `/session start` at the start of any session if `.agents/` exists. Run `/session end` before wrapping up.
-- **Version Bump Rule**: After editing any `skills/*/*/SKILL.md`, bump in the same commit: (1) the skill's `metadata.version`, (2) `gemini-extension.json` version, (3) `.claude-plugin/marketplace.json` metadata.version. Check the actual files for current versions — do not rely on a cached value here.
+- **Version Bump Rule**: After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's `metadata.version`, (2) `gemini-extension.json` version, (3) `.claude-plugin/marketplace.json` metadata.version. Check the actual files for current versions — do not rely on a cached value here.
 - **Staging discipline**: Always `git add <specific files>`. Never `git add -A` or `git add .`.
 
 ## Development Workflow

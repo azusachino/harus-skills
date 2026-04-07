@@ -5,23 +5,22 @@
     "email": "azusachino@duck.com"
   },
   "metadata": {
-    "description": "Custom Claude Code skills for productivity and learning",
-    "version": "1.8.0"
+    "description": "Custom Claude Code skills for productivity and project management",
+    "version": "1.9.0"
   },
   "plugins": [
     {
-      "name": "code-skills",
-      "description": "Project and session management skills",
+      "name": "harus-skills",
       "source": "./",
-      "strict": false,
-      "skills": ["./skills/code-skills/init-project", "./skills/code-skills/session"]
-    },
-    {
-      "name": "lang-skills",
-      "description": "Language learning skills",
-      "source": "./",
-      "strict": false,
-      "skills": ["./skills/lang-skills/daily-language-lesson", "./skills/lang-skills/notion-language-lesson"]
+      "description": "Project scaffolding and session management skills",
+      "version": "1.9.0",
+      "author": {
+        "name": "haru",
+        "email": "azusachino@duck.com"
+      },
+      "repository": "https://github.com/azusachino/harus-skills",
+      "category": "productivity",
+      "mcpServers": "./.mcp.json"
     }
   ]
 }
