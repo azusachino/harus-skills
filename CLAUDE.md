@@ -19,6 +19,9 @@ docs/                             # Project documentation
   plans/                          # Design documents
 .claude-plugin/
   marketplace.json                # Plugin marketplace registration
+.codex-plugin/
+  plugin.json                     # Codex plugin manifest
+.mcp.json                         # Bundled MCP servers
 gemini-extension.json             # Gemini CLI extension manifest
 ```
 
@@ -60,6 +63,24 @@ MCP-primary session management. When `@modelcontextprotocol/server-memory` is av
 ### `init-project` (v1.0.0)
 
 Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, docs, and tooling configs. Nix-first tool provisioning (mise as fallback). Adds `CURRENT_TASK.md`/`MEMORY.md` to `.gitignore`. Offers nix-run or npx for MCP server invocation.
+
+## MCP Servers
+
+Three servers are bundled in `.mcp.json`. Detect by checking the tool list.
+
+| Server | Detect via | When to use |
+| --- | --- | --- |
+| `memory` | `search_nodes`, `create_entities`, `add_observations` | Persisting session state and facts across conversations |
+| `fetch` | `fetch` | Retrieving live URLs, docs, or external references |
+| `sequential-thinking` | `sequentialthinking` | Complex multi-step planning before acting on large changes |
+
+**`memory` usage**: `search_nodes` before starting work to load prior context; `create_entities` / `add_observations` to save; `delete_entities` on stale session nodes at session end. Entity naming: `[project-name]:session` for session state, `UserPreferences` / `CodingStyle` / `ToolPreferences` for global facts.
+
+**`fetch` usage**: prefer over `WebFetch` when available — pass a URL and get back the page content. Do not use for local file reads.
+
+**`sequential-thinking` usage**: invoke at the start of complex tasks with a clear problem statement; follow the returned steps in order. Skip for simple well-scoped tasks.
+
+> Note: AGENTS.md (loaded by Gemini CLI and Codex) and individual SKILL.md files carry the same guidance for skill users. Keep all three in sync when updating MCP instructions.
 
 ## Agent Behavior
 
