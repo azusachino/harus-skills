@@ -2,24 +2,19 @@
 
 ## Project Overview
 
-A collection of custom agent skills for productivity, project management, and language learning. Compatible with Claude Code, Gemini CLI, and Codex. Skills are user-invocable commands following the [Agent Skills Standard](http://agentskills.io). Published as a Claude plugin marketplace at `azusachino/harus-skills` and a Gemini CLI extension.
+A collection of custom agent skills for productivity and project management. Compatible with Claude Code, Gemini CLI, and Codex. Skills are user-invocable commands following the [Agent Skills Standard](http://agentskills.io). Published as a Claude plugin marketplace at `azusachino/harus-skills` and a Gemini CLI extension.
 
 ## Architecture
 
 ```text
 harus-skills/
-  skills/
-    code-skills/                 # Project and session management skills
-      init-project/              # Project scaffolding and agent infrastructure
-      session/                   # MCP-primary memory management, CONTEXT.md as living doc
-    lang-skills/                 # Language learning skills
-      daily-language-lesson/     # Language lessons → Obsidian vault (en/ja/es)
-      notion-language-lesson/    # Language lessons → Notion database (en/ja/es)
-        scripts/                 # nll-push.py, nll-status.py
+  skills/                        # Flat skill directories
+    init-project/                # Project scaffolding and agent infrastructure
+    session/                     # MCP-primary memory management, CONTEXT.md as living doc
   docs/
     plans/                       # Design documents
   .claude-plugin/
-    marketplace.json             # Plugin marketplace registration (two plugins: code-skills, lang-skills)
+    marketplace.json             # Plugin marketplace registration (code-skills plugin)
   gemini-extension.json          # Gemini CLI extension manifest
   Makefile                       # Task runner (fmt, lint, test, check, verify)
 ```
@@ -29,8 +24,8 @@ Each skill is a directory with a `SKILL.md` (YAML frontmatter + markdown body) a
 ### Plugin Structure
 
 - **Marketplace**: `azusachino/harus-skills`
-- **Plugins**: `code-skills` (init-project, session) and `lang-skills` (daily-language-lesson, notion-language-lesson)
-- Install: `/plugin marketplace add azusachino/harus-skills` → `/plugin install harus-skills@code-skills` or `harus-skills@lang-skills`
+- **Plugins**: `code-skills` (init-project, session)
+- Install: `/plugin marketplace add azusachino/harus-skills` → `/plugin install harus-skills@code-skills`
 - Invocation: `/skill-name` or `/harus-skills:skill-name`
 
 ## Skills
@@ -39,8 +34,6 @@ Each skill is a directory with a `SKILL.md` (YAML frontmatter + markdown body) a
 | --- | --- | --- | --- |
 | `session` | 1.5.0 | `/session` | MCP-primary session state; doc sync at start/end; context-mode aware |
 | `init-project` | 0.5.0 | `/init-project`, `/init` | Scaffold AGENTS.md, .agents/, docs, MCP config; nix-first tooling |
-| `daily-language-lesson` | 1.0.0 | `/dll`, `/lesson` | Language lessons saved to Obsidian vault |
-| `notion-language-lesson` | 1.1.0 | `/nll` | Language lessons pushed to Notion database |
 
 ## Build & Run
 
@@ -78,7 +71,7 @@ make clean        # Remove generated lessons
 | `.claude-plugin/marketplace.json` | Plugin registration — bump version on every skill change |
 | `gemini-extension.json` | Gemini CLI manifest — bump version on every skill change |
 | `Makefile` | All task definitions |
-| `.env.example` | Documents VAULT_PATH, NOTION_API_KEY, NOTION_DATABASE_ID |
+| `.env.example` | Documents VAULT_PATH and other env vars |
 
 ## Global Memory (MCP)
 

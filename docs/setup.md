@@ -28,8 +28,6 @@ No build step. This is a content repository.
 Skills are invoked inside Claude Code:
 
 ```bash
-/lesson          # Generate language lessons (Obsidian vault)
-/nll             # Generate language lessons (Notion)
 /init-project    # Initialize a project with agent infrastructure
 /session         # Manage session state and memory
 ```

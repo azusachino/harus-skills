@@ -4,7 +4,7 @@
 
 - [x] Skills follow Agent Skills Standard (SKILL.md with YAML frontmatter)
 - [x] Plugin marketplace registration via `.claude-plugin/marketplace.json`
-- [x] Daily language lesson generation (English, Japanese, Spanish)
+- [x] Flat skill directory structure (no category subdirs)
 - [x] Merge request creation from feature branches
 - [x] Project initialization with agent infrastructure
 - [ ] Skill discovery and browsing

@@ -8,14 +8,7 @@ harus-skills is a Claude Code plugin marketplace containing reusable skills. Ski
 
 ```text
 harus-skills/
-  skills/                        # Each subdirectory is one skill
-    daily-language-lesson/       # Generates language learning lessons
-      SKILL.md                   # Skill definition
-      README.md                  # User documentation
-    notion-language-lesson/      # Same lessons pushed to Notion
-      SKILL.md
-      README.md
-      scripts/                   # nll-push.py, nll-status.py
+  skills/                        # Flat skill directories
     init-project/                # Project initialization
       SKILL.md
       CONFIGS.md                 # Reference configs for tooling setup
@@ -23,7 +16,6 @@ harus-skills/
       SKILL.md
   docs/                          # Project documentation
     plans/                       # Design documents and proposals
-  lessons/                       # Generated output (gitignored)
   .claude-plugin/
     marketplace.json             # Plugin registry
   .agents/                       # Agent infrastructure
@@ -34,8 +26,6 @@ harus-skills/
 
 | Skill                  | Purpose                      | Invocation                 |
 | ---------------------- | ---------------------------- | -------------------------- |
-| daily-language-lesson  | Generate en/ja/es lessons    | `/lesson`, `/dll`          |
-| notion-language-lesson | Same lessons → Notion DB     | `/nll`                     |
 | init-project           | Initialize project infra     | `/init-project`, `/init`   |
 | session                | Session state + memory mgmt  | `/session`                 |
 

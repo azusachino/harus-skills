@@ -1,10 +1,8 @@
 # harus-skills
 
-A collection of custom Claude Code skills for productivity, project management, and language learning.
+A collection of custom Claude Code skills for productivity and project management.
 
 ## Skills
-
-### code-skills
 
 **`/init-project`** (v1.0.0, alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, `CLAUDE.md`, `.claude/rules/` (core + optional config/release/testing), `.claude/settings.json` (permissions + hooks), `.mcp.json` (project-specific MCP servers only), `.worktreeinclude`, docs, and tooling configs. Nix-first tool provisioning. Merges global MCP memory facts into generated files.
 
@@ -12,18 +10,6 @@ A collection of custom Claude Code skills for productivity, project management, 
 
 - `/session start` — Load MCP entities + project context, flag stale docs
 - `/session end` — Write session state to MCP, sync docs
-
-### lang-skills
-
-**`/daily-language-lesson`** (v1.0.0, aliases: `/dll`, `/lesson`) — Generate multi-language lessons and save them directly to your Obsidian vault daily note.
-
-- **English**: Advanced level — literature, idioms, sophisticated grammar
-- **Japanese**: N1 level — advanced kanji, keigo, literary expressions
-- **Spanish**: B1–B2 level — intermediate vocabulary and grammar
-
-Each lesson includes a reading passage, vocabulary section, comprehension questions, a grammar point, and writing exercises.
-
-**`/notion-language-lesson`** (v1.1.0, alias: `/nll`) — Same lesson content as above, pushed directly to a Notion database as structured toggle-block pages. Falls back to Obsidian vault if Notion push fails. Requires `NOTION_API_KEY` and `NOTION_DATABASE_ID` — see [`skills/lang-skills/notion-language-lesson/README.md`](skills/lang-skills/notion-language-lesson/README.md) for setup.
 
 ## Installation
 
@@ -37,7 +23,6 @@ Each lesson includes a reading passage, vocabulary section, comprehension questi
 ```bash
 /plugin marketplace add azusachino/harus-skills
 /plugin install harus-skills@code-skills
-/plugin install harus-skills@lang-skills
 ```
 
 Restart Claude Code for changes to take effect.
@@ -91,29 +76,20 @@ make list-skills     # List all available skills
 
 ## Skill Structure
 
-Each skill follows the [Agent Skills Standard](http://agentskills.io) format, organized into category subdirectories:
+Each skill follows the [Agent Skills Standard](http://agentskills.io) format, organized as a flat directory under `skills/`:
 
 ```text
 skills/
-  code-skills/          # Project and session management
-    init-project/
-      SKILL.md          # Skill definition with YAML frontmatter
-      configs/          # Bundled config templates
-    session/
-      SKILL.md
-  lang-skills/          # Language learning
-    daily-language-lesson/
-      SKILL.md
-      README.md         # User-facing documentation
-    notion-language-lesson/
-      SKILL.md
-      README.md
-      scripts/
+  init-project/
+    SKILL.md          # Skill definition with YAML frontmatter
+    configs/          # Bundled config templates
+  session/
+    SKILL.md
 ```
 
 ## Contributing
 
-1. Create a new directory under the appropriate category (`skills/code-skills/` or `skills/lang-skills/`)
+1. Create a new directory directly under `skills/`
 2. Add a `SKILL.md` with YAML frontmatter (`name`, `description`, `metadata.version`)
 3. Register it in `.claude-plugin/marketplace.json` under the matching plugin
 4. Run `make check` before submitting

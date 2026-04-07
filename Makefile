@@ -1,6 +1,6 @@
 # Makefile for managing harus-skills tasks
 
-.PHONY: help install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link lesson lesson-date
+.PHONY: help install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link
 
 # Default target
 help:
@@ -14,10 +14,8 @@ help:
 	@echo "  make check        - Run all checks (format, lint, verify)"
 	@echo "  make verify       - Verify repository structure"
 	@echo "  make list-skills  - List all available skills"
-	@echo "  make clean        - Remove generated lesson files"
+	@echo "  make clean        - Remove generated files"
 	@echo "  make link         - Link as a Gemini CLI extension"
-	@echo "  make lesson       - Generate today's lesson"
-	@echo "  make lesson-date DATE=YYYY-MM-DD - Generate lesson for specific date"
 
 install-hooks:
 	@echo "🪝 Installing git hooks..."
@@ -83,7 +81,7 @@ clean:
 
 verify:
 	@echo "✅ Verifying repository structure..."
-	@for skill_dir in skills/code-skills/*/ skills/lang-skills/*/; do \
+	@for skill_dir in skills/*/; do \
 		skill_name=$$(basename "$$skill_dir"); \
 		if [ ! -f "$$skill_dir/SKILL.md" ]; then \
 			echo "❌ Missing SKILL.md in $$skill_name"; \
@@ -111,12 +109,11 @@ verify:
 list-skills:
 	@echo "📚 Available skills:"
 	@echo ""
-	@for skill_dir in skills/code-skills/*/ skills/lang-skills/*/; do \
+	@for skill_dir in skills/*/; do \
 		if [ -f "$$skill_dir/SKILL.md" ]; then \
-			category=$$(basename "$$(dirname "$$skill_dir")"); \
 			skill_name=$$(basename "$$skill_dir"); \
 			description=$$(grep "^description:" "$$skill_dir/SKILL.md" | cut -d':' -f2- | xargs); \
-			echo "  • [$$category] $$skill_name"; \
+			echo "  • $$skill_name"; \
 			if [ -n "$$description" ]; then \
 				echo "    $$description"; \
 			fi; \
@@ -129,13 +126,3 @@ check: fmt-check lint verify
 
 link:
 	@gemini extensions link .
-
-lesson:
-	@claude "/daily-language-lesson"
-
-lesson-date:
-	@if [ -z "$(DATE)" ]; then \
-		echo "❌ Error: DATE not provided. Usage: make lesson-date DATE=2026-03-01"; \
-		exit 1; \
-	fi
-	@claude "/daily-language-lesson $(DATE)"
