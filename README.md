@@ -22,7 +22,7 @@ A collection of custom Claude Code skills for productivity and project managemen
 
 ```bash
 /plugin marketplace add azusachino/harus-skills
-/plugin install harus-skills@code-skills
+/plugin install harus-skills
 ```
 
 Restart Claude Code for changes to take effect.

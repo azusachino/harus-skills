@@ -24,8 +24,8 @@ Each skill is a directory with a `SKILL.md` (YAML frontmatter + markdown body) a
 ### Plugin Structure
 
 - **Marketplace**: `azusachino/harus-skills`
-- **Plugins**: `code-skills` (init-project, session)
-- Install: `/plugin marketplace add azusachino/harus-skills` → `/plugin install harus-skills@code-skills`
+- **Plugin**: `harus-skills` (init-project, session) — skills auto-discovered from `skills/`
+- Install: `/plugin marketplace add azusachino/harus-skills` → `/plugin install harus-skills`
 - Invocation: `/skill-name` or `/harus-skills:skill-name`
 
 ## Skills

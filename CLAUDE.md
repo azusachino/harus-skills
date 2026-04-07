@@ -36,17 +36,17 @@ All skills follow the [Agent Skills Standard](http://agentskills.io) format with
 
 ### Plugin Configuration
 
-The `.claude-plugin/marketplace.json` defines two plugins under the `harus-skills` marketplace:
+The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-skills` marketplace. Skills are auto-discovered from `skills/` — no explicit listing required.
 
 - **Marketplace name**: `harus-skills`
-- **Plugin `code-skills`**: `init-project`, `session`
+- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`)
 
 ### Skill Invocation
 
-| Invocation | Plugin | Skill |
-| --- | --- | --- |
-| `/init-project`, `/init` | `code-skills` | Initialize project with agent infrastructure |
-| `/session` | `code-skills` | Session and memory management |
+| Invocation | Skill |
+| --- | --- |
+| `/init-project`, `/init` | Initialize project with agent infrastructure |
+| `/session` | Session and memory management |
 
 ## Skill Reference
 
