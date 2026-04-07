@@ -19,7 +19,8 @@
         "email": "azusachino@duck.com"
       },
       "repository": "https://github.com/azusachino/harus-skills",
-      "category": "productivity"
+      "category": "productivity",
+      "mcpServers": "./.mcp.json"
     }
   ]
 }

@@ -14,7 +14,7 @@ harus-skills/
   docs/
     plans/                       # Design documents
   .claude-plugin/
-    marketplace.json             # Plugin marketplace registration (code-skills plugin)
+    marketplace.json             # Plugin marketplace registration (harus-skills plugin)
   gemini-extension.json          # Gemini CLI extension manifest
   Makefile                       # Task runner (fmt, lint, test, check, verify)
 ```
