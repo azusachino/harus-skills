@@ -71,19 +71,48 @@ make clean        # Remove generated lessons
 | `.claude-plugin/marketplace.json` | Plugin registration — bump version on every skill change |
 | `gemini-extension.json` | Gemini CLI manifest — bump version on every skill change |
 | `Makefile` | All task definitions |
+| `.mcp.json` | Bundled MCP servers (memory, fetch, sequential-thinking) |
+| `.codex-plugin/plugin.json` | Codex plugin manifest — skills + MCP refs |
 | `.env.example` | Documents VAULT_PATH and other env vars |
 
-## Global Memory (MCP)
+## MCP Servers
 
-The `session` skill uses `@modelcontextprotocol/server-memory` as the primary global tier when available. Detected by checking for `search_nodes`, `create_entities`, `add_observations` in the tool list.
+Three MCP servers are bundled in `.mcp.json`. Detect availability by checking the tool list at session start.
+
+### `memory` (`@modelcontextprotocol/server-memory`)
+
+**Detect**: `search_nodes`, `create_entities`, `add_observations` present in tool list.
+
+**When to use**: persisting facts and session state that must survive across conversations — user preferences, project conventions, in-progress task summaries.
+
+**How**:
+- `create_entities` — create named nodes (`UserPreferences`, `CodingStyle`, `[project]:session`)
+- `add_observations` — append facts to an existing entity
+- `search_nodes` — retrieve relevant entities by keyword before starting work
+- `delete_entities` — clean up stale session entities at session end
 
 Entity conventions:
-
 - Category entities: `UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`
 - Session entities: `[project-name]:session` — volatile, deleted and recreated each session end
 - Project entities: named after repo (e.g. `harus-skills`), lowercased, hyphens for spaces
 
-When MCP is active, `CURRENT_TASK.md` is skipped entirely — session state lives in `[project]:session`. Fallback: `save_memory` → `~/.agents/` → skip silently.
+When active, `CURRENT_TASK.md` is skipped entirely — session state lives in `[project]:session`. Fallback: `~/.agents/` → skip silently.
+
+### `fetch` (`mcp-server-fetch`)
+
+**Detect**: `fetch` present in tool list.
+
+**When to use**: retrieving live content that isn't in the codebase — documentation pages, API specs, GitHub raw files, external references needed by a skill.
+
+**How**: call `fetch` with a URL. Prefer this over `WebFetch` when the MCP is available — it handles redirects and encoding more reliably. Do not use for internal filesystem reads.
+
+### `sequential-thinking` (`@modelcontextprotocol/server-sequential-thinking`)
+
+**Detect**: `sequentialthinking` present in tool list.
+
+**When to use**: tasks that require explicit multi-step planning before acting — complex refactors, architectural decisions, multi-file changes where order matters, or any task where rushing to code risks missing dependencies.
+
+**How**: invoke `sequentialthinking` at the start of the task with a clear problem statement. It returns a structured chain of reasoning steps; follow them in order. Skip for simple, well-scoped tasks — the overhead isn't worth it.
 
 ## Quality Standards
 
