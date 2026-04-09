@@ -5,7 +5,9 @@ Configs are split by language to reduce token usage. Read only the files relevan
 ## Always read first
 
 - `configs/common.md` - editorconfig, prettier, CI (nix-native), git hooks, gitignore base
-- `configs/claude-infra.md` - `.claude/` directory templates (rules, agents, commands, CLAUDE.md)
+- `configs/claude-infra.md` - `.claude/` directory templates (rules, commands, CLAUDE.md)
+- `configs/gemini-infra.md` - `GEMINI.md`, `.gemini/system.md`, `.gemini/settings.json`
+- `configs/codex-infra.md` - `AGENTS.md` requirements for Codex, CODEX.md (monorepo), plugin.json (skill repos only)
 
 ## Then read the language-specific file
 

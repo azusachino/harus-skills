@@ -49,11 +49,9 @@ Template:
 
 ### DO
 - Use \`make <target>\` for all task execution — never run tools directly
-- At session start: load MCP entities if available (\`search_nodes\` in tools); skip \`CURRENT_TASK.md\` when MCP active
-- At session end: write state to \`[project]:session\` MCP entity
+- At session start: load MCP entities if available; skip \`CURRENT_TASK.md\` and \`.agents/CONTEXT.md\` when MCP active
+- At session end: write state to \`[project]:session\` entity; save conventions to project entity — skip local files when MCP active
 - Dispatch sub-agents for independent tasks — parallelize where possible
-- Update \`.agents/CONTEXT.md\` when architecture or conventions change
-- Bump \`metadata.version\` in skill + manifests after any skill edit
 - Stage files explicitly: \`git add <specific files>\` only
 
 ### DON'T

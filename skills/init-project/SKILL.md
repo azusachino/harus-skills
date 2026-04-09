@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 1.0.0
+  version: 1.2.0
 user-invokable: true
 disable-auto-invoke: true
 ---
@@ -67,16 +67,19 @@ If MCP available, call `read_graph()` first. Merge retrieved facts into generate
 
 - `CodingStyle` → `AGENTS.md` Coding Conventions
 - `ToolPreferences` → `AGENTS.md` Build/Run/Test
-- `UserPreferences`, `Standard` → `.agents/CONTEXT.md` Agent Rules
+- `UserPreferences` → `.agents/CONTEXT.md` Agent Rules
 
 Ask permission before writing each file. Never overwrite without asking.
 
-After generating files, if MCP is available, seed the project entity (repo basename, lowercased, hyphens) with key observations so `session start` has meaningful context on first run:
+After generating files, if MCP is available:
 
-- Tech stack and architecture style
-- Tool provisioning method (nix devShell / mise / other)
-- Task runner and key make targets
-- Any non-obvious conventions captured during the scan
+1. Seed the project entity (repo basename, lowercased, hyphens) with key observations so `session start` has meaningful context on first run:
+   - Tech stack and architecture style
+   - Tool provisioning method (nix devShell / mise / other)
+   - Task runner and key make targets
+   - Any non-obvious conventions captured during the scan
+
+2. Seed any missing category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) using the Global Seed Values defined in the session skill — the session skill is the canonical source for these defaults.
 
 ### AGENTS.md
 
@@ -91,16 +94,17 @@ Public project briefing for humans and agents. Sections:
 
 ### .agents/CONTEXT.md
 
-Internal living doc — always read at session start, updated when core things change. Sections:
+Fallback doc — read at session start only when MCP is unavailable. When MCP is active, project context comes from the MCP project entity instead. Still generate this file at init so projects work without MCP.
+
+Sections:
 
 - **Agent Rules** — hard DO/DON'T for this project:
   - DO: Use `make <target>` for all task execution
-  - DO: At session start, load MCP entities if available; skip `CURRENT_TASK.md` when MCP active
-  - DO: At session end, write state to `[project]:session` MCP entity; do not write `CURRENT_TASK.md` when MCP active
-  - DO: Update this file when architecture or conventions change
+  - DO: At session start, load MCP entities if available; skip `CURRENT_TASK.md` and `CONTEXT.md` when MCP active
+  - DO: At session end, write state to `[project]:session` MCP entity; save conventions to project entity — do not write local files when MCP active
   - DO: Dispatch sub-agents for independent parallel tasks by default — don't run them sequentially when they can be parallelized
   - DON'T: Commit without user confirmation
-  - DON'T: Use plan mode (write-plan → execute-plan) for small, well-scoped tasks — plan only for complex multi-step features
+  - DON'T: Use plan mode for small, well-scoped tasks — plan only for complex multi-step features
   - DON'T: Install tools globally (pip install, npm install -g, cargo install) — use nix devShell or `make <target>` instead (if nix detected)
 - **Project Context** — non-obvious patterns, technical notes, agent-only instructions
 - **Tool Provisioning** — how tools are obtained. If nix:
@@ -263,14 +267,15 @@ Ask permission before writing.
 
 #### Gemini bootstrap
 
-Generate `GEMINI.md` (derived from `AGENTS.md`) and `.gemini/system.md` (executor behavior):
+Load `configs/gemini-infra.md` for templates. Generate:
 
-- **`GEMINI.md`**: extract from `AGENTS.md` — language+version, task runner, conventions, API gotchas, upstream references. Keep under 80 lines. This is read-only / regenerable; note at top: `<!-- Generated from AGENTS.md — edit AGENTS.md, not this file -->`.
-- **`.gemini/system.md`**: copy from `~/.gemini/system.md` if it exists, else skip. Do not generate from scratch.
+- `GEMINI.md` — extracted from `AGENTS.md`, under 80 lines
+- `.gemini/system.md` — copy from `~/.gemini/system.md` if it exists; scaffold from template if not
+- `.gemini/settings.json` — only if project-specific MCP servers were selected in Phase 2
 
 #### Codex bootstrap
 
-No file needed — Codex reads `AGENTS.md` natively. Ensure `AGENTS.md` contains the full project context.
+Load `configs/codex-infra.md` for requirements. Codex reads `AGENTS.md` natively — verify it meets the Codex requirements in the config. Generate `CODEX.md` only for monorepos. Generate `.codex-plugin/plugin.json` only for skill/plugin repos.
 
 ### .gitignore additions
 
@@ -278,10 +283,11 @@ Add to `.gitignore` (or `.agents/.gitignore`):
 
 ```gitignore
 .agents/CURRENT_TASK.md
+.agents/CONTEXT.md
 .agents/MEMORY.md
 ```
 
-These are session-volatile — keeping them tracked creates git noise.
+All three are session-volatile MCP fallbacks — keeping them tracked creates git noise.
 
 ### MCP server config (if user accepted)
 
@@ -358,9 +364,11 @@ Init complete:
   .claude/settings.json              ← permissions + hooks (no MCP here)
   .claude/rules/core.md [+ config.md, release.md, testing.md if applicable]
   .claude/commands/help.md [if accepted]
-  GEMINI.md                          ← generated from AGENTS.md
-  .gemini/system.md                  ← copied from ~/.gemini/system.md
-  .agents/CONTEXT.md, .agents/CURRENT_TASK.md, .agents/MEMORY.md
+  GEMINI.md                          ← generated from AGENTS.md (Gemini context)
+  .gemini/system.md                  ← executor behavior (copied or scaffolded)
+  .gemini/settings.json              ← project-specific MCP servers for Gemini (if any)
+  CODEX.md                           ← monorepo only; .codex-plugin/plugin.json for skill repos only
+  .agents/CONTEXT.md, .agents/CURRENT_TASK.md, .agents/MEMORY.md  ← MCP fallback only
   .gitignore (updated)
   docs/architecture.md, docs/setup.md, docs/plan.md, docs/todo.md
   Makefile, [other tooling configs]

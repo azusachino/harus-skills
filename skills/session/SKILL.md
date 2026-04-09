@@ -1,100 +1,140 @@
 ---
 name: session
-description: Use when starting or ending a work session, when a project has a .agents/ directory at the start of a conversation, or when user says "start session", "let's continue", "wrap up", or "end session" — restores prior context and saves session state
+description: Use when starting or ending a work session — auto-triggers when `.agents/` exists at conversation start, or when user says "start session", "let's continue", "wrap up", "end session"
 metadata:
   author: haru
-  version: 1.5.0
+  version: 1.6.0
 ---
 
 # Session Skill
 
 Manage memory and session state across agents and conversations.
 
-**Core principle**: MCP `@modelcontextprotocol/server-memory` is the canonical store for session state and global facts when available. Local `.agents/` files are fallback only — except `CONTEXT.md`, which is always read and updated.
+**Core principle**: MCP `@modelcontextprotocol/server-memory` is the canonical store. Local `.agents/` files are fallback only.
 
-## Auto-Trigger
+## Detect MCP (once, at session start)
 
-Run `/session start` automatically when `.agents/` exists in the project root, or when the user says "start session", "let's continue", "resume".
-
-Run `/session end` when the user says "wrap up", "end session", "save context", "I'm done".
+Check if `search_nodes`, `create_entities`, `add_observations` are in the tool list. Record the result — do not re-check during the session.
 
 ## `/session start`
 
-**Step 1 — Detect MCP**: check if `search_nodes`, `create_entities`, `add_observations` are all in the available tool list. Record this — do not re-check.
+**Step 1 — Load state**:
 
-**Step 2 — Load global memory**:
+- **MCP**: call `read_graph()`. Load: category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`), project entity (`[repo-basename]`), session entity (`[project-name]:session`). If any category entity is missing or empty, seed it from the Global Seed Values section below.
+- **No MCP**: read `.agents/CONTEXT.md` and `.agents/CURRENT_TASK.md`. Skip silently if missing.
 
-- If MCP: call `read_graph()`. Load category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard`), the project entity (cwd basename, lowercased, hyphens), and the session entity `[project-name]:session`.
-- If no MCP: try `save_memory` tool for preferences; fall back silently.
+**Step 2 — Freshness check**: run `git log --oneline -5`. If recent commits touch feature files but context looks unchanged, flag: "Context may be stale — sync at session end."
 
-**Step 3 — Load project context** (always, regardless of MCP):
-
-- Read `AGENTS.md` and `.agents/CONTEXT.md`. Skip silently if missing.
-- If context-mode is active (hooks present), use `ctx_search` to query indexed docs rather than reading full files.
-
-**Step 4 — Session state** (MCP fallback only):
-
-- If MCP unavailable: read `.agents/CURRENT_TASK.md`.
-- If MCP available: skip `CURRENT_TASK.md` entirely — session state comes from `[project]:session` entity.
-
-**Step 5 — Doc freshness check**:
-
-- Run `git log --oneline -5` to see recent commits.
-- If commits touch feature files but `AGENTS.md` or `CONTEXT.md` were not updated, flag it: "Docs may be stale — consider syncing after this session."
-
-**Step 6 — Report**: "Session resumed. Last task: [X]. Next: [Y]." Note any stale docs.
+**Step 3 — Report**: "Session resumed. Last task: [X]. Next: [Y]." Include any freshness warnings.
 
 ## `/session end`
 
-**Step 1 — Sync session state**:
+**Step 1 — Save session state**:
 
-- If MCP: delete `[project-name]:session`, recreate with:
-  - `objective`, `status` (IN_PROGRESS | BLOCKED | REVIEW | DONE), `completed`, `remaining`, `next`, `last-updated`
-- If no MCP: overwrite `.agents/CURRENT_TASK.md` with the same fields.
+- **MCP**: delete `[project-name]:session`, recreate with: `objective`, `status` (IN_PROGRESS | BLOCKED | REVIEW | DONE), `completed`, `remaining`, `next`, `last-updated`.
+- **No MCP**: overwrite `.agents/CURRENT_TASK.md` with the same fields.
 
-**Step 2 — Sync global facts**:
+**Step 2 — Save new facts** (cross-project):
 
-- If MCP: for each new cross-project fact — `search_nodes` to deduplicate, then `add_observations` on the appropriate category entity. For project decisions, add to the project entity.
-- If no MCP: append to `.agents/MEMORY.md` (format: `## YYYY-MM-DD — [topic]` / `**Fact:** ...` / `**Why it matters:** ...`). Update in place if a similar entry exists.
+- **MCP**: `search_nodes` to deduplicate, then `add_observations` on the appropriate category entity (`UserPreferences`, `CodingStyle`, `ToolPreferences`).
+- **No MCP**: append to `.agents/MEMORY.md` (`## YYYY-MM-DD — [topic]` / `**Fact:** ...` / `**Why:** ...`). Update in place if a similar entry exists.
 
-**Step 3 — Sync docs**:
+**Step 3 — Save project context** (conventions, patterns, decisions):
 
-- Update `.agents/CONTEXT.md` if any core behavior, architecture pattern, or non-obvious convention changed this session. Keep it concise — remove stale entries.
-- Update `AGENTS.md` if project structure, commands, or tech stack changed.
-- If docs grew significantly this session, trim redundant or outdated sections.
+- **MCP**: `search_nodes` to deduplicate, then `add_observations` on the project entity.
+- **No MCP**: update `.agents/CONTEXT.md`. Keep it concise — remove stale entries.
 
 **Step 4 — Confirm**: "Session saved. Next: [one-sentence handoff]."
 
-## Context-Mode Integration
+## MCP Entity Reference
 
-If context-mode is installed (check for `ctx_search`, `ctx_batch_execute` in tools or hooks present):
+### Entity Lifecycle
 
-- At session start, prefer `ctx_batch_execute` to load memory + run `git log` in one call rather than sequential reads.
-- Use `ctx_search` for targeted retrieval from large `CONTEXT.md` or `MEMORY.md` instead of reading full files.
-- Raw file reads still apply for files you intend to edit (e.g., before updating `CONTEXT.md`).
+| Entity                   | Lifecycle  | Mechanism                                                                             |
+| ------------------------ | ---------- | ------------------------------------------------------------------------------------- |
+| `[project-name]:session` | Volatile   | `delete_entities` + `create_entities` every session end — full reset, no accumulation |
+| `[repo-basename]`        | Persistent | `create_entities` once if missing; `add_observations` only — never delete             |
+| `UserPreferences`        | Persistent | same as above                                                                         |
+| `CodingStyle`            | Persistent | same as above                                                                         |
+| `ToolPreferences`        | Persistent | same as above                                                                         |
 
-## MCP Entity Conventions
+### Write Protocol
 
-**Session entity** — `[project-name]:session`: volatile, deleted and recreated each session end.
+1. `search_nodes("[topic]")` — check if observation already exists
+2. If entity missing: `create_entities` first
+3. `add_observations` with the new fact — never overwrite, always append
 
-**Category entities**: `UserPreferences`, `CodingStyle`, `ToolPreferences`, `Standard` — cross-project user facts.
+### What Goes Where
 
-**Project entity** — repo basename: stable project conventions (e.g. "Uses nix devShell", "Task runner is make").
+**`UserPreferences`** — cross-project behavioral preferences:
 
-Deduplication: always `search_nodes` before adding observations.
+- Communication style (terse responses, no emojis, ask before committing)
+- Workflow habits (worktrees by default, parallel agents opt-in)
+- Decision preferences (simple over clever, no speculative abstractions)
+
+**`CodingStyle`** — cross-project code conventions:
+
+- Commit format (conventional commits: `feat:`, `fix:`, `chore:`)
+- Formatting rules (2-space indent for config, no prose wrapping)
+- Language idioms that apply broadly
+
+**`ToolPreferences`** — cross-project tool choices:
+
+- Runtime/env manager (nix-first, mise for language runtimes)
+- Task runner (make)
+- Shell, editor, CLI preferences
+
+**`[repo-basename]`** — project-specific, stable:
+
+- Architecture decisions and why they were made
+- Non-obvious conventions not in AGENTS.md
+- Key commands, tech stack, dependency notes
+
+**`[project-name]:session`** — volatile task state, reset every session:
+
+- `objective` — what we're working toward
+- `status` — `IN_PROGRESS` | `BLOCKED` | `REVIEW` | `DONE`
+- `completed` — list of finished items this session
+- `remaining` — what's left
+- `next` — the single most important next action
+- `last-updated` — ISO date
+
+## Global Seed Values
+
+If `read_graph()` returns a category entity with no observations, seed it immediately using `add_observations`. These are the established cross-project defaults — do not ask the user to confirm them.
+
+**`UserPreferences`**
+
+- Project-local worktrees by default for isolated work; parallel sessions are opt-in only
+- Sub-agents by default — dispatch independent work; don't do everything inline
+- Simple solutions over clever ones — avoid over-engineering and speculative abstractions
+- Use haiku or other efficient models for dispatch/sub-agent tasks
+- Terse responses — no trailing summaries, no preamble
+
+**`CodingStyle`**
+
+- Conventional commits: `feat:`, `fix:`, `chore:`, `deploy:` — no emojis in commit messages
+- 2-space indentation for config files (YAML, TOML, JSON)
+- No emojis anywhere unless explicitly requested
+- No manually wrapped prose — let formatters handle line length
+- Staging discipline: `git add <specific files>` only, never `git add -A` or `git add .`
+
+**`ToolPreferences`**
+
+- Nix-first: all tools come from devShell (`nix develop`)
+- `mise` for language runtimes only (not general tooling)
+- `make` is the task runner — always reference `make <target>`
+- `make check` runs before commits; `make validate` before PRs (enforced by hooks)
+- `rtk` CLI proxy active — git and other commands are transparently rewritten for token savings
 
 ## Fallback: Local Files
 
-Used only when MCP is unavailable:
+Used only when MCP is unavailable. All three belong in `.gitignore`.
 
 - `.agents/CURRENT_TASK.md` — task state (overwrite each session end)
-- `.agents/MEMORY.md` — decision log (append only; update in place for duplicates)
+- `.agents/CONTEXT.md` — project conventions (update in place; remove stale entries)
+- `.agents/MEMORY.md` — cross-project facts (append; update in place for duplicates)
 
-Both files should be in `.gitignore` — they are session-volatile and should not pollute git history.
+## Context-Mode Integration
 
-## Core Principles
-
-- **MCP as Truth**: session state lives in MCP only. No local writes for task state when MCP is active.
-- **CONTEXT.md is living**: always read; update and trim at session end when things change.
-- **Doc sync**: flag and fix stale docs at session boundaries — don't let documentation drift.
-- **Graceful degradation**: fall back to local files silently if MCP is not configured.
+If `ctx_search` / `ctx_batch_execute` are available: use `ctx_batch_execute` to load memory + run `git log` in one call; use `ctx_search` for targeted retrieval from large files instead of reading them in full.
