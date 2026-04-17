@@ -21,7 +21,6 @@ docs/                             # Project documentation
   marketplace.json                # Plugin marketplace registration
 .codex-plugin/
   plugin.json                     # Codex plugin manifest
-.mcp.json                         # Bundled MCP servers
 gemini-extension.json             # Gemini CLI extension manifest
 ```
 
@@ -66,9 +65,7 @@ Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` 
 
 ## MCP Servers
 
-Three servers are bundled in `.mcp.json`. Detect by checking the tool list.
-
-**Namespacing**: when installed as a Claude Code plugin, server names become `plugin:harus-skills:<name>`. Tool function names (`search_nodes`, `fetch`, `sequentialthinking`) are unaffected — always detect by function name, not server name. For Codex, `.mcp.json` is read directly with no prefix. Users with these servers already in `~/.claude/settings.json` will get duplicate instances — recommend global config over relying on the plugin-bundled MCPs.
+MCP servers are not bundled — configure them globally in `~/.claude/settings.json`. Detect availability by checking the tool list.
 
 | Server | Detect via | When to use |
 | --- | --- | --- |
@@ -81,8 +78,6 @@ Three servers are bundled in `.mcp.json`. Detect by checking the tool list.
 **`fetch` usage**: prefer over `WebFetch` when available — pass a URL and get back the page content. Do not use for local file reads.
 
 **`sequential-thinking` usage**: invoke at the start of complex tasks with a clear problem statement; follow the returned steps in order. Skip for simple well-scoped tasks.
-
-> Note: AGENTS.md (loaded by Gemini CLI and Codex) and individual SKILL.md files carry the same guidance for skill users. Keep all three in sync when updating MCP instructions.
 
 ## Agent Behavior
 

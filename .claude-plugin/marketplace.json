@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Custom Claude Code skills for productivity and project management",
-    "version": "2.0.0"
+    "version": "2.0.2"
   },
   "plugins": [
     {
       "name": "harus-skills",
       "source": "./",
       "description": "Project scaffolding and session management skills",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "author": {
         "name": "haru",
         "email": "azusachino@duck.com"

@@ -9,6 +9,5 @@
   "repository": "https://github.com/azusachino/harus-skills",
   "license": "MIT",
   "keywords": ["skills", "session", "init-project", "productivity"],
-  "skills": "./skills/",
-  "mcpServers": "./.mcp.json"
+  "skills": "./skills/"
 }

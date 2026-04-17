@@ -71,15 +71,12 @@ make clean        # Remove generated lessons
 | `.claude-plugin/marketplace.json` | Plugin registration — bump version on every skill change |
 | `gemini-extension.json` | Gemini CLI manifest — bump version on every skill change |
 | `Makefile` | All task definitions |
-| `.mcp.json` | Bundled MCP servers (memory, fetch, sequential-thinking) |
-| `.codex-plugin/plugin.json` | Codex plugin manifest — skills + MCP refs |
+| `.codex-plugin/plugin.json` | Codex plugin manifest — skills |
 | `.env.example` | Documents VAULT_PATH and other env vars |
 
 ## MCP Servers
 
-Three MCP servers are bundled in `.mcp.json`. Detect availability by checking the tool list at session start.
-
-**Namespacing**: when installed as a Claude Code plugin, server names are scoped to `plugin:harus-skills:<name>` (e.g. `plugin:harus-skills:memory`). Tool *function* names (`search_nodes`, `fetch`, `sequentialthinking`) are unaffected — detection by function name works regardless. For Codex, `.mcp.json` is read directly with no namespacing. Recommend users configure these servers globally (`~/.claude/settings.json`) to avoid duplicates and the namespace prefix.
+MCP servers are not bundled — configure them globally in `~/.claude/settings.json`. Detect availability by checking the tool list at session start.
 
 ### `memory` (`@modelcontextprotocol/server-memory`)
 

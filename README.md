@@ -44,17 +44,7 @@ codex plugin install https://github.com/azusachino/harus-skills
 
 ## MCP Servers
 
-`.mcp.json` bundles three servers used by the skills:
-
-| Server | Command | Purpose |
-| --- | --- | --- |
-| `memory` | `npx @modelcontextprotocol/server-memory` | Persistent session state across conversations |
-| `fetch` | `uvx mcp-server-fetch` | HTTP fetching for live docs and references |
-| `sequential-thinking` | `npx @modelcontextprotocol/server-sequential-thinking` | Structured reasoning for complex tasks |
-
-These are installed automatically with the plugin. When installed via Claude Code, server names are namespaced to `plugin:harus-skills:<name>` — but skill detection uses tool function names (`search_nodes`, `fetch`, `sequentialthinking`) which are unaffected.
-
-**Recommended**: configure these globally to avoid the namespace prefix and duplication. Add to `~/.claude/settings.json` (Claude Code) or `~/.gemini/settings.json` (Gemini CLI):
+The skills use three MCP servers. Configure them globally in `~/.claude/settings.json` (Claude Code) or `~/.gemini/settings.json` (Gemini CLI):
 
 ```json
 {
