@@ -3,7 +3,7 @@ name: rosemary
 description: Use when starting or ending a work session — auto-triggers when `.agents/` exists at conversation start, or when user says "start session", "let's continue", "wrap up", "end session". Uses the rosemary CLI for persistent knowledge graph storage instead of MCP server-memory.
 metadata:
   author: haru
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # Rosemary Session Skill
@@ -12,9 +12,13 @@ Manage memory and session state across agents and conversations using the `rosem
 
 **Core principle**: `rosemary` is the canonical store. Local `.agents/` files are fallback only when `rosemary` is not in `$PATH`.
 
+**State scope** — prefer **shared (XDG global) state** by default. Project-local state (`rosemary init --local` creating `./rosemary.toml`) is opt-in only when the user explicitly requests it (e.g., "use project-local rosemary", "isolate this repo's memory"). Cross-project entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) always live in the global graph regardless of scope.
+
 ## Detect rosemary (once, at session start)
 
-Run `rosemary --version`. Record the result — do not re-check during the session. If unavailable, fall back to local files.
+Run `command -v rosemary` (or `rosemary help`). Record the result — do not re-check during the session. If unavailable, fall back to local files.
+
+**Scope detection**: if `./rosemary.toml` exists in the repo root, rosemary auto-uses project-local state — note this but do not switch modes mid-session. Otherwise the global XDG graph is in effect.
 
 ## `/rosemary start`
 
@@ -173,7 +177,7 @@ rosemary delete-relations "from" "to" "relation_type"
 
 # Maintenance
 rosemary compact          # archive + refresh FTS/vector (requires --features documents)
-rosemary init --local     # project-local graph init (run once)
+rosemary init --local     # opt-in: project-local graph (only on explicit user request)
 ```
 
 ## Fallback: Local Files
