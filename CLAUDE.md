@@ -13,8 +13,11 @@ skills/                           # Custom skill definitions (flat)
   init-project/                   # Project initialization skill
     SKILL.md
     configs/                      # Bundled config templates
-  session/                        # Session and memory management
+  session/                        # Session and memory management (MCP-primary)
     SKILL.md
+  rosemary/                       # Session and memory management (rosemary CLI)
+    SKILL.md
+    README.md
 docs/                             # Project documentation
   plans/                          # Design documents
 .claude-plugin/
@@ -41,23 +44,31 @@ All skills follow the [Agent Skills Standard](http://agentskills.io) format with
 The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-skills` marketplace. Skills are auto-discovered from `skills/` — no explicit listing required.
 
 - **Marketplace name**: `harus-skills`
-- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`)
+- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`, `rosemary`)
 
 ### Skill Invocation
 
 | Invocation | Skill |
 | --- | --- |
 | `/init-project`, `/init` | Initialize project with agent infrastructure |
-| `/session` | Session and memory management |
+| `/session` | Session and memory management (MCP `server-memory`) |
+| `/rosemary` | Session and memory management (`rosemary` CLI) |
 
 ## Skill Reference
 
-### `session` (v1.5.0)
+### `session` (v1.6.0)
 
 MCP-primary session management. When `@modelcontextprotocol/server-memory` is available, session state lives in a `[project]:session` MCP entity — `CURRENT_TASK.md` is skipped entirely. Syncs docs (`AGENTS.md`, `CONTEXT.md`) at session boundaries. Integrates with context-mode (`ctx_batch_execute`, `ctx_search`) when available.
 
 - `/session start` — load MCP entities + project context, flag stale docs
 - `/session end` — write session state to MCP, sync/trim docs
+
+### `rosemary` (v1.0.0)
+
+CLI-native session management using the `rosemary` knowledge graph tool. Drop-in alternative to `session` for environments without MCP. Requires `rosemary` in `$PATH` and `rosemary init --local` run once per project. Falls back to `.agents/` local files when `rosemary` is unavailable.
+
+- `/rosemary start` — load entities via `open-nodes`, flag stale context
+- `/rosemary end` — full reset of session entity, save facts, run `rosemary compact`
 
 ### `init-project` (v1.0.0)
 
