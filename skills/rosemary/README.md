@@ -9,7 +9,11 @@ This skill is a CLI-native alternative to the `session` skill. It replaces MCP `
 Install `rosemary` from source (requires Rust 1.85+):
 
 ```bash
+# Standard build
 cargo install --git https://github.com/azusachino/rosemary
+
+# With document ingestion + vector search + compact support
+cargo install --git https://github.com/azusachino/rosemary --features documents
 ```
 
 Initialize a project-local graph in your project root (run once):
@@ -35,4 +39,4 @@ When `rosemary` is not in `$PATH`, the skill falls back to local `.agents/` file
 
 ## Storage
 
-Data lives in `.rosemary/data/rosemary.db` (project-local) or under `$XDG_DATA_HOME` (user-level). Run `rosemary compact` to archive session state to Markdown snapshots and refresh the FTS index.
+Data lives in `.rosemary/data/rosemary.db` (project-local) or under `$XDG_DATA_HOME` (user-level). `rosemary compact` (available with `--features documents`) archives session state to Markdown snapshots and refreshes the FTS/vector index.

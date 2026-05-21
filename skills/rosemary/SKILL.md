@@ -56,7 +56,7 @@ Run `rosemary --version`. Record the result — do not re-check during the sessi
 - **rosemary**: `rosemary search-nodes "[topic]"` to check for duplicates, then `rosemary add-observations [repo-basename] "[fact]"`.
 - **No rosemary**: update `.agents/CONTEXT.md`. Keep it concise — remove stale entries.
 
-**Step 4 — Compact**: run `rosemary compact` to archive session state to Markdown and refresh FTS/vector index.
+**Step 4 — Compact** (optional): if `rosemary` was built with the `documents` feature (`cargo install --features documents`), run `rosemary compact` to archive session state to Markdown and refresh the FTS/vector index. Skip silently if the command is unavailable.
 
 **Step 5 — Confirm**: "Session saved. Next: [one-sentence handoff]."
 
@@ -172,7 +172,7 @@ rosemary delete-observations "name" "exact content"
 rosemary delete-relations "from" "to" "relation_type"
 
 # Maintenance
-rosemary compact          # archive + refresh FTS/vector
+rosemary compact          # archive + refresh FTS/vector (requires --features documents)
 rosemary init --local     # project-local graph init (run once)
 ```
 
