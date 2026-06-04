@@ -1,12 +1,14 @@
 ---
 name: session
-description: Use when starting or ending a work session — auto-triggers when `.agents/` exists at conversation start, or when user says "start session", "let's continue", "wrap up", "end session"
+description: DEPRECATED — superseded by the rosemary skill. MCP server-memory session management. Use rosemary instead when the rosemary CLI is available.
 metadata:
   author: haru
-  version: 1.6.0
+  version: 1.6.1
 ---
 
 # Session Skill
+
+> **Deprecated.** Superseded by the [`rosemary`](../rosemary/SKILL.md) skill, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained only for environments still on `@modelcontextprotocol/server-memory`. New work should use `/rosemary`.
 
 Manage memory and session state across agents and conversations.
 

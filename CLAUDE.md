@@ -13,9 +13,9 @@ skills/                           # Custom skill definitions (flat)
   init-project/                   # Project initialization skill
     SKILL.md
     configs/                      # Bundled config templates
-  session/                        # Session and memory management (MCP-primary)
+  session/                        # Deprecated — MCP-primary session management (use rosemary)
     SKILL.md
-  rosemary/                       # Session and memory management (rosemary CLI)
+  rosemary/                       # Session, task dispatcher, knowledge tier (rosemary CLI)
     SKILL.md
     README.md
 docs/                             # Project documentation
@@ -51,28 +51,26 @@ The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-s
 | Invocation | Skill |
 | --- | --- |
 | `/init-project`, `/init` | Initialize project with agent infrastructure |
-| `/session` | Session and memory management (MCP `server-memory`) |
-| `/rosemary` | Session and memory management (`rosemary` CLI) |
+| `/session` | **Deprecated** — MCP `server-memory` session management; use `/rosemary` |
+| `/rosemary` | Session continuity, task dispatcher, and knowledge tier (`rosemary` CLI) |
 
 ## Skill Reference
 
-### `session` (v1.6.0)
+### `session` (v1.6.1) — Deprecated
 
-MCP-primary session management. When `@modelcontextprotocol/server-memory` is available, session state lives in a `[project]:session` MCP entity — `CURRENT_TASK.md` is skipped entirely. Syncs docs (`AGENTS.md`, `CONTEXT.md`) at session boundaries. Integrates with context-mode (`ctx_batch_execute`, `ctx_search`) when available.
+Superseded by `rosemary`. MCP-primary session management on `@modelcontextprotocol/server-memory`: session state lives in a `[project]:session` MCP entity, docs sync at boundaries. Retained only for environments still on `server-memory`; new work should use `/rosemary`.
 
-- `/session start` — load MCP entities + project context, flag stale docs
-- `/session end` — write session state to MCP, sync/trim docs
+### `rosemary` (v1.2.0)
 
-### `rosemary` (v1.0.0)
+CLI-native shared state via the `rosemary` knowledge graph — one graph, three pillars. Prefers shared XDG state; project-local (`rosemary init --local`) is opt-in. Falls back to `.agents/` files when `rosemary` is unavailable.
 
-CLI-native session management using the `rosemary` knowledge graph tool. Drop-in alternative to `session` for environments without MCP. Requires `rosemary` in `$PATH` and `rosemary init --local` run once per project. Falls back to `.agents/` local files when `rosemary` is unavailable.
+- `/rosemary start` / `/rosemary end` — session continuity (load/save the `[project]:session` entity)
+- `/rosemary tasks plan|list|dispatch|sync|close` — durable task dispatcher (epic + task entities, status lifecycle) replacing TodoWrite/local jsonl
+- `/rosemary recall` — knowledge tier: `ingest`/`query` over docs + an ADR decision log
 
-- `/rosemary start` — load entities via `open-nodes`, flag stale context
-- `/rosemary end` — full reset of session entity, save facts, run `rosemary compact`
+### `init-project` (v1.3.0)
 
-### `init-project` (v1.0.0)
-
-Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, docs, and tooling configs. Nix-first tool provisioning (mise as fallback). Adds `CURRENT_TASK.md`/`MEMORY.md` to `.gitignore`. Offers nix-run or npx for MCP server invocation.
+Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in for repos with a flake). Seeds the rosemary graph so `/rosemary start` has context on first run; `.agents/` files are the fallback. Adds session-volatile files to `.gitignore`.
 
 ## MCP Servers
 
