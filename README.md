@@ -4,20 +4,19 @@ A collection of custom Claude Code skills for productivity and project managemen
 
 ## Skills
 
-**`/init-project`** (v1.0.0, alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, `CLAUDE.md`, `.claude/rules/`, `.claude/settings.json` (permissions + hooks), `.mcp.json` (project-specific MCP servers only), `.worktreeinclude`, docs, and tooling configs. Nix-first tool provisioning. Merges global MCP memory facts into generated files.
+**`/rosemary`** (v1.2.0) — Share durable state across sessions and sub-agents via the [`rosemary`](https://github.com/azusachino/rosemary) CLI knowledge graph. One graph, three pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan|list|dispatch|sync|close`) that replaces ephemeral TodoWrite/local jsonl, and a **knowledge tier** (`recall` — `ingest`/`query` + an ADR decision log). Falls back to `.agents/` files when rosemary is absent.
 
-**`/session`** (v1.5.0) — MCP-primary session management. When `@modelcontextprotocol/server-memory` is available, session state lives in a `[project]:session` MCP entity — no local file writes. Syncs and trims `AGENTS.md`/`CONTEXT.md` at session boundaries.
+**`/init-project`** (v1.3.0, alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, `CLAUDE.md`, `.claude/rules/`, `.claude/settings.json` (permissions + hooks), `.worktreeinclude`, docs, and tooling configs. Mise-first tool provisioning (nix opt-in); seeds the rosemary graph so `/rosemary start` has context on first run.
 
-- `/session start` — load MCP entities + project context, flag stale docs
-- `/session end` — write session state to MCP, sync docs
+**`/session`** (v1.6.0) — **Deprecated.** MCP variant of session management built on `@modelcontextprotocol/server-memory`. Superseded by `/rosemary`, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained for environments still on `server-memory`; new projects should use `/rosemary`.
 
 ## Installation
 
 ### Prerequisites
 
 - [Claude Code](https://claude.ai/code) CLI
-- Node.js (for `npx`-based MCP servers)
-- `uvx` / Python (for `mcp-server-fetch`)
+- [`rosemary`](https://github.com/azusachino/rosemary) CLI for the `/rosemary` skill (`cargo install --git https://github.com/azusachino/rosemary --features documents`)
+- Node.js (for `npx`-based MCP servers, only if using the `/session` MCP variant)
 
 ### Claude Code — Marketplace Plugin
 
@@ -42,9 +41,9 @@ gemini extensions link /path/to/harus-skills
 codex plugin install https://github.com/azusachino/harus-skills
 ```
 
-## MCP Servers
+## MCP Servers (optional)
 
-The skills use three MCP servers. Configure them globally in `~/.claude/settings.json` (Claude Code) or `~/.gemini/settings.json` (Gemini CLI):
+Only the deprecated `/session` skill needs an MCP server. `/rosemary` and `/init-project` have no MCP dependency. If you still use `/session`, configure `server-memory` globally in `~/.claude/settings.json`:
 
 ```json
 {
@@ -52,14 +51,6 @@ The skills use three MCP servers. Configure them globally in `~/.claude/settings
     "memory": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-memory"]
-    },
-    "fetch": {
-      "command": "uvx",
-      "args": ["mcp-server-fetch"]
-    },
-    "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     }
   }
 }
@@ -85,10 +76,13 @@ Each skill follows the [Agent Skills Standard](http://agentskills.io) format as 
 
 ```text
 skills/
-  init-project/
+  rosemary/
     SKILL.md          # Skill definition with YAML frontmatter
+    README.md
+  init-project/
+    SKILL.md
     configs/          # Bundled config templates
-  session/
+  session/            # Deprecated — superseded by rosemary
     SKILL.md
 ```
 

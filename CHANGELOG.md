@@ -1,0 +1,43 @@
+# Changelog
+
+All notable changes to this project are documented here. The version tracks the plugin/marketplace version in `.claude-plugin/marketplace.json`; individual skills carry their own `metadata.version`.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.3.0] - 2026-06-04
+
+### Added
+
+- **rosemary** (1.2.0): task dispatcher (`/rosemary tasks plan|list|dispatch|sync|close`) backed by epic + task entities with `part_of` relations and an append-only status lifecycle (`READY_TO_DISPATCH → DISPATCHED → REVIEW → AWAITING_VERIFY → DONE`) — a durable replacement for ephemeral TodoWrite/local jsonl that sub-agents and the lead coordinate through.
+- **rosemary** (1.2.0): knowledge tier (`/rosemary recall`) with `ingest`/`query` over docs and an ADR-style decision log (`<project>:decision:<slug>` concept entities with `supersedes`/`depends_on` relations).
+- **rosemary** (1.2.0): `:`-hierarchical naming convention (`<project>:<epic>:task-N`), a "Real-World Practices" checklist distilled from production use, and an instruction-file index guardrail (index `CLAUDE.md`/`AGENTS.md` via `ingest`, never duplicate into entities).
+
+### Changed
+
+- **init-project** (1.3.0): refreshed around the rosemary + mise + make stack. Tool provisioning is now mise-first (nix opt-in for repos with an existing flake); memory seeds and reads the rosemary graph with `.agents/` files as fallback.
+- **rosemary** (1.2.0): trimmed for clarity — merged Entity Reference subsections, condensed practices, replaced the status ASCII diagram with a one-liner.
+- Root `README.md`: documents all three skills, rosemary prerequisites, and the now-optional MCP section.
+
+### Removed
+
+- **init-project** (1.3.0): Gemini and Codex bootstrap (`GEMINI.md`, `.gemini/`, `CODEX.md`, `.codex-plugin/`), project-specific MCP `.mcp.json` scaffolding, and the macOS notification hook. Deleted the orphaned `configs/gemini-infra.md` and `configs/codex-infra.md`.
+
+### Deprecated
+
+- **session** (1.6.1): superseded by **rosemary**. Retained only for environments still on `@modelcontextprotocol/server-memory`; new projects should use `/rosemary`.
+
+## [2.2.0] - earlier
+
+### Added
+
+- **rosemary** (1.0.0): CLI-native session management as a drop-in alternative to the MCP-based `session` skill; prioritizes shared XDG state with project-local opt-in.
+
+## [2.0.2] - earlier
+
+### Changed
+
+- Removed bundled `.mcp.json` and auto-loaded `mcpServers` to fix a plugin conflict; overhauled the `session` skill and expanded `init-project` infrastructure.
+
+[2.3.0]: https://github.com/azusachino/harus-skills/releases/tag/v2.3.0
+[2.2.0]: https://github.com/azusachino/harus-skills/releases/tag/v2.2.0
+[2.0.2]: https://github.com/azusachino/harus-skills/releases/tag/v2.0.2
