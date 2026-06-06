@@ -18,6 +18,8 @@ skills/                           # Custom skill definitions (flat)
   rosemary/                       # Session, task dispatcher, knowledge tier (rosemary CLI)
     SKILL.md
     README.md
+  toolbelt/                       # Modern CLI tool reference (eza/rg/fd/sd/xh/dasel/...)
+    SKILL.md
 docs/                             # Project documentation
   plans/                          # Design documents
 .claude-plugin/
@@ -44,7 +46,7 @@ All skills follow the [Agent Skills Standard](http://agentskills.io) format with
 The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-skills` marketplace. Skills are auto-discovered from `skills/` — no explicit listing required.
 
 - **Marketplace name**: `harus-skills`
-- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`, `rosemary`)
+- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`, `rosemary`, `toolbelt`)
 
 ### Skill Invocation
 
@@ -53,6 +55,7 @@ The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-s
 | `/init-project`, `/init` | Initialize project with agent infrastructure |
 | `/session` | **Deprecated** — MCP `server-memory` session management; use `/rosemary` |
 | `/rosemary` | Session continuity, task dispatcher, and knowledge tier (`rosemary` CLI) |
+| `/toolbelt` | Reference for preferred modern CLIs (`eza`/`rg`/`fd`/`sd`/`xh`/`dasel`/...) |
 
 ## Skill Reference
 
@@ -60,13 +63,18 @@ The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-s
 
 Superseded by `rosemary`. MCP-primary session management on `@modelcontextprotocol/server-memory`: session state lives in a `[project]:session` MCP entity, docs sync at boundaries. Retained only for environments still on `server-memory`; new work should use `/rosemary`.
 
-### `rosemary` (v1.2.0)
+### `rosemary` (v1.3.0)
 
 CLI-native shared state via the `rosemary` knowledge graph — one graph, three pillars. Prefers shared XDG state; project-local (`rosemary init --local`) is opt-in. Falls back to `.agents/` files when `rosemary` is unavailable.
 
 - `/rosemary start` / `/rosemary end` — session continuity (load/save the `[project]:session` entity)
 - `/rosemary tasks plan|list|dispatch|sync|close` — durable task dispatcher (epic + task entities, status lifecycle) replacing TodoWrite/local jsonl
 - `/rosemary recall` — knowledge tier: `ingest`/`query` over docs + an ADR decision log
+- Pruning & maintenance: append-only is the *write* discipline; curate persistent entities on a cadence (`rosemary stats` → `delete-observations`) so the graph doesn't grow to multi-k observations
+
+### `toolbelt` (v1.0.0)
+
+Self-contained reference for haru's preferred modern CLIs. Carries both the substitution table (`ls`/`cat`→`eza`/`bat`, `grep`/`find`→`rg`/`fd`, `sed`→`sd`, `curl`→`xh`, non-JSON→`dasel`, etc.) and the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON, `rtk` proxy) so it works on any device regardless of the local global `CLAUDE.md`.
 
 ### `init-project` (v1.3.0)
 
