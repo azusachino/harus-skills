@@ -3,7 +3,7 @@ name: rosemary
 description: Use to share state across sessions and agents using the rosemary CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/rosemary tasks`) that replaces ephemeral TodoWrite/local jsonl, and a knowledge tier (`/rosemary recall`). Auto-triggers when `.agents/` exists at conversation start, or when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
 metadata:
   author: haru
-  version: 1.2.0
+  version: 1.3.0
 ---
 
 # Rosemary Skill
@@ -204,6 +204,38 @@ Checklist distilled from running this dispatcher on a production project:
 - `status:` is append-only — the trail is the audit log.
 - Keep the session `next:` to a single action.
 - On `tasks close`, promote durable lessons into `[repo-basename]` or a decision entity before they're lost.
+- Prune periodically — append-only is the *write* discipline, not a no-delete rule. See below.
+
+## Pruning & Maintenance
+
+Append-only keeps the audit trail honest *during* work, but persistent entities (`[repo-basename]`, `UserPreferences`, `CodingStyle`, `ToolPreferences`, closed epics) accumulate observations indefinitely. Left alone, a long-lived graph grows to multiple thousands of observations, which bloats every `open-nodes`/`read-graph` load and dilutes `query` ranking. Curate on a cadence — pruning is editing the record, not falsifying it.
+
+**When to prune** — run `rosemary stats` at session start roughly weekly (or whenever a load feels heavy). Trigger a prune pass when:
+
+- the graph crosses ~1–2k total observations, or any single entity exceeds ~50 observations;
+- a persistent entity has visibly duplicated or superseded facts (same convention restated, an old decision now reversed);
+- an epic is `DONE` and its task entities still carry a long `status:`/`TL-review` trail.
+
+**What to prune (and what to keep)**:
+
+| Entity | Prune | Keep |
+| --- | --- | --- |
+| `[project]:session` | Nothing to do — the `delete`+`create` reset at each `end` already bounds it. | — |
+| `[project]:[epic]:task-N` (closed) | Collapse the `status:` trail to milestones: keep the final `DONE` line + the one `impl:` summary; delete intermediate `DISPATCHED`/`REVIEW`/`AWAITING_VERIFY` lines. | Final status, `impl:`, any decision link. |
+| `[repo-basename]` | Duplicate or superseded conventions; merge two lines stating the same fact into one. | The current, distinct fact. |
+| `UserPreferences` / `CodingStyle` / `ToolPreferences` | Restated or contradicted preferences — replace the stale line with the current one. | One line per live preference. |
+| `[project]:decision:<slug>` | Don't delete — supersede instead: create the new decision, `create-relations [new] [old] "supersedes"`. | The full ADR, both old and new (the *why* of the reversal is the value). |
+
+**How to prune** — read first, then delete by exact content:
+
+```bash
+rosemary stats                                   # is a pass warranted?
+rosemary open-nodes "[entity]"                   # read current observations verbatim
+rosemary delete-observations "[entity]" "[exact stale line]"   # repeat per line
+rosemary add-observations "[entity]" "[consolidated line]"     # if merging duplicates
+```
+
+`delete-observations` matches the **exact** observation string — copy it from the `open-nodes` output, don't paraphrase. Prune in small batches and re-`stats` to confirm. If built with the `documents` feature, follow a prune with `rosemary compact` to archive and rebuild the FTS/vector index. Never prune an in-flight session or an open epic's live `status:` trail — only closed/persistent entities.
 
 ## Entity Reference
 
@@ -274,7 +306,7 @@ rosemary delete-relations "from" "to" "relation_type"
 
 # Maintenance
 rosemary compact          # archive + refresh FTS/vector (requires --features documents)
-rosemary stats            # entity / relation / observation counts
+rosemary stats            # entity / relation / observation counts — check before a prune pass
 rosemary init --local     # opt-in: project-local graph (only on explicit user request)
 ```
 
