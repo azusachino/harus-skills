@@ -1,6 +1,6 @@
 ---
 name: session
-description: DEPRECATED — superseded by the rosemary skill. MCP server-memory session management. Use rosemary instead when the rosemary CLI is available.
+description: DEPRECATED — superseded by the asobi skill. MCP server-memory session management. Use asobi instead when the asobi CLI is available.
 metadata:
   author: haru
   version: 1.6.2
@@ -8,11 +8,11 @@ metadata:
 
 # Session Skill
 
-> **Deprecated.** Superseded by the [`rosemary`](../rosemary/SKILL.md) skill, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained only for environments still on `@modelcontextprotocol/server-memory`. New work should use `/rosemary`.
+> **Deprecated.** Superseded by the [`asobi`](../asobi/SKILL.md) skill, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained only for environments still on `@modelcontextprotocol/server-memory`. New work should use `/asobi`.
 
 Manage memory and session state across agents and conversations.
 
-**Core principle**: MCP `@modelcontextprotocol/server-memory` is the canonical store. (Prefer `/rosemary`, which has no MCP dependency.)
+**Core principle**: MCP `@modelcontextprotocol/server-memory` is the canonical store. (Prefer `/asobi`, which has no MCP dependency.)
 
 ## Detect MCP (once, at session start)
 

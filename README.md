@@ -4,18 +4,20 @@ A collection of custom Claude Code skills for productivity and project managemen
 
 ## Skills
 
-**`/rosemary`** (v1.2.0) — Share durable state across sessions and sub-agents via the [`rosemary`](https://github.com/azusachino/rosemary) CLI knowledge graph. One graph, three pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan|list|dispatch|sync|close`) that replaces ephemeral TodoWrite/local jsonl, and a **knowledge tier** (`recall` — `ingest`/`query` + an ADR decision log). Falls back to `.agents/` files when rosemary is absent.
+**`/asobi`** (v1.5.0) — Share durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan|list|dispatch|sync|close`) that replaces ephemeral TodoWrite/local jsonl, a **knowledge tier** (`recall` — `ingest`/`query` + an ADR decision log), and a **skill library** (`skills` — install/recall agent skills from git). `asobi` is required — there is no `.agents/` file fallback.
 
-**`/init-project`** (v1.3.0, alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, `CLAUDE.md`, `.claude/rules/`, `.claude/settings.json` (permissions + hooks), `.worktreeinclude`, docs, and tooling configs. Mise-first tool provisioning (nix opt-in); seeds the rosemary graph so `/rosemary start` has context on first run.
+**`/init-project`** (v1.4.0, alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `CLAUDE.md`, `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in); seeds the asobi graph so `/asobi start` has context on first run.
 
-**`/session`** (v1.6.0) — **Deprecated.** MCP variant of session management built on `@modelcontextprotocol/server-memory`. Superseded by `/rosemary`, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained for environments still on `server-memory`; new projects should use `/rosemary`.
+**`/toolbelt`** (v1.0.0) — Reference for haru's preferred modern CLIs (`eza`/`bat`, `rg`/`fd`, `sd`, `xh`, `dasel`, `procs`, `doggo`, `hexyl`, `duckdb`/`psql`, `hyperfine`/`oha`) plus the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON). Self-contained, so it works on any device.
+
+**`/session`** (v1.6.2) — **Deprecated.** MCP variant of session management built on `@modelcontextprotocol/server-memory`. Superseded by `/asobi`, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained for environments still on `server-memory`; new projects should use `/asobi`.
 
 ## Installation
 
 ### Prerequisites
 
 - [Claude Code](https://claude.ai/code) CLI
-- [`rosemary`](https://github.com/azusachino/rosemary) CLI for the `/rosemary` skill (`cargo install --git https://github.com/azusachino/rosemary --features documents`)
+- [`asobi`](https://github.com/azusachino/asobi) CLI for the `/asobi` skill (`cargo install asobi --features documents`)
 - Node.js (for `npx`-based MCP servers, only if using the `/session` MCP variant)
 
 ### Claude Code — Marketplace Plugin
@@ -43,7 +45,7 @@ codex plugin install https://github.com/azusachino/harus-skills
 
 ## MCP Servers (optional)
 
-Only the deprecated `/session` skill needs an MCP server. `/rosemary` and `/init-project` have no MCP dependency. If you still use `/session`, configure `server-memory` globally in `~/.claude/settings.json`:
+Only the deprecated `/session` skill needs an MCP server. `/asobi` and `/init-project` have no MCP dependency. If you still use `/session`, configure `server-memory` globally in `~/.claude/settings.json`:
 
 ```json
 {
@@ -58,14 +60,14 @@ Only the deprecated `/session` skill needs an MCP server. `/rosemary` and `/init
 
 ## Development
 
-Tools via nix devShell (mise as fallback). Tasks via Makefile.
+Tools via nix devShell. Tasks via Makefile.
 
 ```bash
 nix develop          # Enter dev shell (provides all tools)
 make install-hooks   # Install git pre-commit hooks
-make fmt             # Format JSON, YAML, TOML files
-make lint            # Lint Python files
-make check           # Run all checks (fmt + lint + verify)
+make fmt             # Format JSON/YAML (not markdown)
+make check           # Run all checks (format + verify)
+make validate        # PR gate: check + plugin manifest validation
 make verify          # Verify repository structure
 make list-skills     # List all available skills
 ```
@@ -76,13 +78,15 @@ Each skill follows the [Agent Skills Standard](http://agentskills.io) format as 
 
 ```text
 skills/
-  rosemary/
+  asobi/
     SKILL.md          # Skill definition with YAML frontmatter
     README.md
   init-project/
     SKILL.md
     configs/          # Bundled config templates
-  session/            # Deprecated — superseded by rosemary
+  toolbelt/
+    SKILL.md
+  session/            # Deprecated — superseded by asobi
     SKILL.md
 ```
 

@@ -13,9 +13,9 @@ skills/                           # Custom skill definitions (flat)
   init-project/                   # Project initialization skill
     SKILL.md
     configs/                      # Bundled config templates
-  session/                        # Deprecated — MCP-primary session management (use rosemary)
+  session/                        # Deprecated — MCP-primary session management (use asobi)
     SKILL.md
-  rosemary/                       # Session, task dispatcher, knowledge tier, skill library (rosemary CLI)
+  asobi/                          # Session, task dispatcher, knowledge tier, skill library (asobi CLI)
     SKILL.md
   toolbelt/                       # Modern CLI tool reference (eza/rg/fd/sd/xh/dasel/...)
     SKILL.md
@@ -45,32 +45,32 @@ All skills follow the [Agent Skills Standard](http://agentskills.io) format with
 The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-skills` marketplace. Skills are auto-discovered from `skills/` — no explicit listing required.
 
 - **Marketplace name**: `harus-skills`
-- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`, `rosemary`, `toolbelt`)
+- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`, `asobi`, `toolbelt`)
 
 ### Skill Invocation
 
 | Invocation | Skill |
 | --- | --- |
 | `/init-project`, `/init` | Initialize project with agent infrastructure |
-| `/session` | **Deprecated** — MCP `server-memory` session management; use `/rosemary` |
-| `/rosemary` | Session continuity, task dispatcher, knowledge tier, and skill library (`rosemary` CLI) |
+| `/session` | **Deprecated** — MCP `server-memory` session management; use `/asobi` |
+| `/asobi` | Session continuity, task dispatcher, knowledge tier, and skill library (`asobi` CLI) |
 | `/toolbelt` | Reference for preferred modern CLIs (`eza`/`rg`/`fd`/`sd`/`xh`/`dasel`/...) |
 
 ## Skill Reference
 
-### `session` (v1.6.1) — Deprecated
+### `session` (v1.6.2) — Deprecated
 
-Superseded by `rosemary`. MCP-primary session management on `@modelcontextprotocol/server-memory`: session state lives in a `[project]:session` MCP entity, docs sync at boundaries. Retained only for environments still on `server-memory`; new work should use `/rosemary`.
+Superseded by `asobi`. MCP-primary session management on `@modelcontextprotocol/server-memory`: session state lives in a `[project]:session` MCP entity, docs sync at boundaries. Retained only for environments still on `server-memory`; new work should use `/asobi`.
 
-### `rosemary` (v1.4.0)
+### `asobi` (v1.5.0)
 
-CLI-native shared state via the `rosemary` knowledge graph — one graph, four pillars. Prefers shared XDG state; project-local (`rosemary init --local`) is opt-in. `rosemary` is required — there is no `.agents/` file fallback.
+CLI-native shared state via the `asobi` knowledge graph — one graph, four pillars. Prefers shared XDG state; project-local (`asobi init --local`) is opt-in. `asobi` is required — there is no `.agents/` file fallback.
 
-- `/rosemary start` / `/rosemary end` — session continuity (load/save the `[project]:session` entity)
-- `/rosemary tasks plan|list|dispatch|sync|close` — durable task dispatcher (epic + task entities, status lifecycle) replacing TodoWrite/local jsonl
-- `/rosemary recall` — knowledge tier: `ingest`/`query` over docs + an ADR decision log
-- `/rosemary skills` — install/update agent skills from a git repo or local path into the graph, recalled alongside docs
-- Pruning & maintenance: each entity caps at 50 observations by default — append during active work, then rewrite/consolidate (`rosemary stats` → `delete-observations`) to stay under the cap
+- `/asobi start` / `/asobi end` — session continuity (load/save the `[project]:session` entity)
+- `/asobi tasks plan|list|dispatch|sync|close` — durable task dispatcher (epic + task entities, status lifecycle) replacing TodoWrite/local jsonl
+- `/asobi recall` — knowledge tier: `ingest`/`query` over docs + an ADR decision log
+- `/asobi skills` — install/update agent skills from a git repo or local path into the graph, recalled alongside docs
+- Pruning & maintenance: each entity caps at 50 observations by default — append during active work, then rewrite/consolidate (`asobi stats` → `delete-observations`) to stay under the cap
 
 ### `toolbelt` (v1.0.0)
 
@@ -78,7 +78,7 @@ Self-contained reference for haru's preferred modern CLIs. Carries both the subs
 
 ### `init-project` (v1.4.0)
 
-Scans a project, asks targeted questions, and generates `CLAUDE.md` (single source of truth), `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in for repos with a flake). Seeds the rosemary graph so `/rosemary start` has context on first run; rosemary is required (no `.agents/` fallback).
+Scans a project, asks targeted questions, and generates `CLAUDE.md` (single source of truth), `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in for repos with a flake). Seeds the asobi graph so `/asobi start` has context on first run; asobi is required (no `.agents/` fallback).
 
 ## MCP Servers
 
@@ -98,8 +98,8 @@ MCP servers are not bundled — configure them globally in `~/.claude/settings.j
 
 ## Agent Behavior
 
-- **Session Management**: Run `/rosemary start` at the start of any session. Run `/rosemary end` before wrapping up.
-- **Version Bump Rule**: After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's `metadata.version`, (2) `gemini-extension.json` version, (3) `.claude-plugin/marketplace.json` metadata.version. Check the actual files for current versions — do not rely on a cached value here.
+- **Session Management**: Run `/asobi start` at the start of any session. Run `/asobi end` before wrapping up.
+- **Version Bump Rule**: There is one universal `harus-skills` version, shared across all plugin manifests. After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's own `metadata.version`, and (2) the single universal version in every manifest, all kept identical — `.claude-plugin/marketplace.json` (both top-level `metadata.version` and the plugin entry's `version`), `gemini-extension.json` `version`, and `.codex-plugin/plugin.json` `version`. Check the actual files for current versions — do not rely on a cached value here.
 - **Staging discipline**: Always `git add <specific files>`. Never `git add -A` or `git add .`.
 
 ## Development Workflow

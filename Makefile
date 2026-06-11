@@ -98,12 +98,13 @@ check: fmt-check verify
 
 validate: check
 	@echo "🔎 Validating plugin manifests..."
-	@jq empty .claude-plugin/marketplace.json gemini-extension.json
+	@jq empty .claude-plugin/marketplace.json gemini-extension.json .codex-plugin/plugin.json
 	@MP=$$(jq -r '.metadata.version' .claude-plugin/marketplace.json); \
 		PV=$$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json); \
 		GV=$$(jq -r '.version' gemini-extension.json); \
-		if [ "$$MP" != "$$PV" ] || [ "$$MP" != "$$GV" ]; then \
-			echo "❌ Version mismatch: marketplace.metadata=$$MP plugin=$$PV gemini=$$GV"; \
+		CV=$$(jq -r '.version' .codex-plugin/plugin.json); \
+		if [ "$$MP" != "$$PV" ] || [ "$$MP" != "$$GV" ] || [ "$$MP" != "$$CV" ]; then \
+			echo "❌ Version mismatch: marketplace.metadata=$$MP plugin=$$PV gemini=$$GV codex=$$CV"; \
 			exit 1; \
 		fi; \
 		echo "  ✓ manifest versions aligned ($$MP)"
