@@ -63,8 +63,8 @@ Template:
 
 ### DO
 - Use \`make <target>\` for all task execution — never run tools directly
-- At session start: load rosemary entities (\`/rosemary start\`)
-- At session end: write state to the \`[project]:session\` rosemary entity; save conventions to the project entity (\`/rosemary end\`)
+- At session start: load asobi entities (\`/asobi start\`)
+- At session end: write state to the \`[project]:session\` asobi entity; save conventions to the project entity (\`/asobi end\`)
 - Dispatch sub-agents for independent tasks — parallelize where possible
 - Stage files explicitly: \`git add <specific files>\` only
 

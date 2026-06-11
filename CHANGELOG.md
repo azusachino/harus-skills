@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-06-11
+
+### Changed
+
+- **rosemary → asobi**: the underlying CLI was published to crates.io and renamed; the binary, command, and crate are all now `asobi`. The skill is renamed to match (`/asobi`, `skills/asobi/`), every CLI invocation switches `rosemary` → `asobi`, the config file becomes `asobi.toml`, and the project-local cache moves to `.asobi/`. No features changed — same session continuity, task dispatcher, knowledge tier, and skill library.
+- **asobi** (1.5.0): install instructions now use crates.io (`cargo install asobi`, `cargo binstall asobi`, or `--features documents`) instead of `cargo install --git`.
+- Docs (`CLAUDE.md`, `README.md`), the deprecated `session` skill, and `init-project` updated to reference `asobi`.
+
 ## [2.3.0] - 2026-06-04
 
 ### Added

@@ -10,7 +10,7 @@ disable-auto-invoke: true
 
 # Init Project
 
-Initialize the current project with agent infrastructure, documentation, and tooling. Stack assumption: **rosemary** (memory), **mise** (tools), **make** (commands). Nix is supported as an opt-in for repos that already use it.
+Initialize the current project with agent infrastructure, documentation, and tooling. Stack assumption: **asobi** (memory), **mise** (tools), **make** (commands). Nix is supported as an opt-in for repos that already use it.
 
 ## Phase 1: Scan
 
@@ -18,13 +18,13 @@ Silently collect before asking anything:
 
 - **Language/framework**: file extensions, config files, dependency manifests
 - **Build system**: `Makefile`, `Cargo.toml`, `go.mod`, `package.json`, `build.zig`, etc.
-- **Existing agent infra**: `CLAUDE.md`, `.claude/`, `rosemary.toml`
+- **Existing agent infra**: `CLAUDE.md`, `.claude/`, `asobi.toml`
 - **Tooling**:
   - Mise: `mise.toml`, `.mise.toml` — primary tool source
   - Nix: `flake.nix`, `shell.nix`, `default.nix`, `flake.lock` — optional, only when already present
   - Formatters, linters, git hooks, CI/CD, editor config
   - Task runner: `Makefile` (primary), `justfile`, `Taskfile.yml`
-- **Memory**: run `command -v rosemary` — the memory store, seeded in Phase 3 (no file fallback)
+- **Memory**: run `command -v asobi` — the memory store, seeded in Phase 3 (no file fallback)
 - **Docs**: `README.md`, `docs/`, existing architecture or design docs
 - **Git state**: branch, remotes, recent commits
 
@@ -42,7 +42,7 @@ Present scan summary, then ask **one question at a time** for anything not infer
 
 ## Phase 3: Generate Agent Infrastructure
 
-If `rosemary` is available, call `rosemary read-graph` first and merge retrieved facts into generated files:
+If `asobi` is available, call `asobi read-graph` first and merge retrieved facts into generated files:
 
 - `CodingStyle` → `CLAUDE.md` Coding Conventions
 - `ToolPreferences` → `CLAUDE.md` Build/Run/Test
@@ -50,10 +50,10 @@ If `rosemary` is available, call `rosemary read-graph` first and merge retrieved
 
 Ask permission before writing each file. Never overwrite without asking.
 
-After generating files, if `rosemary` is available, seed the graph so `/rosemary start` has context on first run:
+After generating files, if `asobi` is available, seed the graph so `/asobi start` has context on first run:
 
-1. Project entity (repo basename): `rosemary create-entities "[repo-basename]" "project"` then `add-observations` for tech stack + architecture, tool provisioning method (mise / nix), task runner + key make targets, and any non-obvious conventions from the scan.
-2. Missing category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`): seed from the **Global Seed Values in the rosemary skill** — it is the canonical source for these defaults.
+1. Project entity (repo basename): `asobi create-entities "[repo-basename]" "project"` then `add-observations` for tech stack + architecture, tool provisioning method (mise / nix), task runner + key make targets, and any non-obvious conventions from the scan.
+2. Missing category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`): seed from the **Global Seed Values in the asobi skill** — it is the canonical source for these defaults.
 
 ### `.claude/` directory
 
@@ -178,7 +178,7 @@ Ask permission before writing.
 
 ### .gitignore additions
 
-Nothing session-volatile to ignore by default — rosemary state lives in the global XDG graph. Only if the user opted into a project-local graph (`rosemary init --local`), add `.rosemary/` to `.gitignore`.
+Nothing session-volatile to ignore by default — asobi state lives in the global XDG graph. Only if the user opted into a project-local graph (`asobi init --local`), add `.asobi/` to `.gitignore`.
 
 ## Phase 4: Generate Documentation
 
@@ -224,7 +224,7 @@ Init complete:
   .claude/settings.json              ← permissions + hooks
   .claude/rules/core.md [+ config.md, release.md, testing.md if applicable]
   .claude/commands/help.md [if accepted]
-  .gitignore (updated, if project-local rosemary)
+  .gitignore (updated, if project-local asobi)
   docs/architecture.md, docs/setup.md, docs/plan.md, docs/todo.md
   Makefile, mise.toml [+ flake.nix if nix], [other tooling configs]
 
@@ -232,8 +232,8 @@ Personal overrides: create .claude/settings.local.json (auto-gitignored).
 Global agents (haiku-developer, gemini-developer, codex-developer,
 dispatch-debugger, repo-scout) apply automatically — no per-project setup.
 
-Next: run `/rosemary start` at the start of each work session,
-      run `/rosemary end` before wrapping up to save state.
+Next: run `/asobi start` at the start of each work session,
+      run `/asobi end` before wrapping up to save state.
 ```
 
 ## Rules
@@ -243,6 +243,6 @@ Next: run `/rosemary start` at the start of each work session,
 - **Populate from scan** — don't leave TODO when the info is available.
 - **Make is the task runner** — reference `make <target>` everywhere. No mise *task* references (mise provides tools, make runs commands).
 - **Mise-first** — tools come from mise; use nix only when the repo already has a flake or the user chose it.
-- **Rosemary for memory** — seed and read the rosemary graph; it is required and has no file fallback.
+- **Asobi for memory** — seed and read the asobi graph; it is required and has no file fallback.
 - **Token efficiency** — if a script runs without error, don't read its output.
 - **Language-aware** — adapt all templates to the detected language/ecosystem.
