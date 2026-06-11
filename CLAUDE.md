@@ -114,23 +114,21 @@ make install-hooks  # Install git pre-commit hooks
 ### Common Commands
 
 ```bash
-make fmt          # Format JSON, YAML, TOML (NOT markdown)
+make fmt          # Format JSON/YAML (NOT markdown)
 make fmt-check    # Check formatting without modifying
-make lint         # Lint Python (ruff)
-make lint-fix     # Lint and auto-fix
-make check        # Run all checks (format + lint + verify)
+make check        # Run all checks (format + verify)
+make validate     # PR gate: check + plugin manifest validation
 make list-skills  # List all available skills
 make verify       # Verify repository structure
 make clean        # Remove generated lessons
 ```
 
+CI (`.github/workflows/ci.yml`) runs `nix develop --command make validate` on every push to `main` and every PR.
+
 ### File Formatting
 
 - **Markdown**: no linting. Never run Prettier on `.md` files — it wraps prose and breaks formatting. Never manually wrap prose lines either.
-- **JSON/YAML**: Prettier with 2-space indentation
-- **TOML**: Taplo formatter
-- **Shell scripts**: shfmt with 2-space indentation
-- **Python**: ruff
+- **JSON/YAML**: Prettier with 2-space indentation (the only formatter; tools come from the nix devShell)
 
 ## Key Conventions
 
@@ -138,5 +136,5 @@ make clean        # Remove generated lessons
 - Skills ask user permission before executing commands
 - No emojis in git commit messages or MR descriptions
 - Conventional commit style: `feat:`, `fix:`, `docs:`, `chore:`
-- Always run `make fmt` + `make lint` before committing
+- Always run `make check` before committing; `make validate` before PRs
 - Never overwrite existing files without asking
