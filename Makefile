@@ -1,6 +1,6 @@
 # Makefile for managing harus-skills tasks
 
-.PHONY: help install-hooks fmt fmt-check lint lint-fix clean verify list-skills check link
+.PHONY: help install-hooks fmt fmt-check clean verify list-skills check validate link
 
 # Default target
 help:
@@ -9,9 +9,9 @@ help:
 	@echo "  Setup: nix develop  (provides all tools via nixpkgs)"
 	@echo ""
 	@echo "  make install-hooks - Install git pre-commit hooks"
-	@echo "  make fmt          - Format all files"
-	@echo "  make lint         - Lint Python files"
-	@echo "  make check        - Run all checks (format, lint, verify)"
+	@echo "  make fmt          - Format JSON/YAML files"
+	@echo "  make check        - Run all checks (format + verify)"
+	@echo "  make validate     - PR gate: check + manifest validation"
 	@echo "  make verify       - Verify repository structure"
 	@echo "  make list-skills  - List all available skills"
 	@echo "  make clean        - Remove generated files"
@@ -37,42 +37,14 @@ install-hooks:
 	@echo "✅ Git hooks installed!"
 
 fmt:
-	@echo "Formatting files..."
+	@echo "Formatting JSON/YAML files..."
 	@prettier --write "**/*.{json,yaml,yml}"
-	@taplo format "**/*.toml" 2>/dev/null || true
-	@if find . -name "*.sh" -o -name "*.bash" | grep -q .; then \
-		shfmt -w -i 2 -ci -bn $$(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules); \
-	fi
-	@if find . -name "*.py" | grep -q .; then \
-		ruff format .; \
-	fi
 	@echo "Done."
 
 fmt-check:
-	@echo "Checking file formatting..."
+	@echo "Checking JSON/YAML formatting..."
 	@prettier --check "**/*.{json,yaml,yml}"
-	@taplo format --check "**/*.toml" 2>/dev/null || true
-	@if find . -name "*.sh" -o -name "*.bash" | grep -q .; then \
-		shfmt -d -i 2 -ci -bn $$(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules); \
-	fi
-	@if find . -name "*.py" | grep -q .; then \
-		ruff format --check .; \
-	fi
 	@echo "All files are properly formatted."
-
-lint:
-	@echo "Linting Python files..."
-	@if find . -name "*.py" | grep -q .; then \
-		ruff check .; \
-	fi
-	@echo "Done."
-
-lint-fix:
-	@echo "Linting and fixing Python files..."
-	@if find . -name "*.py" | grep -q .; then \
-		ruff check . --fix; \
-	fi
-	@echo "Done."
 
 clean:
 	@echo "🧹 Cleaning generated lessons..."
@@ -121,8 +93,21 @@ list-skills:
 		fi; \
 	done
 
-check: fmt-check lint verify
+check: fmt-check verify
 	@echo "✅ All checks passed!"
+
+validate: check
+	@echo "🔎 Validating plugin manifests..."
+	@jq empty .claude-plugin/marketplace.json gemini-extension.json
+	@MP=$$(jq -r '.metadata.version' .claude-plugin/marketplace.json); \
+		PV=$$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json); \
+		GV=$$(jq -r '.version' gemini-extension.json); \
+		if [ "$$MP" != "$$PV" ] || [ "$$MP" != "$$GV" ]; then \
+			echo "❌ Version mismatch: marketplace.metadata=$$MP plugin=$$PV gemini=$$GV"; \
+			exit 1; \
+		fi; \
+		echo "  ✓ manifest versions aligned ($$MP)"
+	@echo "✅ Validation passed!"
 
 link:
 	@gemini extensions link .

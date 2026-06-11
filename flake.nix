@@ -16,10 +16,8 @@
       {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            nodePackages.prettier # JSON/YAML formatter
-            taplo # TOML formatter
-            shfmt # shell script formatter
-            ruff # Python linter/formatter
+            prettier # JSON/YAML formatter
+            jq # JSON query — manifest validation in `make validate`
           ];
         };
       }

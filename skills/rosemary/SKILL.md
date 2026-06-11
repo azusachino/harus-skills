@@ -1,9 +1,9 @@
 ---
 name: rosemary
-description: Use to share state across sessions and agents using the rosemary CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/rosemary tasks`) that replaces ephemeral TodoWrite/local jsonl, and a knowledge tier (`/rosemary recall`). Auto-triggers when `.agents/` exists at conversation start, or when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
+description: Use to share state across sessions and agents via the rosemary CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/rosemary tasks`) that replaces ephemeral TodoWrite/local jsonl, a knowledge tier (`/rosemary recall`), and a skill library (`/rosemary skills`). Auto-triggers when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
 metadata:
   author: haru
-  version: 1.3.0
+  version: 1.4.0
 ---
 
 # Rosemary Skill
@@ -15,10 +15,11 @@ Share durable state across conversations and sub-agents using the `rosemary` CLI
 | **Session continuity** | `/rosemary start`, `/rosemary end` | resume work after `/clear`, context compaction, or a machine restart |
 | **Task dispatcher** | `/rosemary tasks plan\|list\|dispatch\|sync\|close` | durable, cross-agent task state — replaces TodoWrite / local jsonl |
 | **Knowledge tier** | `/rosemary recall` | hybrid semantic search over ingested docs + a decision log |
+| **Skill library** | `/rosemary skills` | install/update agent skills from git into the graph, recalled alongside docs |
 
-**Core principle**: `rosemary` is the canonical store. Local `.agents/` files are fallback only when `rosemary` is not in `$PATH`. Task state lives in the graph, never in an ephemeral in-conversation todo list — that is the whole point: a dispatched sub-agent and the lead coordinate *through the graph*, not through the user.
+**Core principle**: `rosemary` is the canonical store and is required — there is no local-file fallback. Task state lives in the graph, never in an ephemeral in-conversation todo list — that is the whole point: a dispatched sub-agent and the lead coordinate *through the graph*, not through the user.
 
-**State scope** — prefer **shared (XDG global) state** by default. Project-local state (`rosemary init --local`, creating `./rosemary.toml`) is opt-in only when the user explicitly requests it (e.g. "use project-local rosemary", "isolate this repo's memory"). Cross-project entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) always live in the global graph regardless of scope.
+**State scope** — default to **shared (XDG global) state**. Project-local state (`rosemary init --local` → `./rosemary.toml`) is opt-in only on explicit request. Cross-project entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) always live in the global graph regardless of scope.
 
 ## Naming Convention
 
@@ -36,7 +37,7 @@ Entity names use `:` as a hierarchy separator. Keep names verbatim — do not fl
 
 ## Detect rosemary (once, at session start)
 
-Run `command -v rosemary`. Record the result — do not re-check during the session. If unavailable, fall back to local files.
+Run `command -v rosemary`. Record the result — do not re-check during the session. If unavailable, stop and tell the user to install it (`cargo install --git https://github.com/azusachino/rosemary`); there is no file fallback.
 
 **Scope detection**: if `./rosemary.toml` exists in the repo root, rosemary auto-uses project-local state — note this but do not switch modes mid-session. Otherwise the global XDG graph is in effect.
 
@@ -44,8 +45,7 @@ Run `command -v rosemary`. Record the result — do not re-check during the sess
 
 **Step 1 — Load state**:
 
-- **rosemary**: `rosemary open-nodes UserPreferences CodingStyle ToolPreferences [repo-basename] [project]:session`. If any entity is missing from the output, it doesn't exist yet — seed it from Global Seed Values. If the session entity is missing, treat as a fresh start. If `[project]:session` references an active epic, also load it: `rosemary search-nodes "[epic-name]"` to pull the epic and its task children.
-- **No rosemary**: read `.agents/CONTEXT.md` and `.agents/CURRENT_TASK.md`. Skip silently if missing.
+`rosemary open-nodes UserPreferences CodingStyle ToolPreferences [repo-basename] [project]:session`. If any entity is missing from the output, it doesn't exist yet — seed it from Global Seed Values. If the session entity is missing, treat as a fresh start. If `[project]:session` references an active epic, also load it: `rosemary search-nodes "[epic-name]"` to pull the epic and its task children.
 
 **Step 2 — Freshness check**: run `git log --oneline -5`. If recent commits touch feature files but the loaded context looks unchanged, flag: "Context may be stale — sync at session end."
 
@@ -53,7 +53,7 @@ Run `command -v rosemary`. Record the result — do not re-check during the sess
 
 ## `/rosemary end`
 
-**Step 1 — Save session state** (rosemary): full reset — delete the old session entity and recreate it clean so it never accumulates stale lines:
+**Step 1 — Save session state**: full reset — delete the old session entity and recreate it clean so it never accumulates stale lines:
 
 ```bash
 rosemary delete-entities "[project]:session"
@@ -66,11 +66,9 @@ rosemary add-observations "[project]:session" "next: [single most important next
 rosemary add-observations "[project]:session" "last-updated: YYYY-MM-DD"
 ```
 
-- **No rosemary**: overwrite `.agents/CURRENT_TASK.md` with the same fields.
+**Step 2 — Save new facts** (cross-project): `rosemary search-nodes "[topic]"` to check for duplicates, then `rosemary add-observations [UserPreferences|CodingStyle|ToolPreferences] "[fact]"`.
 
-**Step 2 — Save new facts** (cross-project): `rosemary search-nodes "[topic]"` to check for duplicates, then `rosemary add-observations [UserPreferences|CodingStyle|ToolPreferences] "[fact]"`. No rosemary: append to `.agents/MEMORY.md`.
-
-**Step 3 — Save project context** (conventions, patterns, decisions): `rosemary search-nodes "[topic]"`, then `rosemary add-observations [repo-basename] "[fact]"`. No rosemary: update `.agents/CONTEXT.md`, keep concise.
+**Step 3 — Save project context** (conventions, patterns, decisions): `rosemary search-nodes "[topic]"`, then `rosemary add-observations [repo-basename] "[fact]"`.
 
 **Step 4 — Compact** (optional): if `rosemary` was built with the `documents` feature, run `rosemary compact` to archive session state to Markdown and refresh the FTS/vector index. Skip silently if unavailable.
 
@@ -127,8 +125,8 @@ rosemary add-observations "[project]:[epic]:task-N" "status: REVIEW"
 
 **Dispatch models** — pick per epic:
 
-- **Sequential (default, proven)** — no worktrees, one agent at a time, lead reviews the diff in the working tree, commit after each task. Use when tasks touch overlapping files, need a human verify-gate, or want tight per-task review. This is the cadence that works in practice.
-- **Worktree-per-task (opt-in)** — each task gets its own git worktree under the project; dispatch independent tasks in parallel; merge per task. Matches the global worktrees-by-default preference. Use only when tasks are genuinely independent (disjoint files).
+- **Sequential (default, proven)** — one agent at a time, no worktrees; lead reviews the working-tree diff and commits after each task. Use when tasks overlap files or need a verify-gate.
+- **Worktree-per-task (opt-in)** — each independent task in its own worktree under the project, dispatched in parallel, merged per task. Use only for genuinely disjoint files.
 
 ### `tasks sync [task]`
 
@@ -170,9 +168,7 @@ rosemary query "how does session auth verify tokens"   # hybrid semantic + keywo
 
 `ingest` takes exactly one `<PATH>` (file or directory) — call it once per path, not as a list. Prefer `query` before re-reading a large doc — it returns the relevant chunks, not the whole file. Re-`ingest` after meaningful doc changes.
 
-**Guardrail — index, never duplicate.** `CLAUDE.md` / `AGENTS.md` are the canonical, harness-loaded source of truth. `ingest` makes them *queryable*; it does not make the graph their owner. Never copy a file's content into entities — that creates a second source that drifts. The seed entities (`UserPreferences` / `CodingStyle` / `ToolPreferences`) are the curated cross-project *slice* of global `CLAUDE.md`, kept as entities because they are agent-writable and queryable; everything else in those files stays in the files and is reached via `query`.
-
-**Ranking caveat (verified).** `query` hybrid-ranks graph topics *above* ingested document chunks — an ingested `CLAUDE.md` surfaces, but below the `codingstyle`/`toolpreferences` topic entities. So the curated entities remain the primary recall path; ingested instruction files are a full-text safety net for content that isn't captured as an entity, not a replacement for the seed trio.
+**Guardrail — index, never duplicate.** `CLAUDE.md` is the canonical, harness-loaded source of truth; `ingest` makes it *queryable*, not graph-owned. Never copy file content into entities — that creates a second source that drifts. The seed entities (`UserPreferences`/`CodingStyle`/`ToolPreferences`) are the curated, agent-writable slice of global `CLAUDE.md` and stay the primary recall path: `query` hybrid-ranks them *above* ingested chunks, so an ingested instruction file is a full-text safety net, not a replacement for the seed trio.
 
 ### Decision log (ADRs)
 
@@ -191,51 +187,29 @@ rosemary create-relations "[project]:[epic]:task-N" "[project]:decision:[slug]" 
 
 Surface them with `rosemary search-nodes "[topic]"` or `rosemary query "why [topic]"`.
 
-## Real-World Practices
+## `/rosemary skills` — Skill Library
 
-Checklist distilled from running this dispatcher on a production project:
+Install reusable agent skills straight into the graph from a git repo or local path. Each skill's frontmatter + body is stored as an entity and (with the `documents` feature) indexed for vector search, so an installed skill is reachable from `rosemary query` alongside your ingested docs — one recall path for docs *and* skills.
 
-- One agent at a time unless tasks touch disjoint files; parallel only pays when worktrees don't fight.
-- Lead reviews every sub-agent diff before commit and trims stray changes — never blind-trust.
-- Commit after each task passes review — a bisectable branch beats one squash.
-- Pin file paths + line numbers in each task `title:` so dispatch is execution, not rediscovery.
-- Order tasks smallest → biggest; early wins de-risk the larger ones.
-- `AWAITING_VERIFY` for anything needing human/device confirmation — don't auto-close.
-- `status:` is append-only — the trail is the audit log.
-- Keep the session `next:` to a single action.
-- On `tasks close`, promote durable lessons into `[repo-basename]` or a decision entity before they're lost.
-- Prune periodically — append-only is the *write* discipline, not a no-delete rule. See below.
+```bash
+rosemary skills install <git-url|path> --all          # ingest every skill found
+rosemary skills install <git-url|path> --select a b   # ingest only the named skills
+rosemary skills install <git-url|path>                # interactive picker (TTY required)
+rosemary skills                                       # list installed skills, grouped by source
+rosemary skills show <name>                           # print one skill's raw body
+rosemary skills update [source]                       # refresh from source (all, or one slug/URL)
+rosemary skills remove <name|source>                  # drop one skill or a whole source
+```
+
+Git sources are shallow-cloned to a reused cache (`.rosemary/caches/<slug>`); `update` does `git fetch` + `reset --hard`, re-cloning if that fails (needs `git` on `$PATH`). Installed names are `skill:<slug>:<name>`; `show`/`remove` also accept the short name.
+
+**Efficient use**: ingest a curated set in one call with `--select a b c` (use `--all` only for a whole repo); afterward recall via `rosemary query "<task>"` instead of re-fetching the repo; refresh with `update`, treating upstream as source of truth — never hand-edit installed skill entities. Example: `rosemary skills install https://github.com/azusachino/rosemary --all`.
 
 ## Pruning & Maintenance
 
-Append-only keeps the audit trail honest *during* work, but persistent entities (`[repo-basename]`, `UserPreferences`, `CodingStyle`, `ToolPreferences`, closed epics) accumulate observations indefinitely. Left alone, a long-lived graph grows to multiple thousands of observations, which bloats every `open-nodes`/`read-graph` load and dilutes `query` ranking. Curate on a cadence — pruning is editing the record, not falsifying it.
+Each entity caps at **50 observations** by default — you can't append forever. Append freely during active work, but when an entity fills (check `rosemary stats`), **rewrite and consolidate** rather than pile on: merge duplicate facts, replace stale lines with the current one, and collapse a closed task's `status:` trail to its final `DONE` + `impl:`. Decisions are the exception — never delete one; supersede it (`create-relations [new] [old] "supersedes"`) so the *why* of the reversal survives.
 
-**When to prune** — run `rosemary stats` at session start roughly weekly (or whenever a load feels heavy). Trigger a prune pass when:
-
-- the graph crosses ~1–2k total observations, or any single entity exceeds ~50 observations;
-- a persistent entity has visibly duplicated or superseded facts (same convention restated, an old decision now reversed);
-- an epic is `DONE` and its task entities still carry a long `status:`/`TL-review` trail.
-
-**What to prune (and what to keep)**:
-
-| Entity | Prune | Keep |
-| --- | --- | --- |
-| `[project]:session` | Nothing to do — the `delete`+`create` reset at each `end` already bounds it. | — |
-| `[project]:[epic]:task-N` (closed) | Collapse the `status:` trail to milestones: keep the final `DONE` line + the one `impl:` summary; delete intermediate `DISPATCHED`/`REVIEW`/`AWAITING_VERIFY` lines. | Final status, `impl:`, any decision link. |
-| `[repo-basename]` | Duplicate or superseded conventions; merge two lines stating the same fact into one. | The current, distinct fact. |
-| `UserPreferences` / `CodingStyle` / `ToolPreferences` | Restated or contradicted preferences — replace the stale line with the current one. | One line per live preference. |
-| `[project]:decision:<slug>` | Don't delete — supersede instead: create the new decision, `create-relations [new] [old] "supersedes"`. | The full ADR, both old and new (the *why* of the reversal is the value). |
-
-**How to prune** — read first, then delete by exact content:
-
-```bash
-rosemary stats                                   # is a pass warranted?
-rosemary open-nodes "[entity]"                   # read current observations verbatim
-rosemary delete-observations "[entity]" "[exact stale line]"   # repeat per line
-rosemary add-observations "[entity]" "[consolidated line]"     # if merging duplicates
-```
-
-`delete-observations` matches the **exact** observation string — copy it from the `open-nodes` output, don't paraphrase. Prune in small batches and re-`stats` to confirm. If built with the `documents` feature, follow a prune with `rosemary compact` to archive and rebuild the FTS/vector index. Never prune an in-flight session or an open epic's live `status:` trail — only closed/persistent entities.
+`delete-observations` matches the **exact** string — copy it from `open-nodes`, don't paraphrase. Never prune an in-flight session or an open epic's live trail. With the `documents` feature, follow a prune with `rosemary compact` to rebuild the index.
 
 ## Entity Reference
 
@@ -244,8 +218,8 @@ rosemary add-observations "[entity]" "[consolidated line]"     # if merging dupl
 | `[project]:session` | `session` | Volatile — `delete`+`create` each `end` | `objective`, `status`, `completed`, `remaining`, `next`, `last-updated` |
 | `[project]:[epic]` / `:task-N` | `task` | Epic-scoped — `create` once, append-only `status:` trail, rests `DONE` on close | epic objective/scope; per-task `title`, `status`, `impl` |
 | `[project]:decision:<slug>` | `concept` | Persistent — `create` once, link with relations | `decision`, `context`, `consequences`, `date` |
-| `[repo-basename]` | `project` | Persistent — append-only, never delete | architecture decisions + why, non-obvious conventions, key commands, stack |
-| `UserPreferences` / `CodingStyle` / `ToolPreferences` | `preference` / `standard` | Persistent, global — append-only | cross-project prefs (see Global Seed Values) |
+| `[repo-basename]` | `project` | Persistent — append, then consolidate under the 50-obs cap; never delete the entity | architecture decisions + why, non-obvious conventions, key commands, stack |
+| `UserPreferences` / `CodingStyle` / `ToolPreferences` | `preference` / `standard` | Persistent, global — append, then consolidate under the 50-obs cap | cross-project prefs (see Global Seed Values) |
 
 Remaining types: `reference` (external URLs/resources). Write protocol for every entity:
 
@@ -299,6 +273,12 @@ rosemary create-relations "from" "to" "relation_type"
 # Documents
 rosemary ingest <path>                        # load docs into the document tier
 
+# Skills
+rosemary skills install <git-url|path> --all  # ingest a repo's skills into the graph
+rosemary skills                               # list installed skills
+rosemary skills update [source]               # refresh installed skills
+rosemary skills remove <name|source>          # drop a skill or source
+
 # Delete
 rosemary delete-entities "name1" "name2" ...
 rosemary delete-observations "name" "exact content"
@@ -309,11 +289,3 @@ rosemary compact          # archive + refresh FTS/vector (requires --features do
 rosemary stats            # entity / relation / observation counts — check before a prune pass
 rosemary init --local     # opt-in: project-local graph (only on explicit user request)
 ```
-
-## Fallback: Local Files
-
-Used only when `rosemary` is not available. All belong in `.gitignore`. The task dispatcher and knowledge tier have no file fallback — they require rosemary.
-
-- `.agents/CURRENT_TASK.md` — task state (overwrite each session end)
-- `.agents/CONTEXT.md` — project conventions (update in place; remove stale entries)
-- `.agents/MEMORY.md` — cross-project facts (append; update in place for duplicates)

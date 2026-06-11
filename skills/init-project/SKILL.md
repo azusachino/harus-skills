@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 1.3.0
+  version: 1.4.0
 user-invokable: true
 disable-auto-invoke: true
 ---
@@ -18,13 +18,13 @@ Silently collect before asking anything:
 
 - **Language/framework**: file extensions, config files, dependency manifests
 - **Build system**: `Makefile`, `Cargo.toml`, `go.mod`, `package.json`, `build.zig`, etc.
-- **Existing agent infra**: `AGENTS.md`, `.agents/`, `CLAUDE.md`, `.cursor/`, `rosemary.toml`
+- **Existing agent infra**: `CLAUDE.md`, `.claude/`, `rosemary.toml`
 - **Tooling**:
   - Mise: `mise.toml`, `.mise.toml` — primary tool source
   - Nix: `flake.nix`, `shell.nix`, `default.nix`, `flake.lock` — optional, only when already present
   - Formatters, linters, git hooks, CI/CD, editor config
   - Task runner: `Makefile` (primary), `justfile`, `Taskfile.yml`
-- **Memory**: run `command -v rosemary` — primary store when present; `.agents/` files are the fallback
+- **Memory**: run `command -v rosemary` — the memory store, seeded in Phase 3 (no file fallback)
 - **Docs**: `README.md`, `docs/`, existing architecture or design docs
 - **Git state**: branch, remotes, recent commits
 
@@ -32,7 +32,7 @@ Silently collect before asking anything:
 
 Present scan summary, then ask **one question at a time** for anything not inferable:
 
-1. "What does this project do?" — for AGENTS.md overview
+1. "What does this project do?" — for CLAUDE.md overview
 2. "Architecture style?" — monolith / library / CLI / API / microservice
 3. "Key coding conventions?" — naming, error handling, testing philosophy
 4. "Quality checks that must pass?" — format, lint, test, coverage
@@ -44,9 +44,9 @@ Present scan summary, then ask **one question at a time** for anything not infer
 
 If `rosemary` is available, call `rosemary read-graph` first and merge retrieved facts into generated files:
 
-- `CodingStyle` → `AGENTS.md` Coding Conventions
-- `ToolPreferences` → `AGENTS.md` Build/Run/Test
-- `UserPreferences` → `.agents/CONTEXT.md` Agent Rules
+- `CodingStyle` → `CLAUDE.md` Coding Conventions
+- `ToolPreferences` → `CLAUDE.md` Build/Run/Test
+- `UserPreferences` → `.claude/rules/core.md` Agent Rules
 
 Ask permission before writing each file. Never overwrite without asking.
 
@@ -55,9 +55,13 @@ After generating files, if `rosemary` is available, seed the graph so `/rosemary
 1. Project entity (repo basename): `rosemary create-entities "[repo-basename]" "project"` then `add-observations` for tech stack + architecture, tool provisioning method (mise / nix), task runner + key make targets, and any non-obvious conventions from the scan.
 2. Missing category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`): seed from the **Global Seed Values in the rosemary skill** — it is the canonical source for these defaults.
 
-### AGENTS.md
+### `.claude/` directory
 
-Public project briefing for humans and agents. Sections:
+Load `configs/claude-infra.md` for templates. Ask permission once for the whole group before writing.
+
+#### CLAUDE.md (root)
+
+The single source of truth for all agents. Generate if not already present; never overwrite an existing CLAUDE.md — offer to merge instead. Sections:
 
 - **Project Overview** — description, purpose
 - **Tech Stack & Architecture** — detected stack, structure, key patterns
@@ -66,41 +70,15 @@ Public project briefing for humans and agents. Sections:
 - **Key Files & Entry Points** — important paths for quick orientation
 - **Quality Standards** — required checks before commit/merge
 
-### .agents/ (file fallback)
-
-Generated so the project works when `rosemary` is not installed. When rosemary is present, session state lives in the graph and these files are skipped at runtime. Add all three to `.gitignore`.
-
-- **`.agents/CONTEXT.md`** — Agent Rules (hard DO/DON'T) + Project Context + Tool Provisioning:
-  - DO: use `make <target>` for all task execution
-  - DO: at session start, load rosemary entities if available; otherwise read `.agents/CONTEXT.md` + `CURRENT_TASK.md`
-  - DO: at session end, write state to the `[project]:session` rosemary entity; save conventions to the project entity — fall back to local files only when rosemary is absent
-  - DO: dispatch sub-agents for independent parallel tasks by default
-  - DON'T: commit without user confirmation
-  - DON'T: use plan mode for small, well-scoped tasks
-  - DON'T: install tools globally — use mise (or the nix devShell, if nix) instead
-  - Tool Provisioning: mise (`mise install`, `mise exec -- <cmd>`); or nix (`nix develop`, `nix develop --command <cmd>`, never install outside the flake)
-- **`.agents/CURRENT_TASK.md`** — seed with initial DONE state. Fields: `Objective`, `Status`, `Completed Steps`, `Remaining Steps`, `Next Action`, `Last Updated`.
-- **`.agents/MEMORY.md`** — seed with an empty decision-log header.
-
-### `.claude/` directory
-
-Load `configs/claude-infra.md` for templates. Ask permission once for the whole group before writing.
-
-#### CLAUDE.md (root)
-
-Generate if not already present. Keep minimal — `AGENTS.md` is the single source of truth:
+Close with a Rules pointer:
 
 ```markdown
-@AGENTS.md
-
 ## Rules
 
 - See `.claude/rules/core.md` for agent DO/DON'T rules
 [- See `.claude/rules/config.md` for config management rules  # only if config.md generated]
 [- See `.claude/rules/release.md` for release process rules   # only if release.md generated]
 ```
-
-Never overwrite an existing CLAUDE.md — offer to merge instead.
 
 #### `.claude/rules/core.md`
 
@@ -200,13 +178,7 @@ Ask permission before writing.
 
 ### .gitignore additions
 
-Add the session-volatile fallback files:
-
-```gitignore
-.agents/CURRENT_TASK.md
-.agents/CONTEXT.md
-.agents/MEMORY.md
-```
+Nothing session-volatile to ignore by default — rosemary state lives in the global XDG graph. Only if the user opted into a project-local graph (`rosemary init --local`), add `.rosemary/` to `.gitignore`.
 
 ## Phase 4: Generate Documentation
 
@@ -247,14 +219,12 @@ Print a concise list of everything created, then the session reminder:
 
 ```text
 Init complete:
-  AGENTS.md                          ← single source of truth for all agents
-  CLAUDE.md                          ← @AGENTS.md + .claude/rules refs only
+  CLAUDE.md                          ← single source of truth for all agents
   .worktreeinclude                   ← gitignored files copied into worktrees
   .claude/settings.json              ← permissions + hooks
   .claude/rules/core.md [+ config.md, release.md, testing.md if applicable]
   .claude/commands/help.md [if accepted]
-  .agents/CONTEXT.md, .agents/CURRENT_TASK.md, .agents/MEMORY.md  ← rosemary fallback only
-  .gitignore (updated)
+  .gitignore (updated, if project-local rosemary)
   docs/architecture.md, docs/setup.md, docs/plan.md, docs/todo.md
   Makefile, mise.toml [+ flake.nix if nix], [other tooling configs]
 
@@ -273,6 +243,6 @@ Next: run `/rosemary start` at the start of each work session,
 - **Populate from scan** — don't leave TODO when the info is available.
 - **Make is the task runner** — reference `make <target>` everywhere. No mise *task* references (mise provides tools, make runs commands).
 - **Mise-first** — tools come from mise; use nix only when the repo already has a flake or the user chose it.
-- **Rosemary for memory** — seed and read the rosemary graph; `.agents/` files are the fallback when rosemary is absent.
+- **Rosemary for memory** — seed and read the rosemary graph; it is required and has no file fallback.
 - **Token efficiency** — if a script runs without error, don't read its output.
 - **Language-aware** — adapt all templates to the detected language/ecosystem.
