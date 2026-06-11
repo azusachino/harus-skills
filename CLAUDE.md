@@ -15,9 +15,8 @@ skills/                           # Custom skill definitions (flat)
     configs/                      # Bundled config templates
   session/                        # Deprecated — MCP-primary session management (use rosemary)
     SKILL.md
-  rosemary/                       # Session, task dispatcher, knowledge tier (rosemary CLI)
+  rosemary/                       # Session, task dispatcher, knowledge tier, skill library (rosemary CLI)
     SKILL.md
-    README.md
   toolbelt/                       # Modern CLI tool reference (eza/rg/fd/sd/xh/dasel/...)
     SKILL.md
 docs/                             # Project documentation
@@ -54,7 +53,7 @@ The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-s
 | --- | --- |
 | `/init-project`, `/init` | Initialize project with agent infrastructure |
 | `/session` | **Deprecated** — MCP `server-memory` session management; use `/rosemary` |
-| `/rosemary` | Session continuity, task dispatcher, and knowledge tier (`rosemary` CLI) |
+| `/rosemary` | Session continuity, task dispatcher, knowledge tier, and skill library (`rosemary` CLI) |
 | `/toolbelt` | Reference for preferred modern CLIs (`eza`/`rg`/`fd`/`sd`/`xh`/`dasel`/...) |
 
 ## Skill Reference
@@ -63,22 +62,23 @@ The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-s
 
 Superseded by `rosemary`. MCP-primary session management on `@modelcontextprotocol/server-memory`: session state lives in a `[project]:session` MCP entity, docs sync at boundaries. Retained only for environments still on `server-memory`; new work should use `/rosemary`.
 
-### `rosemary` (v1.3.0)
+### `rosemary` (v1.4.0)
 
-CLI-native shared state via the `rosemary` knowledge graph — one graph, three pillars. Prefers shared XDG state; project-local (`rosemary init --local`) is opt-in. Falls back to `.agents/` files when `rosemary` is unavailable.
+CLI-native shared state via the `rosemary` knowledge graph — one graph, four pillars. Prefers shared XDG state; project-local (`rosemary init --local`) is opt-in. `rosemary` is required — there is no `.agents/` file fallback.
 
 - `/rosemary start` / `/rosemary end` — session continuity (load/save the `[project]:session` entity)
 - `/rosemary tasks plan|list|dispatch|sync|close` — durable task dispatcher (epic + task entities, status lifecycle) replacing TodoWrite/local jsonl
 - `/rosemary recall` — knowledge tier: `ingest`/`query` over docs + an ADR decision log
-- Pruning & maintenance: append-only is the *write* discipline; curate persistent entities on a cadence (`rosemary stats` → `delete-observations`) so the graph doesn't grow to multi-k observations
+- `/rosemary skills` — install/update agent skills from a git repo or local path into the graph, recalled alongside docs
+- Pruning & maintenance: each entity caps at 50 observations by default — append during active work, then rewrite/consolidate (`rosemary stats` → `delete-observations`) to stay under the cap
 
 ### `toolbelt` (v1.0.0)
 
 Self-contained reference for haru's preferred modern CLIs. Carries both the substitution table (`ls`/`cat`→`eza`/`bat`, `grep`/`find`→`rg`/`fd`, `sed`→`sd`, `curl`→`xh`, non-JSON→`dasel`, etc.) and the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON, `rtk` proxy) so it works on any device regardless of the local global `CLAUDE.md`.
 
-### `init-project` (v1.3.0)
+### `init-project` (v1.4.0)
 
-Scans a project, asks targeted questions, and generates `AGENTS.md`, `.agents/` files, `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in for repos with a flake). Seeds the rosemary graph so `/rosemary start` has context on first run; `.agents/` files are the fallback. Adds session-volatile files to `.gitignore`.
+Scans a project, asks targeted questions, and generates `CLAUDE.md` (single source of truth), `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in for repos with a flake). Seeds the rosemary graph so `/rosemary start` has context on first run; rosemary is required (no `.agents/` fallback).
 
 ## MCP Servers
 
@@ -98,7 +98,7 @@ MCP servers are not bundled — configure them globally in `~/.claude/settings.j
 
 ## Agent Behavior
 
-- **Session Management**: Run `/session start` at the start of any session if `.agents/` exists. Run `/session end` before wrapping up.
+- **Session Management**: Run `/rosemary start` at the start of any session. Run `/rosemary end` before wrapping up.
 - **Version Bump Rule**: After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's `metadata.version`, (2) `gemini-extension.json` version, (3) `.claude-plugin/marketplace.json` metadata.version. Check the actual files for current versions — do not rely on a cached value here.
 - **Staging discipline**: Always `git add <specific files>`. Never `git add -A` or `git add .`.
 

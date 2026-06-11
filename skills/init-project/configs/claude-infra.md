@@ -6,16 +6,20 @@ Templates for `.claude/` directory generation. Used by `init-project` Phase 3.
 
 ## CLAUDE.md
 
-Root-level project instructions for Claude Code. Keep concise — detailed conventions go in `.claude/rules/`.
+Root-level project instructions — the single source of truth for all agents. Hard DO/DON'T rules go in `.claude/rules/`.
 
 Template:
 
 ```markdown
 # CLAUDE.md
 
-## Project
+## Project Overview
 
-[One-sentence description of the project.]
+[One-sentence description and purpose of the project.]
+
+## Tech Stack & Architecture
+
+[Detected stack, project structure, key patterns.]
 
 ## Commands
 
@@ -25,6 +29,16 @@ make lint         # Lint checks
 make check        # fmt + lint + verify
 make test         # Run tests (if applicable)
 \`\`\`
+
+All daily operations go through \`make <target>\`. Tools come from mise (\`mise install\` to provision); with nix, enter \`nix develop\` or run \`nix develop --command <cmd>\`.
+
+## Coding Conventions
+
+[Naming, error handling, formatting rules.]
+
+## Quality Standards
+
+[Required checks before commit/merge.]
 
 ## Rules
 
@@ -49,8 +63,8 @@ Template:
 
 ### DO
 - Use \`make <target>\` for all task execution — never run tools directly
-- At session start: load MCP entities if available; skip \`CURRENT_TASK.md\` and \`.agents/CONTEXT.md\` when MCP active
-- At session end: write state to \`[project]:session\` entity; save conventions to project entity — skip local files when MCP active
+- At session start: load rosemary entities (\`/rosemary start\`)
+- At session end: write state to the \`[project]:session\` rosemary entity; save conventions to the project entity (\`/rosemary end\`)
 - Dispatch sub-agents for independent tasks — parallelize where possible
 - Stage files explicitly: \`git add <specific files>\` only
 

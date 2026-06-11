@@ -3,7 +3,7 @@ name: session
 description: DEPRECATED — superseded by the rosemary skill. MCP server-memory session management. Use rosemary instead when the rosemary CLI is available.
 metadata:
   author: haru
-  version: 1.6.1
+  version: 1.6.2
 ---
 
 # Session Skill
@@ -12,7 +12,7 @@ metadata:
 
 Manage memory and session state across agents and conversations.
 
-**Core principle**: MCP `@modelcontextprotocol/server-memory` is the canonical store. Local `.agents/` files are fallback only.
+**Core principle**: MCP `@modelcontextprotocol/server-memory` is the canonical store. (Prefer `/rosemary`, which has no MCP dependency.)
 
 ## Detect MCP (once, at session start)
 
@@ -22,8 +22,7 @@ Check if `search_nodes`, `create_entities`, `add_observations` are in the tool l
 
 **Step 1 — Load state**:
 
-- **MCP**: call `read_graph()`. Load: category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`), project entity (`[repo-basename]`), session entity (`[project-name]:session`). If any category entity is missing or empty, seed it from the Global Seed Values section below.
-- **No MCP**: read `.agents/CONTEXT.md` and `.agents/CURRENT_TASK.md`. Skip silently if missing.
+Call `read_graph()`. Load: category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`), project entity (`[repo-basename]`), session entity (`[project-name]:session`). If any category entity is missing or empty, seed it from the Global Seed Values section below.
 
 **Step 2 — Freshness check**: run `git log --oneline -5`. If recent commits touch feature files but context looks unchanged, flag: "Context may be stale — sync at session end."
 
@@ -33,18 +32,11 @@ Check if `search_nodes`, `create_entities`, `add_observations` are in the tool l
 
 **Step 1 — Save session state**:
 
-- **MCP**: delete `[project-name]:session`, recreate with: `objective`, `status` (IN_PROGRESS | BLOCKED | REVIEW | DONE), `completed`, `remaining`, `next`, `last-updated`.
-- **No MCP**: overwrite `.agents/CURRENT_TASK.md` with the same fields.
+Delete `[project-name]:session`, recreate with: `objective`, `status` (IN_PROGRESS | BLOCKED | REVIEW | DONE), `completed`, `remaining`, `next`, `last-updated`.
 
-**Step 2 — Save new facts** (cross-project):
+**Step 2 — Save new facts** (cross-project): `search_nodes` to deduplicate, then `add_observations` on the appropriate category entity (`UserPreferences`, `CodingStyle`, `ToolPreferences`).
 
-- **MCP**: `search_nodes` to deduplicate, then `add_observations` on the appropriate category entity (`UserPreferences`, `CodingStyle`, `ToolPreferences`).
-- **No MCP**: append to `.agents/MEMORY.md` (`## YYYY-MM-DD — [topic]` / `**Fact:** ...` / `**Why:** ...`). Update in place if a similar entry exists.
-
-**Step 3 — Save project context** (conventions, patterns, decisions):
-
-- **MCP**: `search_nodes` to deduplicate, then `add_observations` on the project entity.
-- **No MCP**: update `.agents/CONTEXT.md`. Keep it concise — remove stale entries.
+**Step 3 — Save project context** (conventions, patterns, decisions): `search_nodes` to deduplicate, then `add_observations` on the project entity.
 
 **Step 4 — Confirm**: "Session saved. Next: [one-sentence handoff]."
 
@@ -89,7 +81,7 @@ Check if `search_nodes`, `create_entities`, `add_observations` are in the tool l
 **`[repo-basename]`** — project-specific, stable:
 
 - Architecture decisions and why they were made
-- Non-obvious conventions not in AGENTS.md
+- Non-obvious conventions not in CLAUDE.md
 - Key commands, tech stack, dependency notes
 
 **`[project-name]:session`** — volatile task state, reset every session:
@@ -128,14 +120,6 @@ If `read_graph()` returns a category entity with no observations, seed it immedi
 - `make` is the task runner — always reference `make <target>`
 - `make check` runs before commits; `make validate` before PRs (enforced by hooks)
 - `rtk` CLI proxy active — git and other commands are transparently rewritten for token savings
-
-## Fallback: Local Files
-
-Used only when MCP is unavailable. All three belong in `.gitignore`.
-
-- `.agents/CURRENT_TASK.md` — task state (overwrite each session end)
-- `.agents/CONTEXT.md` — project conventions (update in place; remove stale entries)
-- `.agents/MEMORY.md` — cross-project facts (append; update in place for duplicates)
 
 ## Context-Mode Integration
 
