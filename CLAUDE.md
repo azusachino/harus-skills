@@ -62,7 +62,7 @@ The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-s
 
 Superseded by `asobi`. MCP-primary session management on `@modelcontextprotocol/server-memory`: session state lives in a `[project]:session` MCP entity, docs sync at boundaries. Retained only for environments still on `server-memory`; new work should use `/asobi`.
 
-### `asobi` (v1.5.0)
+### `asobi` (v1.6.0)
 
 CLI-native shared state via the `asobi` knowledge graph — one graph, four pillars. Prefers shared XDG state; project-local (`asobi init --local`) is opt-in. `asobi` is required — there is no `.agents/` file fallback.
 
