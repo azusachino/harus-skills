@@ -4,13 +4,13 @@ A collection of custom Claude Code skills for productivity and project managemen
 
 ## Skills
 
-**`/asobi`** (v1.5.0) — Share durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan|list|dispatch|sync|close`) that replaces ephemeral TodoWrite/local jsonl, a **knowledge tier** (`recall` — `ingest`/`query` + an ADR decision log), and a **skill library** (`skills` — install/recall agent skills from git). `asobi` is required — there is no `.agents/` file fallback.
+**`/asobi`** — Share durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan|list|dispatch|sync|close`) that replaces ephemeral TodoWrite/local jsonl, a **knowledge tier** (`recall` — `ingest`/`query` + an ADR decision log), and a **skill library** (`skills` — install/recall agent skills from git). `asobi` is required — there is no `.agents/` file fallback.
 
-**`/init-project`** (v1.4.0, alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `CLAUDE.md`, `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in); seeds the asobi graph so `/asobi start` has context on first run.
+**`/init-project`** (alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `CLAUDE.md`, `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in); seeds the asobi graph so `/asobi start` has context on first run.
 
-**`/toolbelt`** (v1.0.0) — Reference for haru's preferred modern CLIs (`eza`/`bat`, `rg`/`fd`, `sd`, `xh`, `dasel`, `procs`, `doggo`, `hexyl`, `duckdb`/`psql`, `hyperfine`/`oha`) plus the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON). Self-contained, so it works on any device.
+**`/toolbelt`** — Reference for haru's preferred modern CLIs (`eza`/`bat`, `rg`/`fd`, `sd`, `xh`, `dasel`, `procs`, `doggo`, `hexyl`, `duckdb`/`psql`, `hyperfine`/`oha`) plus the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON). Self-contained, so it works on any device.
 
-**`/session`** (v1.6.2) — **Deprecated.** MCP variant of session management built on `@modelcontextprotocol/server-memory`. Superseded by `/asobi`, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained for environments still on `server-memory`; new projects should use `/asobi`.
+**`/session`** — **Deprecated.** MCP variant of session management built on `@modelcontextprotocol/server-memory`. Superseded by `/asobi`, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained for environments still on `server-memory`; new projects should use `/asobi`.
 
 ## Installation
 
