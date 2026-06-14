@@ -58,11 +58,11 @@ The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-s
 
 ## Skill Reference
 
-### `session` (v1.6.2) — Deprecated
+### `session` — Deprecated
 
 Superseded by `asobi`. MCP-primary session management on `@modelcontextprotocol/server-memory`: session state lives in a `[project]:session` MCP entity, docs sync at boundaries. Retained only for environments still on `server-memory`; new work should use `/asobi`.
 
-### `asobi` (v1.6.0)
+### `asobi`
 
 CLI-native shared state via the `asobi` knowledge graph — one graph, four pillars. Prefers shared XDG state; project-local (`asobi init --local`) is opt-in. `asobi` is required — there is no `.agents/` file fallback.
 
@@ -72,11 +72,11 @@ CLI-native shared state via the `asobi` knowledge graph — one graph, four pill
 - `/asobi skills` — install/update agent skills from a git repo or local path into the graph, recalled alongside docs
 - Pruning & maintenance: each entity caps at 50 observations by default — append during active work, then rewrite/consolidate (`asobi stats` → `delete-observations`) to stay under the cap
 
-### `toolbelt` (v1.0.0)
+### `toolbelt`
 
 Self-contained reference for haru's preferred modern CLIs. Carries both the substitution table (`ls`/`cat`→`eza`/`bat`, `grep`/`find`→`rg`/`fd`, `sed`→`sd`, `curl`→`xh`, non-JSON→`dasel`, etc.) and the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON, `rtk` proxy) so it works on any device regardless of the local global `CLAUDE.md`.
 
-### `init-project` (v1.4.0)
+### `init-project`
 
 Scans a project, asks targeted questions, and generates `CLAUDE.md` (single source of truth), `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in for repos with a flake). Seeds the asobi graph so `/asobi start` has context on first run; asobi is required (no `.agents/` fallback).
 
@@ -99,7 +99,7 @@ MCP servers are not bundled — configure them globally in `~/.claude/settings.j
 ## Agent Behavior
 
 - **Session Management**: Run `/asobi start` at the start of any session. Run `/asobi end` before wrapping up.
-- **Version Bump Rule**: There is one universal `harus-skills` version, shared across all plugin manifests. After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's own `metadata.version`, and (2) the single universal version in every manifest, all kept identical — `.claude-plugin/marketplace.json` (both top-level `metadata.version` and the plugin entry's `version`), `gemini-extension.json` `version`, and `.codex-plugin/plugin.json` `version`. Check the actual files for current versions — do not rely on a cached value here.
+- **Version Bump Rule**: There is one universal `harus-skills` version, shared across all plugin manifests. After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's own `metadata.version`, and (2) the single universal version in every manifest, all kept identical — `.claude-plugin/marketplace.json` (both top-level `metadata.version` and the plugin entry's `version`), `gemini-extension.json` `version`, and `.codex-plugin/plugin.json` `version`. Check the actual files for current versions — do not rely on a cached value here. Prose docs (`CLAUDE.md`, `README.md`) intentionally carry no version numbers — don't reintroduce them; `SKILL.md` frontmatter is the source of truth.
 - **Staging discipline**: Always `git add <specific files>`. Never `git add -A` or `git add .`.
 
 ## Development Workflow
