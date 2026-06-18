@@ -3,13 +3,25 @@ name: toolbelt
 description: Reference for haru's preferred modern CLI tools — when and how to use eza/bat/fd/ripgrep/sd, xh, dasel, procs, doggo, hexyl, duckdb/psql/sqlx-cli, hyperfine/oha. Invoke when a task involves searching files, editing text, HTTP/API calls, data/SQL work, DNS or process debugging, hex inspection, or benchmarking, and you want the idiomatic tool + flags instead of the classic Unix default.
 metadata:
   author: haru
-  version: 1.0.0
+  version: 2.0.0
 user-invokable: true
 ---
 
 # Toolbelt Skill
 
 haru's machines (managed by `harus-nix` Home Manager) ship a curated set of modern CLIs. **Prefer these over the classic Unix tools by default** — fall back to the classic only when the modern tool is genuinely unavailable.
+
+## Table of Contents
+- [Substitution table (always-on)](#substitution-table-always-on)
+- [Tooling discipline (carried from global defaults)](#tooling-discipline-carried-from-global-defaults)
+- [Runtimes & package managers](#runtimes--package-managers)
+- [Search & navigate](#search--navigate)
+- [Edit text](#edit-text)
+- [HTTP / API debugging](#http--api-debugging)
+- [Data & SQL](#data--sql)
+- [Debug & inspect](#debug--inspect)
+- [Benchmark](#benchmark)
+- [When NOT to substitute](#when-not-to-substitute)
 
 This skill is **self-contained** — it carries both the substitution rules and the usage recipes so it works on any device, even one whose global `~/.claude/CLAUDE.md` isn't synced or differs. Treat it as the portable source of truth; if the local global config disagrees, the local config wins for that machine, but these defaults travel with you.
 
@@ -27,6 +39,10 @@ Reach for the right-hand tool by default; fall back to the classic only when the
 | `ps` / `dig` / `xxd` | `procs` / `doggo` / `hexyl`             | processes, DNS, hex             |
 | `curl` (API testing) | `xh`                                    | HTTP requests                   |
 | `jq` for non-JSON    | `dasel`                                 | YAML/TOML/XML/CSV query+convert |
+| `jq` for YAML        | `yq`                                    | YAML query + convert            |
+| `wc -l` (code count) | `tokei`                                 | code statistics (LOC)           |
+| ad-hoc regex design  | `grex`                                  | generate regular expressions    |
+| `tmux`               | `zellij`                                | terminal workspace multiplexer  |
 | ad-hoc SQL           | `duckdb`, `psql` (postgres), `sqlx-cli` | data + migrations               |
 | benchmarking         | `hyperfine` (CLI), `oha` (HTTP)         | perf checks                     |
 | `python` / `pip` / `pipx` | `uv` / `uvx`                       | Python runtime, deps, tools     |
@@ -39,7 +55,7 @@ These hold across all of haru's projects and are restated here so the skill stan
 - **Nix-first** — tools come from the project devShell (`nix develop`); use `mise` only for language runtimes, not general tooling.
 - **`make` is the task runner** — reference `make <target>` everywhere; `make check` before commits, `make validate` before PRs (hook-enforced).
 - **JSON → `jq`** — always `jq` for JSON processing; never `python3 -c` or inline Python. Reach for `dasel` the moment the format isn't JSON.
-- **`rtk` proxy** — if present, `rtk` transparently rewrites git and other commands for token savings; don't fight it.
+- **`rtk` proxy** — if present, `rtk` (Rust Token Killer) transparently rewrites git and other commands for token savings; don't fight it. Use `rtk gain` to view token saving statistics, `rtk discover` to find missed opportunities, and `rtk proxy <cmd>` as an escape hatch for raw command execution/debugging.
 - **Conventional commits, 2-space config indent, no emojis** — per global CodingStyle.
 
 ## Runtimes & package managers
@@ -95,6 +111,11 @@ Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane d
   - `dasel -f config.yaml '.services.web.port'`
   - `dasel -f data.json -r json -w yaml` (convert JSON→YAML)
   - Use `jq` for pure-JSON pipelines (it's still the default for JSON); reach for `dasel` the moment the format isn't JSON.
+- **`yq`** — query/update YAML documents:
+  - `yq '.services.web.ports[0]' docker-compose.yml`
+  - `yq -P '.foo = "bar"' file.yaml` (pretty print YAML)
+- **`tokei`** — count lines of code quickly:
+  - `tokei .` (recursive code statistics by language)
 - **`duckdb`** — fast analytical SQL over files, no server:
   - `duckdb -c "select * from 'data.csv' limit 5"`
   - `duckdb -c "select count(*) from read_parquet('*.parquet')"`
@@ -118,6 +139,12 @@ Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane d
   - `hexyl file.bin`, `hexyl -n 64 file` (first 64 bytes), inspect encodings/headers.
 - **`tailspin`** (`tspin`) — auto-highlight logs: `tspin app.log` or `cmd | tspin`.
 - **`btop`** — interactive system monitor.
+- **`grex`** — generate regular expressions from user-provided test cases:
+  - `grex a b c` (returns `^[a-c]$`)
+  - `grex -d -w -p email@example.com` (generate with digits, words, non-space)
+- **`zellij`** — modern terminal workspace and multiplexer (replaces tmux):
+  - `zellij` (starts a new session)
+  - `zellij options --theme dracula`
 
 ## Benchmark
 

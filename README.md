@@ -10,15 +10,12 @@ A collection of custom Claude Code skills for productivity and project managemen
 
 **`/toolbelt`** — Reference for haru's preferred modern CLIs (`eza`/`bat`, `rg`/`fd`, `sd`, `xh`, `dasel`, `procs`, `doggo`, `hexyl`, `duckdb`/`psql`, `hyperfine`/`oha`) plus the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON). Self-contained, so it works on any device.
 
-**`/session`** — **Deprecated.** MCP variant of session management built on `@modelcontextprotocol/server-memory`. Superseded by `/asobi`, which provides the same session continuity plus a task dispatcher and knowledge tier without an MCP dependency. Retained for environments still on `server-memory`; new projects should use `/asobi`.
-
 ## Installation
 
 ### Prerequisites
 
 - [Claude Code](https://claude.ai/code) CLI
 - [`asobi`](https://github.com/azusachino/asobi) CLI for the `/asobi` skill (`cargo install asobi --features documents`)
-- Node.js (for `npx`-based MCP servers, only if using the `/session` MCP variant)
 
 ### Claude Code — Marketplace Plugin
 
@@ -29,33 +26,18 @@ A collection of custom Claude Code skills for productivity and project managemen
 
 Restart Claude Code after installing.
 
-### Gemini CLI — Extension
+### Antigravity (agy) — Plugin
 
 ```bash
-gemini extensions install https://github.com/azusachino/harus-skills
+agy plugin install https://github.com/azusachino/harus-skills
 # or for local development:
-gemini extensions link /path/to/harus-skills
+agy plugin link /path/to/harus-skills
 ```
 
 ### Codex
 
 ```bash
 codex plugin install https://github.com/azusachino/harus-skills
-```
-
-## MCP Servers (optional)
-
-Only the deprecated `/session` skill needs an MCP server. `/asobi` and `/init-project` have no MCP dependency. If you still use `/session`, configure `server-memory` globally in `~/.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "memory": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
-    }
-  }
-}
 ```
 
 ## Development
@@ -85,8 +67,6 @@ skills/
     SKILL.md
     configs/          # Bundled config templates
   toolbelt/
-    SKILL.md
-  session/            # Deprecated — superseded by asobi
     SKILL.md
 ```
 
