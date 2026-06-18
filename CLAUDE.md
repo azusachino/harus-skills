@@ -13,8 +13,6 @@ skills/                           # Custom skill definitions (flat)
   init-project/                   # Project initialization skill
     SKILL.md
     configs/                      # Bundled config templates
-  session/                        # Deprecated — MCP-primary session management (use asobi)
-    SKILL.md
   asobi/                          # Session, task dispatcher, knowledge tier, skill library (asobi CLI)
     SKILL.md
   toolbelt/                       # Modern CLI tool reference (eza/rg/fd/sd/xh/dasel/...)
@@ -25,7 +23,7 @@ docs/                             # Project documentation
   marketplace.json                # Plugin marketplace registration
 .codex-plugin/
   plugin.json                     # Codex plugin manifest
-gemini-extension.json             # Gemini CLI extension manifest
+gemini-extension.json             # Antigravity plugin manifest (compatibility)
 ```
 
 Note: language learning skills (`notion-language-lesson`) live in `harus-nix/.claude/skills/` as personal-only skills.
@@ -45,22 +43,17 @@ All skills follow the [Agent Skills Standard](http://agentskills.io) format with
 The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-skills` marketplace. Skills are auto-discovered from `skills/` — no explicit listing required.
 
 - **Marketplace name**: `harus-skills`
-- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `session`, `asobi`, `toolbelt`)
+- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `asobi`, `toolbelt`)
 
 ### Skill Invocation
 
 | Invocation | Skill |
 | --- | --- |
 | `/init-project`, `/init` | Initialize project with agent infrastructure |
-| `/session` | **Deprecated** — MCP `server-memory` session management; use `/asobi` |
 | `/asobi` | Session continuity, task dispatcher, knowledge tier, and skill library (`asobi` CLI) |
 | `/toolbelt` | Reference for preferred modern CLIs (`eza`/`rg`/`fd`/`sd`/`xh`/`dasel`/...) |
 
 ## Skill Reference
-
-### `session` — Deprecated
-
-Superseded by `asobi`. MCP-primary session management on `@modelcontextprotocol/server-memory`: session state lives in a `[project]:session` MCP entity, docs sync at boundaries. Retained only for environments still on `server-memory`; new work should use `/asobi`.
 
 ### `asobi`
 
@@ -70,7 +63,7 @@ CLI-native shared state via the `asobi` knowledge graph — one graph, four pill
 - `/asobi tasks plan|list|dispatch|sync|close` — durable task dispatcher (epic + task entities, status lifecycle) replacing TodoWrite/local jsonl
 - `/asobi recall` — knowledge tier: `ingest`/`query` over docs + an ADR decision log
 - `/asobi skills` — install/update agent skills from a git repo or local path into the graph, recalled alongside docs
-- Pruning & maintenance: each entity caps at 50 observations by default — append during active work, then rewrite/consolidate (`asobi stats` → `delete-observations`) to stay under the cap
+- Pruning & maintenance: each entity caps at 50 observations by default — append during active work, then rewrite/consolidate (`asobi stats` → `rm-obs`) to stay under the cap
 
 ### `toolbelt`
 
@@ -86,11 +79,8 @@ MCP servers are not bundled — configure them globally in `~/.claude/settings.j
 
 | Server | Detect via | When to use |
 | --- | --- | --- |
-| `memory` | `search_nodes`, `create_entities`, `add_observations` | Persisting session state and facts across conversations |
 | `fetch` | `fetch` | Retrieving live URLs, docs, or external references |
 | `sequential-thinking` | `sequentialthinking` | Complex multi-step planning before acting on large changes |
-
-**`memory` usage**: `search_nodes` before starting work to load prior context; `create_entities` / `add_observations` to save; `delete_entities` on stale session nodes at session end. Entity naming: `[project-name]:session` for session state, `UserPreferences` / `CodingStyle` / `ToolPreferences` for global facts.
 
 **`fetch` usage**: prefer over `WebFetch` when available — pass a URL and get back the page content. Do not use for local file reads.
 
@@ -99,7 +89,7 @@ MCP servers are not bundled — configure them globally in `~/.claude/settings.j
 ## Agent Behavior
 
 - **Session Management**: Run `/asobi start` at the start of any session. Run `/asobi end` before wrapping up.
-- **Version Bump Rule**: There is one universal `harus-skills` version, shared across all plugin manifests. After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's own `metadata.version`, and (2) the single universal version in every manifest, all kept identical — `.claude-plugin/marketplace.json` (both top-level `metadata.version` and the plugin entry's `version`), `gemini-extension.json` `version`, and `.codex-plugin/plugin.json` `version`. Check the actual files for current versions — do not rely on a cached value here. Prose docs (`CLAUDE.md`, `README.md`) intentionally carry no version numbers — don't reintroduce them; `SKILL.md` frontmatter is the source of truth.
+- **Version Bump Rule**: There is one universal `harus-skills` version, shared across all plugin manifests. After editing any `skills/*/SKILL.md`, bump in the same commit: (1) the skill's own `metadata.version`, and (2) the single universal version in every manifest, all kept identical — `.claude-plugin/marketplace.json` (both top-level `metadata.version` and the plugin entry's `version`), `gemini-extension.json` `version` (Antigravity compatibility manifest), and `.codex-plugin/plugin.json` `version`. Check the actual files for current versions — do not rely on a cached value here. Prose docs (`CLAUDE.md`, `README.md`) intentionally carry no version numbers — don't reintroduce them; `SKILL.md` frontmatter is the source of truth.
 - **Staging discipline**: Always `git add <specific files>`. Never `git add -A` or `git add .`.
 
 ## Development Workflow

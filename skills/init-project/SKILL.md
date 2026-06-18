@@ -3,7 +3,7 @@ name: init-project
 description: Initialize project with agent infrastructure, documentation structure, and tooling gaps filled
 metadata:
   author: haru
-  version: 1.4.0
+  version: 2.0.0
 user-invokable: true
 disable-auto-invoke: true
 ---
@@ -11,6 +11,15 @@ disable-auto-invoke: true
 # Init Project
 
 Initialize the current project with agent infrastructure, documentation, and tooling. Stack assumption: **asobi** (memory), **mise** (tools), **make** (commands). Nix is supported as an opt-in for repos that already use it.
+
+## Table of Contents
+- [Phase 1: Scan](#phase-1-scan)
+- [Phase 2: Report & Ask](#phase-2-report--ask)
+- [Phase 3: Generate Agent Infrastructure](#phase-3-generate-agent-infrastructure)
+- [Phase 4: Generate Documentation](#phase-4-generate-documentation)
+- [Phase 5: Fill Tooling Gaps](#phase-5-fill-tooling-gaps)
+- [Phase 6: Summary](#phase-6-summary)
+- [Rules](#rules)
 
 ## Phase 1: Scan
 
@@ -42,17 +51,21 @@ Present scan summary, then ask **one question at a time** for anything not infer
 
 ## Phase 3: Generate Agent Infrastructure
 
-If `asobi` is available, call `asobi read-graph` first and merge retrieved facts into generated files:
-
-- `CodingStyle` → `CLAUDE.md` Coding Conventions
-- `ToolPreferences` → `CLAUDE.md` Build/Run/Test
-- `UserPreferences` → `.claude/rules/core.md` Agent Rules
+If `asobi` is available, load the global preference entities first to dynamically customize generated files rather than relying on static templates.
+Run:
+```bash
+asobi show UserPreferences CodingStyle ToolPreferences
+```
+Map and merge the retrieved observations:
+- `CodingStyle` observations $\rightarrow$ `CLAUDE.md` Coding Conventions
+- `ToolPreferences` observations $\rightarrow$ `CLAUDE.md` Build/Run/Test
+- `UserPreferences` observations $\rightarrow$ `.claude/rules/core.md` Agent Rules
 
 Ask permission before writing each file. Never overwrite without asking.
 
 After generating files, if `asobi` is available, seed the graph so `/asobi start` has context on first run:
 
-1. Project entity (repo basename): `asobi create-entities "[repo-basename]" "project"` then `add-observations` for tech stack + architecture, tool provisioning method (mise / nix), task runner + key make targets, and any non-obvious conventions from the scan.
+1. Project entity (repo basename): `asobi new "[repo-basename]" "project"` then `obs` for tech stack + architecture, tool provisioning method (mise / nix), task runner + key make targets, and any non-obvious conventions from the scan.
 2. Missing category entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`): seed from the **Global Seed Values in the asobi skill** — it is the canonical source for these defaults.
 
 ### `.claude/` directory

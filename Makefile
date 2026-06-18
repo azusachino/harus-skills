@@ -15,7 +15,7 @@ help:
 	@echo "  make verify       - Verify repository structure"
 	@echo "  make list-skills  - List all available skills"
 	@echo "  make clean        - Remove generated files"
-	@echo "  make link         - Link as a Gemini CLI extension"
+	@echo "  make link         - Link as an Antigravity plugin"
 
 install-hooks:
 	@echo "🪝 Installing git hooks..."
@@ -111,4 +111,4 @@ validate: check
 	@echo "✅ Validation passed!"
 
 link:
-	@gemini extensions link .
+	@agy plugin link harus-skills .

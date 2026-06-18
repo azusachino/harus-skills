@@ -3,12 +3,26 @@ name: asobi
 description: Use to share state across sessions and agents via the asobi CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/asobi tasks`) that replaces ephemeral TodoWrite/local jsonl, a knowledge tier (`/asobi recall`), and a skill library (`/asobi skills`). Auto-triggers when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
 metadata:
   author: haru
-  version: 1.6.0
+  version: 2.0.0
 ---
 
 # Asobi Skill
 
 Share durable state across conversations and sub-agents using the `asobi` CLI knowledge graph. Asobi is one primitive — a graph any agent can read and write — exposed through three pillars:
+
+## Table of Contents
+- [Primitives — trail vs state](#primitives--trail-vs-state)
+- [Naming Convention](#naming-convention)
+- [Detect asobi (once, at session start)](#detect-asobi-once-at-session-start)
+- [/asobi start](#asobi-start)
+- [/asobi end](#asobi-end)
+- [/asobi tasks — Task Dispatcher](#asobi-tasks--task-dispatcher)
+- [/asobi recall — Knowledge Tier](#asobi-recall--knowledge-tier)
+- [/asobi skills — Skill Library](#asobi-skills--skill-library)
+- [Pruning & Maintenance](#pruning--maintenance)
+- [Entity Reference](#entity-reference)
+- [Global Seed Values](#global-seed-values)
+- [Command Quick Reference](#command-quick-reference)
 
 | Pillar | Command | What it backs |
 | --- | --- | --- |
@@ -29,9 +43,9 @@ One graph, two ways to write a fact onto an entity — picking the right one *is
 - **Truth** — a `key → value` fact that **upserts in place**. The *current state*: `status`, `next`, `version`, dates. Writing the same key again overwrites the old value — no stale accumulation, no delete-then-recreate dance.
 - **Relation** — a directed edge `(from, to, type)` between two entities (`part_of`, `supersedes`, `depends_on`).
 
-`search-nodes` / `read-graph` return **truths + `observationCount` only** (cheap, lazy-read) — so anything you scan often (a task's `status`) belongs in a truth: readable without `open-nodes`. `open-nodes` additionally returns the full observation list and a skill body.
+`search` / `graph` return **truths + `observationCount` only** (cheap, lazy-read) — so anything you scan often (a task's `status`) belongs in a truth: readable without `show`. `show` additionally returns the full observation list and a skill body.
 
-Write current state with `asobi add-truth <name> <key> <value>` (upserts); append history with `asobi add-observations`. The 50-observation cap applies to observations only — truths upsert and never accumulate toward it.
+Write current state with `asobi truth <name> <key> <value>` (upserts); append history with `asobi obs`. The 50-observation cap applies to observations only — truths upsert and never accumulate toward it.
 
 ## Naming Convention
 
@@ -57,7 +71,7 @@ Run `command -v asobi`. Record the result — do not re-check during the session
 
 **Step 1 — Load state**:
 
-`asobi open-nodes UserPreferences CodingStyle ToolPreferences [repo-basename] [project]:session`. If any entity is missing from the output, it doesn't exist yet — seed it from Global Seed Values. If the session entity is missing, treat as a fresh start. If `[project]:session` references an active epic, also load it: `asobi search-nodes "[epic-name]"` to pull the epic and its task children.
+`asobi show UserPreferences CodingStyle ToolPreferences [repo-basename] [project]:session`. If any entity is missing from the output, it doesn't exist yet — seed it from Global Seed Values. If the session entity is missing, treat as a fresh start. If `[project]:session` references an active epic, also load it: `asobi search "[epic-name]"` to pull the epic and its task children.
 
 **Step 2 — Freshness check**: run `git log --oneline -5`. If recent commits touch feature files but the loaded context looks unchanged, flag: "Context may be stale — sync at session end."
 
@@ -68,20 +82,20 @@ Run `command -v asobi`. Record the result — do not re-check during the session
 **Step 1 — Save session state**: upsert the current-state fields as **truths** (they overwrite in place, so state never accumulates stale lines — no reset needed), and append one `completed:` observation for the history trail:
 
 ```bash
-asobi create-entities "[project]:session" "session"   # no-op if it already exists
-asobi add-truth "[project]:session" objective "[what we worked toward; name the active epic if any]"
-asobi add-truth "[project]:session" status "[IN_PROGRESS|BLOCKED|REVIEW|DONE]"
-asobi add-truth "[project]:session" remaining "[what's left]"
-asobi add-truth "[project]:session" next "[single most important next action]"
-asobi add-truth "[project]:session" last-updated "YYYY-MM-DD"
-asobi add-observations "[project]:session" "completed YYYY-MM-DD: [finished items this session]"
+asobi new "[project]:session" "session"   # no-op if it already exists
+asobi truth "[project]:session" objective "[what we worked toward; name the active epic if any]"
+asobi truth "[project]:session" status "[IN_PROGRESS|BLOCKED|REVIEW|DONE]"
+asobi truth "[project]:session" remaining "[what's left]"
+asobi truth "[project]:session" next "[single most important next action]"
+asobi truth "[project]:session" last-updated "YYYY-MM-DD"
+asobi obs "[project]:session" "completed YYYY-MM-DD: [finished items this session]"
 ```
 
 The truths upsert, so the session entity stays clean on its own — the `completed:` trail is the only thing that grows, and it is useful history (prune it only if it nears the 50-cap).
 
-**Step 2 — Save new facts** (cross-project): `asobi search-nodes "[topic]"` to check for duplicates, then `asobi add-observations [UserPreferences|CodingStyle|ToolPreferences] "[fact]"`.
+**Step 2 — Save new facts** (cross-project): `asobi search "[topic]"` to check for duplicates, then `asobi obs [UserPreferences|CodingStyle|ToolPreferences] "[fact]"`.
 
-**Step 3 — Save project context** (conventions, patterns, decisions): `asobi search-nodes "[topic]"`, then `asobi add-observations [repo-basename] "[fact]"`.
+**Step 3 — Save project context** (conventions, patterns, decisions): `asobi search "[topic]"`, then `asobi obs [repo-basename] "[fact]"`.
 
 **Step 4 — Compact** (optional): if `asobi` was built with the `documents` feature, run `asobi compact` to archive session state to Markdown and refresh the FTS/vector index. Skip silently if unavailable.
 
@@ -89,30 +103,30 @@ The truths upsert, so the session entity stays clean on its own — the `complet
 
 ## `/asobi tasks` — Task Dispatcher
 
-A durable replacement for in-conversation todo lists. An **epic** entity holds the objective and scope; **task** entities hold one dispatchable unit each, linked `part_of` the epic. Each task's current `status` is a **truth** (upserts in place; cheaply readable via `search-nodes` without loading observations); the `impl:` / `TL-review:` observations are the append-only audit trail. The session entity points at the active epic and the next task.
+A durable replacement for in-conversation todo lists. An **epic** entity holds the objective and scope; **task** entities hold one dispatchable unit each, linked `part_of` the epic. Each task's current `status` is a **truth** (upserts in place; cheaply readable via `search` without loading observations); the `impl:` / `TL-review:` observations are the append-only audit trail. The session entity points at the active epic and the next task.
 
 ### `tasks plan <epic-name>`
 
 Break work into an epic + tasks. Create once, then never overwrite:
 
 ```bash
-asobi create-entities "[project]:[epic]" "task"
-asobi add-truth "[project]:[epic]" objective "[what this epic delivers]"
-asobi add-observations "[project]:[epic]" "scope: [in / out of scope, decided constraints]"
+asobi new "[project]:[epic]" "task"
+asobi truth "[project]:[epic]" objective "[what this epic delivers]"
+asobi obs "[project]:[epic]" "scope: [in / out of scope, decided constraints]"
 
-asobi create-entities "[project]:[epic]:task-1" "task"
-asobi add-truth "[project]:[epic]:task-1" title "[one-line goal]"
-asobi add-truth "[project]:[epic]:task-1" status READY_TO_DISPATCH
-asobi add-observations "[project]:[epic]:task-1" "plan: [file paths + line numbers + approach]"
-asobi create-relations "[project]:[epic]:task-1" "[project]:[epic]" "part_of"
+asobi new "[project]:[epic]:task-1" "task"
+asobi truth "[project]:[epic]:task-1" title "[one-line goal]"
+asobi truth "[project]:[epic]:task-1" status READY_TO_DISPATCH
+asobi obs "[project]:[epic]:task-1" "plan: [file paths + line numbers + approach]"
+asobi link "[project]:[epic]:task-1" "[project]:[epic]" "part_of"
 # ...repeat per task; dependent tasks start with status "BLOCKED_ON task-N"
 ```
 
-Then point the session at it: `asobi add-truth "[project]:session" objective "[epic] — see [project]:[epic]"`. Order tasks **smallest → biggest** to build momentum. `title` + `status` are truths so the board renders from a cheap `search-nodes`; put concrete file paths and line numbers in the `plan:` observation so the dispatched agent (briefed via `open-nodes`) needs zero discovery.
+Then point the session at it: `asobi truth "[project]:session" objective "[epic] — see [project]:[epic]"`. Order tasks **smallest → biggest** to build momentum. `title` + `status` are truths so the board renders from a cheap `search`; put concrete file paths and line numbers in the `plan:` observation so the dispatched agent (briefed via `show`) needs zero discovery.
 
 ### `tasks list [epic-name]`
 
-`asobi search-nodes "[epic]"` returns each task's `status` truth + `observationCount` without loading observations — render the board straight from the truths (no `open-nodes` per task):
+`asobi search "[epic]"` returns each task's `status` truth + `observationCount` without loading observations — render the board straight from the truths (no `show` per task):
 
 ```
 [project]:[epic]
@@ -127,15 +141,15 @@ Then point the session at it: `asobi add-truth "[project]:session" objective "[e
 Pick the next `READY_TO_DISPATCH` task (or the named one). Mark it dispatched, spawn a sub-agent, and have the agent write results **back into the task entity** — not just into the conversation:
 
 ```bash
-asobi add-truth "[project]:[epic]:task-N" status DISPATCHED
-asobi add-observations "[project]:[epic]:task-N" "dispatched to [agent] YYYY-MM-DD"
+asobi truth "[project]:[epic]:task-N" status DISPATCHED
+asobi obs "[project]:[epic]:task-N" "dispatched to [agent] YYYY-MM-DD"
 ```
 
-Brief the sub-agent from the task's `title` truth and `plan:` observation (`open-nodes` the task). Default agent is `haiku-developer` (efficient model for scoped work) unless the task is correctness-critical. Require the agent to end by recording:
+Brief the sub-agent from the task's `title` truth and `plan:` observation (`show` the task). Default agent is `haiku-developer` (efficient model for scoped work) unless the task is correctness-critical. Require the agent to end by recording:
 
 ```bash
-asobi add-observations "[project]:[epic]:task-N" "impl: [what changed; files touched; make check result]"
-asobi add-truth "[project]:[epic]:task-N" status REVIEW
+asobi obs "[project]:[epic]:task-N" "impl: [what changed; files touched; make check result]"
+asobi truth "[project]:[epic]:task-N" status REVIEW
 ```
 
 **Dispatch models** — pick per epic:
@@ -148,11 +162,11 @@ asobi add-truth "[project]:[epic]:task-N" status REVIEW
 The lead reviews the dispatched diff, records the outcome, and advances status. Never blind-trust a sub-agent's diff — note anything you trimmed:
 
 ```bash
-asobi add-observations "[project]:[epic]:task-N" "TL-review YYYY-MM-DD: [diff verdict; what was adjusted]"
-asobi add-truth "[project]:[epic]:task-N" status AWAITING_VERIFY   # human/device check needed
+asobi obs "[project]:[epic]:task-N" "TL-review YYYY-MM-DD: [diff verdict; what was adjusted]"
+asobi truth "[project]:[epic]:task-N" status AWAITING_VERIFY   # human/device check needed
 # or
-asobi add-truth "[project]:[epic]:task-N" status DONE
-asobi add-observations "[project]:[epic]:task-N" "done: committed on [branch] YYYY-MM-DD"
+asobi truth "[project]:[epic]:task-N" status DONE
+asobi obs "[project]:[epic]:task-N" "done: committed on [branch] YYYY-MM-DD"
 ```
 
 Then re-point the session `next` truth at the following task, and unblock dependents — upsert each dependent's `status` truth from `BLOCKED_ON task-N` to `READY_TO_DISPATCH` (`tasks list` will now show them ready).
@@ -162,9 +176,9 @@ Then re-point the session `next` truth at the following task, and unblock depend
 When every task is `DONE`: lift the durable lessons out of the volatile task entities into the persistent project entity, then let the epic rest (no delete — the history stays queryable):
 
 ```bash
-asobi add-observations "[repo-basename]" "[convention or decision learned during the epic]"
-asobi add-truth "[project]:[epic]" status DONE
-asobi add-observations "[project]:[epic]" "outcome: [PR link] YYYY-MM-DD"
+asobi obs "[repo-basename]" "[convention or decision learned during the epic]"
+asobi truth "[project]:[epic]" status DONE
+asobi obs "[project]:[epic]" "outcome: [PR link] YYYY-MM-DD"
 ```
 
 ### Status lifecycle
@@ -173,7 +187,7 @@ asobi add-observations "[project]:[epic]" "outcome: [PR link] YYYY-MM-DD"
 
 ## `/asobi recall` — Knowledge Tier
 
-Semantic recall over your own docs and a decision log. Requires the `documents` feature for `ingest`/`query`; degrade to `search-nodes` otherwise.
+Semantic recall over your own docs and a decision log. Requires the `documents` feature for `ingest`/`query`; degrade to `search` otherwise.
 
 ### Ingest + query
 
@@ -192,17 +206,17 @@ asobi query "how does session auth verify tokens"   # hybrid semantic + keyword 
 Record non-obvious choices as decision entities so the *why* survives:
 
 ```bash
-asobi create-entities "[project]:decision:[slug]" "concept"
-asobi add-observations "[project]:decision:[slug]" "decision: [what was chosen]"
-asobi add-observations "[project]:decision:[slug]" "context: [the forces / constraints]"
-asobi add-observations "[project]:decision:[slug]" "consequences: [trade-offs accepted]"
-asobi add-observations "[project]:decision:[slug]" "date: YYYY-MM-DD"
+asobi new "[project]:decision:[slug]" "concept"
+asobi obs "[project]:decision:[slug]" "decision: [what was chosen]"
+asobi obs "[project]:decision:[slug]" "context: [the forces / constraints]"
+asobi obs "[project]:decision:[slug]" "consequences: [trade-offs accepted]"
+asobi obs "[project]:decision:[slug]" "date: YYYY-MM-DD"
 # link related decisions and the work they constrain
-asobi create-relations "[project]:decision:[new]" "[project]:decision:[old]" "supersedes"
-asobi create-relations "[project]:[epic]:task-N" "[project]:decision:[slug]" "depends_on"
+asobi link "[project]:decision:[new]" "[project]:decision:[old]" "supersedes"
+asobi link "[project]:[epic]:task-N" "[project]:decision:[slug]" "depends_on"
 ```
 
-Surface them with `asobi search-nodes "[topic]"` or `asobi query "why [topic]"`.
+Surface them with `asobi search "[topic]"` or `asobi query "why [topic]"`.
 
 ## `/asobi skills` — Skill Library
 
@@ -224,30 +238,30 @@ Git sources are shallow-cloned to a reused cache (`.asobi/caches/<slug>`); `upda
 
 ## Pruning & Maintenance
 
-Each entity caps at **50 observations** by default — you can't append forever. **Truths are exempt: they upsert in place and never count toward the cap** — keeping current state (`status`, `next`, dates) in truths is the first defense against fill-up. Only observations accumulate. Append freely during active work, but when an entity fills (check `asobi stats`), **rewrite and consolidate** rather than pile on: merge duplicate facts and collapse a closed task's observation trail to its final `impl:` + `done:` (its `status` truth is already just `DONE`). Decisions are the exception — never delete one; supersede it (`create-relations [new] [old] "supersedes"`) so the *why* of the reversal survives.
+Each entity caps at **50 observations** by default — you can't append forever. **Truths are exempt: they upsert in place and never count toward the cap** — keeping current state (`status`, `next`, dates) in truths is the first defense against fill-up. Only observations accumulate. Append freely during active work, but when an entity fills (check `asobi stats`), **rewrite and consolidate** rather than pile on: merge duplicate facts and collapse a closed task's observation trail to its final `impl:` + `done:` (its `status` truth is already just `DONE`). Decisions are the exception — never delete one; supersede it (`link [new] [old] "supersedes"`) so the *why of the reversal survives.
 
-`delete-observations` matches the **exact** string — copy it from `open-nodes`, don't paraphrase. To correct a truth, just `add-truth` the new value (it overwrites) or `delete-truth [name] [key]`. Never prune an in-flight session or an open epic's live trail. With the `documents` feature, follow a prune with `asobi compact` to rebuild the index.
+`rm-obs` matches the **exact** string — copy it from `show`, don't paraphrase. To correct a truth, just `truth` the new value (it overwrites) or `rm-truth [name] [key]`. Never prune an in-flight session or an open epic's live trail. With the `documents` feature, follow a prune with `asobi compact` to rebuild the index.
 
 ## Entity Reference
 
 | Entity | Type | Lifecycle | Holds (truths = current state · observations = trail) |
 | --- | --- | --- | --- |
-| `[project]:session` | `session` | `create` once; state truths upsert, `completed:` trail appends | truths: `objective`, `status`, `remaining`, `next`, `last-updated` · obs: `completed:` log |
-| `[project]:[epic]` / `:task-N` | `task` | Epic-scoped — `create` once, `status` truth upserts, obs trail appends, rests `DONE` on close | truths: `title`, `status` (epic: `objective`) · obs: `plan:`, `impl:`, `TL-review:`, `done:` (epic: `scope:`, `outcome:`) |
-| `[project]:decision:<slug>` | `concept` | Persistent — `create` once, link with relations | obs: `decision`, `context`, `consequences`, `date` |
+| `[project]:session` | `session` | `new` once; state truths upsert, `completed:` trail appends | truths: `objective`, `status`, `remaining`, `next`, `last-updated` · obs: `completed:` log |
+| `[project]:[epic]` / `:task-N` | `task` | Epic-scoped — `new` once, `status` truth upserts, obs trail appends, rests `DONE` on close | truths: `title`, `status` (epic: `objective`) · obs: `plan:`, `impl:`, `TL-review:`, `done:` (epic: `scope:`, `outcome:`) |
+| `[project]:decision:<slug>` | `concept` | Persistent — `new` once, link with relations | obs: `decision`, `context`, `consequences`, `date` |
 | `[repo-basename]` | `project` | Persistent — append, then consolidate under the 50-obs cap; never delete the entity | obs: architecture decisions + why, non-obvious conventions, key commands, stack |
 | `UserPreferences` / `CodingStyle` / `ToolPreferences` | `preference` / `standard` | Persistent, global — append, then consolidate under the 50-obs cap | obs: cross-project prefs (see Global Seed Values) |
 
 Remaining types: `reference` (external URLs/resources). Write protocol for every entity:
 
-1. `asobi search-nodes "[topic]"` — check the fact doesn't already exist.
-2. If the entity is missing: `asobi create-entities [name] [type]` first.
-3. **Current-state** field (`status`, `version`, a date, `next`): `asobi add-truth [name] [key] [value]` — it upserts, so just write the new value (no delete needed). **Append-only history**: `asobi add-observations [name] "[fact]"` — never overwrite, always append.
-4. To fix a stale observation: `asobi delete-observations [name] "[exact old content]"`, then re-add. To fix a truth: just `add-truth` again (overwrites), or `asobi delete-truth [name] [key]`.
+1. `asobi search "[topic]"` — check the fact doesn't already exist.
+2. If the entity is missing: `asobi new [name] [type]` first.
+3. **Current-state** field (`status`, `version`, a date, `next`): `asobi truth [name] [key] [value]` — it upserts, so just write the new value (no delete needed). **Append-only history**: `asobi obs [name] "[fact]"` — never overwrite, always append.
+4. To fix a stale observation: `asobi rm-obs [name] "[exact old content]"`, then re-add. To fix a truth: just `truth` again (overwrites), or `asobi rm-truth [name] [key]`.
 
 ## Global Seed Values
 
-If an entity is missing from `open-nodes`, create and seed it immediately. These are established cross-project defaults — do not ask the user to confirm them.
+If an entity is missing from `show`, create and seed it immediately. These are established cross-project defaults — do not ask the user to confirm them.
 
 **`UserPreferences`** (`preference`)
 
@@ -277,19 +291,19 @@ If an entity is missing from `open-nodes`, create and seed it immediately. These
 
 ```bash
 # Read
-asobi read-graph
-asobi search-nodes "query"
-asobi open-nodes "name1" "name2" ...
+asobi graph
+asobi search "query" [--limit <N>] [--where KEY=VALUE ...]
+asobi show "name1" "name2" ...
 asobi query "natural-language question"   # hybrid semantic (requires --features documents)
 
 # Write
-asobi create-entities "name" "type"
-asobi add-observations "name" "content"           # append-only trail
-asobi create-relations "from" "to" "relation_type"
+asobi new "name" "type" [--obs "content" ...]
+asobi obs "name" "content" [<content> ...]        # append-only trail
+asobi link "from" "to" "relation_type" [<from> <to> <relation_type> ...]
 
 # Truths (current-state key→value, upserts in place)
-asobi add-truth "name" "key" "value"
-asobi delete-truth "name" "key"
+asobi truth "name" "key" "value"
+asobi rm-truth "name" "key"
 
 # Documents
 asobi ingest <path>                        # load docs into the document tier
@@ -299,11 +313,12 @@ asobi skills install <git-url|path> --all  # ingest a repo's skills into the gra
 asobi skills                               # list installed skills
 asobi skills update [source]               # refresh installed skills
 asobi skills remove <name|source>          # drop a skill or source
+asobi skills show <name>                   # print raw body of installed skill
 
 # Delete
-asobi delete-entities "name1" "name2" ...
-asobi delete-observations "name" "exact content"
-asobi delete-relations "from" "to" "relation_type"
+asobi rm "name1" "name2" ...               # delete entities (cascades to obs and relations)
+asobi rm-obs "name" "exact content"        # delete specific observation
+asobi unlink "from" "to" "relation_type"   # delete specific relation
 
 # Maintenance
 asobi compact          # archive + refresh FTS/vector (requires --features documents)
