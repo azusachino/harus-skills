@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-06-18
+
+### Added
+- **toolbelt** (2.0.0): Added modern CLI tools (`yq`, `tokei`, `grex`, `zellij`) and documented the `rtk` (Rust Token Killer) proxy commands.
+
+### Changed
+- **asobi** (2.0.0): Upgraded to the new v0.2 command API:
+  - Switched `create-entities` $\rightarrow$ `new`
+  - Switched `add-observations` $\rightarrow$ `obs`
+  - Switched `create-relations` $\rightarrow$ `link`
+  - Switched `add-truth` $\rightarrow$ `truth`
+  - Switched `delete-truth` $\rightarrow$ `rm-truth`
+  - Switched `delete-entities` $\rightarrow$ `rm`
+  - Switched `delete-observations` $\rightarrow$ `rm-obs`
+  - Switched `delete-relations` $\rightarrow$ `unlink`
+  - Switched `search-nodes` $\rightarrow$ `search`
+  - Switched `open-nodes` $\rightarrow$ `show`
+  - Switched `read-graph` $\rightarrow$ `graph`
+  - Added a Table of Contents and step-by-step observations pruning guide.
+- **init-project** (2.0.0): Updated to use the new `asobi` v0.2 commands, implemented dynamic loading of global preference entities (`asobi show`), and added automatic allowed permissions for Nix-first project commands in `settings.json`.
+- Root `README.md` and `CLAUDE.md`: Replaced all legacy Gemini references with Antigravity (`agy`) CLI plugin commands.
+
+### Removed
+- **session**: Completely dropped the deprecated MCP-primary `session` skill.
+
 ## [2.6.0] - 2026-06-11
 
 ### Changed
@@ -46,6 +71,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Removed bundled `.mcp.json` and auto-loaded `mcpServers` to fix a plugin conflict; overhauled the `session` skill and expanded `init-project` infrastructure.
 
+[3.0.0]: https://github.com/azusachino/harus-skills/releases/tag/v3.0.0
 [2.3.0]: https://github.com/azusachino/harus-skills/releases/tag/v2.3.0
 [2.2.0]: https://github.com/azusachino/harus-skills/releases/tag/v2.2.0
 [2.0.2]: https://github.com/azusachino/harus-skills/releases/tag/v2.0.2
