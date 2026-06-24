@@ -1,0 +1,7 @@
+[project]
+name = "harus-skills"
+version = "0.1.0"
+description = "Tooling for the harus-skills plugin (version sync across manifests)"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
