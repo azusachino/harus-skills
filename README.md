@@ -8,6 +8,8 @@ A collection of custom Claude Code skills for productivity and project managemen
 
 **`/init-project`** (alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `CLAUDE.md`, `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in); seeds the asobi graph so `/asobi start` has context on first run.
 
+**`/revise`** — Persist project lessons, findings, and wrong approaches so future sessions can recall them. Stores positive lessons on the project entity, wrong approaches as active `[project]:pitfall:<slug>` warnings, and falls back to `docs/lessons/` only when asobi is unavailable.
+
 **`/toolbelt`** — Reference for haru's preferred modern CLIs (`eza`/`bat`, `rg`/`fd`, `sd`, `xh`, `dasel`, `procs`, `doggo`, `hexyl`, `duckdb`/`psql`, `hyperfine`/`oha`) plus the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON). Self-contained, so it works on any device.
 
 ## Installation
@@ -66,6 +68,8 @@ skills/
   init-project/
     SKILL.md
     configs/          # Bundled config templates
+  revise/
+    SKILL.md
   toolbelt/
     SKILL.md
 ```

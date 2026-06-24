@@ -3,7 +3,7 @@ name: asobi
 description: Use to share state across sessions and agents via the asobi CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/asobi tasks`) that replaces ephemeral TodoWrite/local jsonl, a knowledge tier (`/asobi recall`), and a skill library (`/asobi skills`). Auto-triggers when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
 metadata:
   author: haru
-  version: 2.0.0
+  version: 2.1.0
 ---
 
 # Asobi Skill
@@ -57,6 +57,7 @@ Entity names use `:` as a hierarchy separator. Keep names verbatim — do not fl
 | `<project>:<epic>` | `task` | `ame:mobile-support` |
 | `<project>:<epic>:task-<n>` | `task` | `ame:mobile-support:task-3` |
 | `<project>:decision:<slug>` | `concept` | `ame:decision:no-pwa` |
+| `<project>:pitfall:<slug>` | `concept` | `ame:pitfall:no-local-jsonl` |
 | `<repo-basename>` | `project` | `ame` |
 
 `<project>` is the repo basename. Use `-` only inside a single segment (`mobile-support`), `:` only between hierarchy levels.
@@ -73,9 +74,17 @@ Run `command -v asobi`. Record the result — do not re-check during the session
 
 `asobi show UserPreferences CodingStyle ToolPreferences [repo-basename] [project]:session`. If any entity is missing from the output, it doesn't exist yet — seed it from Global Seed Values. If the session entity is missing, treat as a fresh start. If `[project]:session` references an active epic, also load it: `asobi search "[epic-name]"` to pull the epic and its task children.
 
+Then load active project pitfalls:
+
+```bash
+asobi search "pitfall" --where status=active
+```
+
+From the result, report only entities whose names start with `[project]:pitfall:`. `search` returns truths + observation counts, so this should stay cheap; do not `show` every pitfall during start.
+
 **Step 2 — Freshness check**: run `git log --oneline -5`. If recent commits touch feature files but the loaded context looks unchanged, flag: "Context may be stale — sync at session end."
 
-**Step 3 — Report**: "Session resumed. Last task: [X]. Next: [Y]." If an epic is active, append a one-line task board (see `/asobi tasks list`). Include any freshness warnings.
+**Step 3 — Report**: "Session resumed. Last task: [X]. Next: [Y]." If an epic is active, append a one-line task board (see `/asobi tasks list`). Include any freshness warnings. If active pitfalls exist, append: "Active pitfalls: [N] — [title/title/title]." This line is the human-visible proof that pitfall recall ran.
 
 ## `/asobi end`
 
@@ -145,7 +154,15 @@ asobi truth "[project]:[epic]:task-N" status DISPATCHED
 asobi obs "[project]:[epic]:task-N" "dispatched to [agent] YYYY-MM-DD"
 ```
 
-Brief the sub-agent from the task's `title` truth and `plan:` observation (`show` the task). Default agent is `haiku-developer` (efficient model for scoped work) unless the task is correctness-critical. Require the agent to end by recording:
+Before briefing the sub-agent, query task-relevant lessons:
+
+```bash
+asobi query "[task title]"
+```
+
+Also inspect the shown task for `depends_on` relations to `[project]:pitfall:<slug>` and include those linked pitfalls as explicit warnings. The relation direction is `task --depends_on--> pitfall`, meaning the task depends on knowing the warning.
+
+Brief the sub-agent from the task's `title` truth, `plan:` observation (`show` the task), task-relevant query results, and any linked active pitfalls. Default agent is `haiku-developer` (efficient model for scoped work) unless the task is correctness-critical. Require the agent to end by recording:
 
 ```bash
 asobi obs "[project]:[epic]:task-N" "impl: [what changed; files touched; make check result]"
@@ -218,6 +235,23 @@ asobi link "[project]:[epic]:task-N" "[project]:decision:[slug]" "depends_on"
 
 Surface them with `asobi search "[topic]"` or `asobi query "why [topic]"`.
 
+### Pitfall log
+
+Record wrong approaches and dead ends as pitfall entities. A pitfall is not an ADR: decisions explain the path chosen; pitfalls warn future agents away from paths already tried and rejected.
+
+```bash
+asobi new "[project]:pitfall:[slug]" "concept"
+asobi truth "[project]:pitfall:[slug]" status active          # active | resolved
+asobi truth "[project]:pitfall:[slug]" title "[short warning]"
+asobi obs "[project]:pitfall:[slug]" "tried: [approach attempted]"
+asobi obs "[project]:pitfall:[slug]" "why-it-failed: [root cause / symptom]"
+asobi obs "[project]:pitfall:[slug]" "do-instead: [approach that worked, or 'open']"
+asobi obs "[project]:pitfall:[slug]" "date: YYYY-MM-DD"
+asobi link "[project]:[epic]:task-N" "[project]:pitfall:[slug]" "depends_on"
+```
+
+Keep `status` as a truth so `/asobi start` can cheaply surface active pitfalls with `asobi search "pitfall" --where status=active`. When a dead end becomes obsolete, upsert `status` to `resolved` and append a `resolved YYYY-MM-DD:` observation.
+
 ## `/asobi skills` — Skill Library
 
 Install reusable agent skills straight into the graph from a git repo or local path. Each skill's frontmatter + body is stored as an entity and (with the `documents` feature) indexed for vector search, so an installed skill is reachable from `asobi query` alongside your ingested docs — one recall path for docs *and* skills.
@@ -249,6 +283,7 @@ Each entity caps at **50 observations** by default — you can't append forever.
 | `[project]:session` | `session` | `new` once; state truths upsert, `completed:` trail appends | truths: `objective`, `status`, `remaining`, `next`, `last-updated` · obs: `completed:` log |
 | `[project]:[epic]` / `:task-N` | `task` | Epic-scoped — `new` once, `status` truth upserts, obs trail appends, rests `DONE` on close | truths: `title`, `status` (epic: `objective`) · obs: `plan:`, `impl:`, `TL-review:`, `done:` (epic: `scope:`, `outcome:`) |
 | `[project]:decision:<slug>` | `concept` | Persistent — `new` once, link with relations | obs: `decision`, `context`, `consequences`, `date` |
+| `[project]:pitfall:<slug>` | `concept` | Persistent warning — `status` truth starts `active`, flips to `resolved` when obsolete | truths: `status`, `title` · obs: `tried:`, `why-it-failed:`, `do-instead:`, `date:`, `resolved:` |
 | `[repo-basename]` | `project` | Persistent — append, then consolidate under the 50-obs cap; never delete the entity | obs: architecture decisions + why, non-obvious conventions, key commands, stack |
 | `UserPreferences` / `CodingStyle` / `ToolPreferences` | `preference` / `standard` | Persistent, global — append, then consolidate under the 50-obs cap | obs: cross-project prefs (see Global Seed Values) |
 
