@@ -1,6 +1,6 @@
 # Makefile for managing harus-skills tasks
 
-.PHONY: help install-hooks fmt fmt-check clean verify list-skills check validate link
+.PHONY: help install-hooks fmt fmt-check clean verify list-skills check validate link sync-version
 
 # Default target
 help:
@@ -16,6 +16,7 @@ help:
 	@echo "  make list-skills  - List all available skills"
 	@echo "  make clean        - Remove generated files"
 	@echo "  make link         - Link as an Antigravity plugin"
+	@echo "  make sync-version - Sync plugin version across manifests (V=x.y.z to set)"
 
 install-hooks:
 	@echo "🪝 Installing git hooks..."
@@ -112,3 +113,9 @@ validate: check
 
 link:
 	@agy plugin link harus-skills .
+
+# Sync the universal plugin version across all manifests.
+# Propagate the canonical version: make sync-version
+# Set an explicit version:        make sync-version V=3.1.0
+sync-version:
+	@uv run python tools/sync_version.py $(V)
