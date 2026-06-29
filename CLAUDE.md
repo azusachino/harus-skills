@@ -75,7 +75,7 @@ Captures durable lessons separately from session status. Classifies free-form le
 
 ### `toolbelt`
 
-Self-contained reference for haru's preferred modern CLIs. Carries both the substitution table (`ls`/`cat`→`eza`/`bat`, `grep`/`find`→`rg`/`fd`, `sed`→`sd`, `curl`→`xh`, non-JSON→`dasel`, etc.) and the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON, `rtk` proxy) so it works on any device regardless of the local global `CLAUDE.md`.
+Self-contained reference for haru's preferred modern CLIs. Carries both the substitution table (`ls`/`cat`→`eza`/`bat`, `grep`/`find`→`rg`/`fd`, `sed`→`sd`, `curl`→`xh`, non-JSON→`dasel`, etc.) and the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON) so it works on any device regardless of the local global `CLAUDE.md`.
 
 ### `init-project`
 

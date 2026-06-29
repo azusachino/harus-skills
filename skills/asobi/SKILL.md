@@ -3,7 +3,7 @@ name: asobi
 description: Use to share state across sessions and agents via the asobi CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/asobi tasks`) that replaces ephemeral TodoWrite/local jsonl, a knowledge tier (`/asobi recall`), and a skill library (`/asobi skills`). Auto-triggers when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
 metadata:
   author: haru
-  version: 2.1.0
+  version: 2.1.1
 ---
 
 # Asobi Skill
@@ -320,7 +320,6 @@ If an entity is missing from `show`, create and seed it immediately. These are e
 - `mise` for language runtimes only (not general tooling)
 - `make` is the task runner — always reference `make <target>`
 - `make check` runs before commits; `make validate` before PRs (enforced by hooks)
-- `rtk` CLI proxy active — git and other commands are transparently rewritten for token savings
 
 ## Command Quick Reference
 
