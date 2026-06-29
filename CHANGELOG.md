@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [3.0.0] - 2026-06-18
 
 ### Added
-- **toolbelt** (2.0.0): Added modern CLI tools (`yq`, `tokei`, `grex`, `zellij`) and documented the `rtk` (Rust Token Killer) proxy commands.
+- **toolbelt** (2.0.0): Added modern CLI tools (`yq`, `tokei`, `grex`, `zellij`).
 
 ### Changed
 - **asobi** (2.0.0): Upgraded to the new v0.2 command API:

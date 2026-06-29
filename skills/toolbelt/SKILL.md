@@ -3,7 +3,7 @@ name: toolbelt
 description: Reference for haru's preferred modern CLI tools — when and how to use eza/bat/fd/ripgrep/sd, xh, dasel, procs, doggo, hexyl, duckdb/psql/sqlx-cli, hyperfine/oha. Invoke when a task involves searching files, editing text, HTTP/API calls, data/SQL work, DNS or process debugging, hex inspection, or benchmarking, and you want the idiomatic tool + flags instead of the classic Unix default.
 metadata:
   author: haru
-  version: 2.0.0
+  version: 2.0.1
 user-invokable: true
 ---
 
@@ -55,7 +55,6 @@ These hold across all of haru's projects and are restated here so the skill stan
 - **Nix-first** — tools come from the project devShell (`nix develop`); use `mise` only for language runtimes, not general tooling.
 - **`make` is the task runner** — reference `make <target>` everywhere; `make check` before commits, `make validate` before PRs (hook-enforced).
 - **JSON → `jq`** — always `jq` for JSON processing; never `python3 -c` or inline Python. Reach for `dasel` the moment the format isn't JSON.
-- **`rtk` proxy** — if present, `rtk` (Rust Token Killer) transparently rewrites git and other commands for token savings; don't fight it. Use `rtk gain` to view token saving statistics, `rtk discover` to find missed opportunities, and `rtk proxy <cmd>` as an escape hatch for raw command execution/debugging.
 - **Conventional commits, 2-space config indent, no emojis** — per global CodingStyle.
 
 ## Runtimes & package managers
