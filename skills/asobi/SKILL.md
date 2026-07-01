@@ -3,7 +3,7 @@ name: asobi
 description: Use to share state across sessions and agents via the asobi CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/asobi tasks`) that replaces ephemeral TodoWrite/local jsonl, a knowledge tier (`/asobi recall`), and a skill library (`/asobi skills`). Auto-triggers when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
 metadata:
   author: haru
-  version: 2.1.1
+  version: 2.1.2
 ---
 
 # Asobi Skill
@@ -39,13 +39,13 @@ Share durable state across conversations and sub-agents using the `asobi` CLI kn
 
 One graph, two ways to write a fact onto an entity — picking the right one *is* the skill:
 
-- **Observation** — an append-only log line. The *trail*: what happened, in order. Capped (oldest evicted past 50 per entity). Use for history: `completed:`, `impl:`, `TL-review:`, decision context.
+- **Observation** — an append-only log line. The *trail*: what happened, in order. Capped (oldest evicted past 200 per entity). Use for history: `completed:`, `impl:`, `TL-review:`, decision context. Each observation carries a stable integer ID (`show --with-ids`) — edit one in place with `update-obs` or delete it with `rm-obs`, by ID or by exact content.
 - **Truth** — a `key → value` fact that **upserts in place**. The *current state*: `status`, `next`, `version`, dates. Writing the same key again overwrites the old value — no stale accumulation, no delete-then-recreate dance.
 - **Relation** — a directed edge `(from, to, type)` between two entities (`part_of`, `supersedes`, `depends_on`).
 
-`search` / `graph` return **truths + `observationCount` only** (cheap, lazy-read) — so anything you scan often (a task's `status`) belongs in a truth: readable without `show`. `show` additionally returns the full observation list and a skill body.
+`search` / `graph` return **truths + `observationCount` only** (cheap, lazy-read) — so anything you scan often (a task's `status`) belongs in a truth: readable without `show`. `show` additionally returns the full observation list and a skill body; add `--with-ids` for each observation's integer ID, or `--expand <relation_type>` to pull linked entities into the same payload.
 
-Write current state with `asobi truth <name> <key> <value>` (upserts); append history with `asobi obs`. The 50-observation cap applies to observations only — truths upsert and never accumulate toward it.
+Write current state with `asobi truth <name> <key> <value>` (upserts); append history with `asobi obs`. The 200-observation cap (overridable via `ASOBI_OBSERVATION_LIMIT` or `asobi.toml`'s `observation_limit`) applies to observations only — truths upsert and never accumulate toward it.
 
 ## Naming Convention
 
@@ -72,7 +72,7 @@ Run `command -v asobi`. Record the result — do not re-check during the session
 
 **Step 1 — Load state**:
 
-`asobi show UserPreferences CodingStyle ToolPreferences [repo-basename] [project]:session`. If any entity is missing from the output, it doesn't exist yet — seed it from Global Seed Values. If the session entity is missing, treat as a fresh start. If `[project]:session` references an active epic, also load it: `asobi search "[epic-name]"` to pull the epic and its task children.
+`asobi show UserPreferences CodingStyle ToolPreferences [repo-basename] [project]:session`. If any entity is missing from the output, it doesn't exist yet — seed it from Global Seed Values. If the session entity is missing, treat as a fresh start. If `[project]:session` references an active epic, also load it: `asobi show "[project]:[epic]" --expand part_of` pulls the epic and all its task children in a single payload (or `asobi search "[epic-name]"` for a truths-only board).
 
 Then load active project pitfalls:
 
@@ -100,13 +100,13 @@ asobi truth "[project]:session" last-updated "YYYY-MM-DD"
 asobi obs "[project]:session" "completed YYYY-MM-DD: [finished items this session]"
 ```
 
-The truths upsert, so the session entity stays clean on its own — the `completed:` trail is the only thing that grows, and it is useful history (prune it only if it nears the 50-cap).
+The truths upsert, so the session entity stays clean on its own — the `completed:` trail is the only thing that grows, and it is useful history (prune it only if it nears the 200-cap).
 
 **Step 2 — Save new facts** (cross-project): `asobi search "[topic]"` to check for duplicates, then `asobi obs [UserPreferences|CodingStyle|ToolPreferences] "[fact]"`.
 
 **Step 3 — Save project context** (conventions, patterns, decisions): `asobi search "[topic]"`, then `asobi obs [repo-basename] "[fact]"`.
 
-**Step 4 — Compact** (optional): if `asobi` was built with the `documents` feature, run `asobi compact` to archive session state to Markdown and refresh the FTS/vector index. Skip silently if unavailable.
+**Step 4 — Compact** (optional): if `asobi` was built with the `documents` feature, run `asobi compact` to refresh the FTS/vector index. It syncs **durable knowledge only** (`project`/`concept`/`reference`/`preference`/`standard`) — volatile `session`/`task` and self-indexing `skill` entities are deliberately not written to the recall tier (they stay cheaply readable via `search`/`show`). It is idempotent: unchanged entities are left byte-for-byte and not re-embedded. Skip silently if unavailable.
 
 **Step 5 — Confirm**: "Session saved. Next: [one-sentence handoff]."
 
@@ -135,7 +135,7 @@ Then point the session at it: `asobi truth "[project]:session" objective "[epic]
 
 ### `tasks list [epic-name]`
 
-`asobi search "[epic]"` returns each task's `status` truth + `observationCount` without loading observations — render the board straight from the truths (no `show` per task):
+`asobi search "[epic]"` returns each task's `status` truth + `observationCount` without loading observations — render the board straight from the truths (no `show` per task). `asobi show "[epic]" --expand part_of` returns the same truths for the epic and every child in one payload if you also want the relations:
 
 ```
 [project]:[epic]
@@ -272,9 +272,9 @@ Git sources are shallow-cloned to a reused cache (`.asobi/caches/<slug>`); `upda
 
 ## Pruning & Maintenance
 
-Each entity caps at **50 observations** by default — you can't append forever. **Truths are exempt: they upsert in place and never count toward the cap** — keeping current state (`status`, `next`, dates) in truths is the first defense against fill-up. Only observations accumulate. Append freely during active work, but when an entity fills (check `asobi stats`), **rewrite and consolidate** rather than pile on: merge duplicate facts and collapse a closed task's observation trail to its final `impl:` + `done:` (its `status` truth is already just `DONE`). Decisions are the exception — never delete one; supersede it (`link [new] [old] "supersedes"`) so the *why of the reversal survives.
+Each entity caps at **200 observations** by default (overridable via `ASOBI_OBSERVATION_LIMIT` or `asobi.toml`'s `observation_limit`) — you can't append forever. **Truths are exempt: they upsert in place and never count toward the cap** — keeping current state (`status`, `next`, dates) in truths is the first defense against fill-up. Only observations accumulate. Run `asobi stats --per-entity` to see which entities are near their cap. Append freely during active work, but when an entity fills, **rewrite and consolidate** rather than pile on: merge duplicate facts and collapse a closed task's observation trail to its final `impl:` + `done:` (its `status` truth is already just `DONE`). Decisions are the exception — never delete one; supersede it (`link [new] [old] "supersedes"`) so the *why* of the reversal survives.
 
-`rm-obs` matches the **exact** string — copy it from `show`, don't paraphrase. To correct a truth, just `truth` the new value (it overwrites) or `rm-truth [name] [key]`. Never prune an in-flight session or an open epic's live trail. With the `documents` feature, follow a prune with `asobi compact` to rebuild the index.
+Edit or delete a single observation by its integer ID (from `show --with-ids`), which sidesteps fragile string matching: `asobi update-obs [name] [id] "[new content]" --id` rewrites it in place; `asobi rm-obs [name] [id] --id` removes it. Content matching still works when you'd rather copy the exact string from `show`: `asobi rm-obs [name] "[exact content]"`. To correct a truth, just `truth` the new value (it overwrites) or `rm-truth [name] [key]`. Never prune an in-flight session or an open epic's live trail. With the `documents` feature, follow a prune with `asobi compact` to rebuild the index.
 
 ## Entity Reference
 
@@ -284,15 +284,15 @@ Each entity caps at **50 observations** by default — you can't append forever.
 | `[project]:[epic]` / `:task-N` | `task` | Epic-scoped — `new` once, `status` truth upserts, obs trail appends, rests `DONE` on close | truths: `title`, `status` (epic: `objective`) · obs: `plan:`, `impl:`, `TL-review:`, `done:` (epic: `scope:`, `outcome:`) |
 | `[project]:decision:<slug>` | `concept` | Persistent — `new` once, link with relations | obs: `decision`, `context`, `consequences`, `date` |
 | `[project]:pitfall:<slug>` | `concept` | Persistent warning — `status` truth starts `active`, flips to `resolved` when obsolete | truths: `status`, `title` · obs: `tried:`, `why-it-failed:`, `do-instead:`, `date:`, `resolved:` |
-| `[repo-basename]` | `project` | Persistent — append, then consolidate under the 50-obs cap; never delete the entity | obs: architecture decisions + why, non-obvious conventions, key commands, stack |
-| `UserPreferences` / `CodingStyle` / `ToolPreferences` | `preference` / `standard` | Persistent, global — append, then consolidate under the 50-obs cap | obs: cross-project prefs (see Global Seed Values) |
+| `[repo-basename]` | `project` | Persistent — append, then consolidate under the 200-obs cap; never delete the entity | obs: architecture decisions + why, non-obvious conventions, key commands, stack |
+| `UserPreferences` / `CodingStyle` / `ToolPreferences` | `preference` / `standard` | Persistent, global — append, then consolidate under the 200-obs cap | obs: cross-project prefs (see Global Seed Values) |
 
 Remaining types: `reference` (external URLs/resources). Write protocol for every entity:
 
 1. `asobi search "[topic]"` — check the fact doesn't already exist.
 2. If the entity is missing: `asobi new [name] [type]` first.
 3. **Current-state** field (`status`, `version`, a date, `next`): `asobi truth [name] [key] [value]` — it upserts, so just write the new value (no delete needed). **Append-only history**: `asobi obs [name] "[fact]"` — never overwrite, always append.
-4. To fix a stale observation: `asobi rm-obs [name] "[exact old content]"`, then re-add. To fix a truth: just `truth` again (overwrites), or `asobi rm-truth [name] [key]`.
+4. To fix a stale observation: `asobi update-obs [name] [id] "[new content]" --id` rewrites it in place (get the ID from `show --with-ids`), or `asobi rm-obs [name] [id] --id` then re-add. To fix a truth: just `truth` again (overwrites), or `asobi rm-truth [name] [key]`.
 
 ## Global Seed Values
 
@@ -327,12 +327,14 @@ If an entity is missing from `show`, create and seed it immediately. These are e
 # Read
 asobi graph
 asobi search "query" [--limit <N>] [--where KEY=VALUE ...]
-asobi show "name1" "name2" ...
+asobi show "name1" "name2" ... [--with-ids] [--expand <relation_type> ...]
 asobi query "natural-language question"   # hybrid semantic (requires --features documents)
+asobi stats [--per-entity] [--json]       # obs counts + limits; --per-entity flags near-cap entities
 
 # Write
 asobi new "name" "type" [--obs "content" ...]
 asobi obs "name" "content" [<content> ...]        # append-only trail
+asobi update-obs "name" "old"|<id> "new" [--id]   # atomic in-place edit (by content, or by ID with --id)
 asobi link "from" "to" "relation_type" [<from> <to> <relation_type> ...]
 
 # Truths (current-state key→value, upserts in place)
@@ -351,7 +353,8 @@ asobi skills show <name>                   # print raw body of installed skill
 
 # Delete
 asobi rm "name1" "name2" ...               # delete entities (cascades to obs and relations)
-asobi rm-obs "name" "exact content"        # delete specific observation
+asobi rm-obs "name" "exact content"        # delete specific observation (by content)
+asobi rm-obs "name" <id> --id              # delete specific observation (by integer ID)
 asobi unlink "from" "to" "relation_type"   # delete specific relation
 
 # Maintenance
