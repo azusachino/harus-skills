@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-07-02
+
+### Changed
+- **asobi** (2.1.2): Updated for the `asobi 0.3.0` CLI API, verified against the live binary:
+  - Default observation cap raised **50 → 200** (overridable via `ASOBI_OBSERVATION_LIMIT` / `observation_limit`).
+  - Documented sequential integer **observation IDs**: `show --with-ids`, atomic `update-obs <name> <id> "…" --id`, and `rm-obs <name> <id> --id`.
+  - Added `show --expand <relation_type>` (load an epic + its task children in one payload) to `/asobi start` and `tasks list`.
+  - Added `stats --per-entity` to the pruning guidance for finding near-cap entities.
+  - Corrected `compact` behavior: it syncs **durable-knowledge entities only** (session/task/skill excluded) and is idempotent.
+- **toolbelt** (2.0.2): Dropped `zellij` (haru uses `tmux`); added a **Domain & infra tools** table for the specialised tools harus-nix provisions (k8s, cloud, containers, secrets, lint/format, media); added a **stop-and-ask hard-stop rule** — halt and ask on any ambiguous situation instead of improvising a fallback.
+
+## [3.1.1] - 2026-06-29
+
+### Changed
+- Removed stale RTK references across the skills and docs.
+
+## [3.1.0] - 2026-06-24
+
+### Added
+- **revise** (1.0.0): New `/revise` skill that persists project lessons, findings, and wrong approaches — positive lessons on the project entity, rejected approaches as active `[project]:pitfall:<slug>` warnings, with a `docs/lessons/` fallback when asobi is unavailable.
+
+### Changed
+- **asobi** (2.1.0): Documented the pitfall log and surfaced active pitfalls at `/asobi start` and during task dispatch.
+
 ## [3.0.0] - 2026-06-18
 
 ### Added
