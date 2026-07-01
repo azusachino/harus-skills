@@ -3,7 +3,7 @@ name: toolbelt
 description: Reference for haru's preferred modern CLI tools — when and how to use eza/bat/fd/ripgrep/sd, xh, dasel, procs, doggo, hexyl, duckdb/psql/sqlx-cli, hyperfine/oha. Invoke when a task involves searching files, editing text, HTTP/API calls, data/SQL work, DNS or process debugging, hex inspection, or benchmarking, and you want the idiomatic tool + flags instead of the classic Unix default.
 metadata:
   author: haru
-  version: 2.0.1
+  version: 2.0.2
 user-invokable: true
 ---
 
@@ -12,6 +12,7 @@ user-invokable: true
 haru's machines (managed by `harus-nix` Home Manager) ship a curated set of modern CLIs. **Prefer these over the classic Unix tools by default** — fall back to the classic only when the modern tool is genuinely unavailable.
 
 ## Table of Contents
+- [Stop-and-ask rule (hard stop)](#stop-and-ask-rule-hard-stop)
 - [Substitution table (always-on)](#substitution-table-always-on)
 - [Tooling discipline (carried from global defaults)](#tooling-discipline-carried-from-global-defaults)
 - [Runtimes & package managers](#runtimes--package-managers)
@@ -21,11 +22,16 @@ haru's machines (managed by `harus-nix` Home Manager) ship a curated set of mode
 - [Data & SQL](#data--sql)
 - [Debug & inspect](#debug--inspect)
 - [Benchmark](#benchmark)
+- [Domain & infra tools (know these exist)](#domain--infra-tools-know-these-exist)
 - [When NOT to substitute](#when-not-to-substitute)
 
 This skill is **self-contained** — it carries both the substitution rules and the usage recipes so it works on any device, even one whose global `~/.claude/CLAUDE.md` isn't synced or differs. Treat it as the portable source of truth; if the local global config disagrees, the local config wins for that machine, but these defaults travel with you.
 
 Rule of thumb: classic tools for piping inside scripts that must be portable; modern tools for interactive/agent work where clarity and ergonomics win.
+
+## Stop-and-ask rule (hard stop)
+
+**When a situation is unclear, STOP and ask the user — do not improvise an alternative path.** If a command errors in a way you don't understand, a tool is missing, a flag behaves unexpectedly, a file/state contradicts what you assumed, or you're unsure which of several approaches is right: halt right there and ask for clarification. Do **not** silently fall back to a different tool, retry with guessed flags, or work around the block — that "try something else" reflex is how agents produce confusing, wrong-turn behavior and cascading failures. One clear question to the user beats three speculative attempts. (This overrides the graceful-fallback note in *When NOT to substitute*: fall back only for the specific, well-understood "tool literally not installed" case; anything ambiguous is a stop.)
 
 ## Substitution table (always-on)
 
@@ -42,7 +48,6 @@ Reach for the right-hand tool by default; fall back to the classic only when the
 | `jq` for YAML        | `yq`                                    | YAML query + convert            |
 | `wc -l` (code count) | `tokei`                                 | code statistics (LOC)           |
 | ad-hoc regex design  | `grex`                                  | generate regular expressions    |
-| `tmux`               | `zellij`                                | terminal workspace multiplexer  |
 | ad-hoc SQL           | `duckdb`, `psql` (postgres), `sqlx-cli` | data + migrations               |
 | benchmarking         | `hyperfine` (CLI), `oha` (HTTP)         | perf checks                     |
 | `python` / `pip` / `pipx` | `uv` / `uvx`                       | Python runtime, deps, tools     |
@@ -141,15 +146,34 @@ Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane d
 - **`grex`** — generate regular expressions from user-provided test cases:
   - `grex a b c` (returns `^[a-c]$`)
   - `grex -d -w -p email@example.com` (generate with digits, words, non-space)
-- **`zellij`** — modern terminal workspace and multiplexer (replaces tmux):
-  - `zellij` (starts a new session)
-  - `zellij options --theme dracula`
+
+Terminal multiplexing stays on `tmux` (haru's choice) — do not reach for `zellij`.
 
 ## Benchmark
 
 - **`hyperfine`** — CLI command benchmarking with stats:
   - `hyperfine 'rg foo' 'grep -r foo .'` (compare), `--warmup 3`.
 - **`oha`** — HTTP load (see above).
+
+## Domain & infra tools (know these exist)
+
+Not substitutions — these are the specialised tools harus-nix already provisions. Reach for them by name instead of hand-rolling or asking the user to install something; they're on the machine.
+
+| Domain | Tools | Reach for it when |
+| --- | --- | --- |
+| **Nix workflow** | `nh` (ergonomic nix/home-manager wrapper), `nom` (`nix-output-monitor`) | rebuilding a config, watching a nix build's progress |
+| **Kubernetes** | `k9s` (TUI), `kubectl`, `stern` (multi-pod log tail), `minikube` | inspecting/driving a cluster, tailing pod logs, local k8s |
+| **Cloud & sync** | `awscli2`, `rclone` | AWS API calls, syncing to/from cloud/object storage |
+| **Containers** | Linux: `podman`/`buildah`/`skopeo` · macOS: `colima` + `docker-client` | building/running/inspecting OCI images (rootless, daemonless) |
+| **Secrets** | `sops`, `age` | encrypting/decrypting secrets in the repo |
+| **Watch & run** | `watchexec` | re-run a command on file changes (tests, builds) |
+| **Lint & format** | `shellcheck`, `shfmt`, `yamlfmt`, `prettier`, `markdownlint-cli2`, `pre-commit` | linting/formatting shell, YAML, JS/TS, Markdown; hook setup |
+| **Lang tooling** | `golangci-lint`, `ruff`/`ty` (Python), `cargo-update`/`-sweep`/`-cache`/`-zigbuild` | project-local linting, Rust cargo maintenance |
+| **Media & docs** | `yt-dlp`, `ffmpeg`, `unar` (archives), `typst` (doc compiler) | downloading media, transcoding, extracting archives, typesetting |
+| **Shell & nav** | `navi` (interactive cheat sheet), `fzf`, `zoxide`, `helix` (`hx` editor) | fuzzy-finding, cheat lookups, quick edits |
+| **Runtime pinning** | `mise` (per-project versions via `.mise.toml`), `rustup` (Rust toolchains) | a project pins a language version; switching Rust toolchains |
+
+If a task needs a tool not on this list or in the tables above, apply the stop-and-ask rule — confirm with the user before installing anything.
 
 ## When NOT to substitute
 
