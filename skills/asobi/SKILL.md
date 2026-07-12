@@ -3,12 +3,12 @@ name: asobi
 description: Use to share state across sessions and agents via the asobi CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/asobi tasks`) that replaces ephemeral TodoWrite/local jsonl, a knowledge tier (`/asobi recall`), and a skill library (`/asobi skills`). Auto-triggers when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
 metadata:
   author: haru
-  version: 2.1.2
+  version: 2.2.0
 ---
 
 # Asobi Skill
 
-Share durable state across conversations and sub-agents using the `asobi` CLI knowledge graph. Asobi is one primitive — a graph any agent can read and write — exposed through three pillars:
+Share durable state across conversations and sub-agents using the `asobi` CLI knowledge graph. Asobi is one primitive — a graph any agent can read and write — exposed through four pillars:
 
 ## Table of Contents
 - [Primitives — trail vs state](#primitives--trail-vs-state)
@@ -45,7 +45,9 @@ One graph, two ways to write a fact onto an entity — picking the right one *is
 
 `search` / `graph` return **truths + `observationCount` only** (cheap, lazy-read) — so anything you scan often (a task's `status`) belongs in a truth: readable without `show`. `show` additionally returns the full observation list and a skill body; add `--with-ids` for each observation's integer ID, or `--expand <relation_type>` to pull linked entities into the same payload.
 
-Write current state with `asobi truth <name> <key> <value>` (upserts); append history with `asobi obs`. The 200-observation cap (overridable via `ASOBI_OBSERVATION_LIMIT` or `asobi.toml`'s `observation_limit`) applies to observations only — truths upsert and never accumulate toward it.
+Write current state with `asobi truth <name> <key> <value>` (upserts); append history with `asobi obs`. The 200-observation cap (overridable via `ASOBI_OBSERVATION_LIMIT` or `asobi.toml`) applies to observations only — truths never count toward it. Overwriting a truth keeps the old value in a valid-time audit trail; read it with `asobi history <name> [key]`.
+
+Two ergonomics worth habituating: add `--json` to any mutating command to print the affected entity and skip a follow-up `show`; and batch — `new A task B concept`, `link A B part_of C D supersedes`, `new X task --obs "seed"` all take repeated args in one call.
 
 ## Naming Convention
 
@@ -147,7 +149,7 @@ Then point the session at it: `asobi truth "[project]:session" objective "[epic]
 
 ### `tasks dispatch [task]`
 
-Pick the next `READY_TO_DISPATCH` task (or the named one). Mark it dispatched, spawn a sub-agent, and have the agent write results **back into the task entity** — not just into the conversation:
+Pick the next `READY_TO_DISPATCH` task (or the named one). **Sub-agent dispatch is opt-in** — by default the lead executes the task inline and records the outcome back into the task entity itself. Spawn a sub-agent only when the user asks or the work is genuinely independent; either way, the result is written **back into the task entity** — not just into the conversation:
 
 ```bash
 asobi truth "[project]:[epic]:task-N" status DISPATCHED
@@ -162,7 +164,7 @@ asobi query "[task title]"
 
 Also inspect the shown task for `depends_on` relations to `[project]:pitfall:<slug>` and include those linked pitfalls as explicit warnings. The relation direction is `task --depends_on--> pitfall`, meaning the task depends on knowing the warning.
 
-Brief the sub-agent from the task's `title` truth, `plan:` observation (`show` the task), task-relevant query results, and any linked active pitfalls. Default agent is `haiku-developer` (efficient model for scoped work) unless the task is correctness-critical. Require the agent to end by recording:
+When you do dispatch, brief the sub-agent from the task's `title` truth, `plan:` observation (`show` the task), task-relevant query results, and any linked active pitfalls. Default agent is `haiku-developer` (efficient model for scoped work) unless the task is correctness-critical. The agent (or the lead, if running inline) ends by recording:
 
 ```bash
 asobi obs "[project]:[epic]:task-N" "impl: [what changed; files touched; make check result]"
@@ -274,7 +276,9 @@ Git sources are shallow-cloned to a reused cache (`.asobi/caches/<slug>`); `upda
 
 Each entity caps at **200 observations** by default (overridable via `ASOBI_OBSERVATION_LIMIT` or `asobi.toml`'s `observation_limit`) — you can't append forever. **Truths are exempt: they upsert in place and never count toward the cap** — keeping current state (`status`, `next`, dates) in truths is the first defense against fill-up. Only observations accumulate. Run `asobi stats --per-entity` to see which entities are near their cap. Append freely during active work, but when an entity fills, **rewrite and consolidate** rather than pile on: merge duplicate facts and collapse a closed task's observation trail to its final `impl:` + `done:` (its `status` truth is already just `DONE`). Decisions are the exception — never delete one; supersede it (`link [new] [old] "supersedes"`) so the *why* of the reversal survives.
 
-Edit or delete a single observation by its integer ID (from `show --with-ids`), which sidesteps fragile string matching: `asobi update-obs [name] [id] "[new content]" --id` rewrites it in place; `asobi rm-obs [name] [id] --id` removes it. Content matching still works when you'd rather copy the exact string from `show`: `asobi rm-obs [name] "[exact content]"`. To correct a truth, just `truth` the new value (it overwrites) or `rm-truth [name] [key]`. Never prune an in-flight session or an open epic's live trail. With the `documents` feature, follow a prune with `asobi compact` to rebuild the index.
+Edit or delete a single observation by its integer ID (from `show --with-ids`), which sidesteps fragile string matching: `asobi update-obs [name] [id] "[new content]" --id` rewrites it in place; `asobi rm-obs [name] [id] --id` removes it. Content matching still works when you'd rather copy the exact string from `show`: `asobi rm-obs [name] "[exact content]"`, and `asobi rm-obs [name] "prefix" --prefix` clears every observation sharing a prefix in one call. To correct a truth, just `truth` the new value (it overwrites) or `rm-truth [name] [key]`. Never prune an in-flight session or an open epic's live trail. With the `documents` feature, follow a prune with `asobi compact` to rebuild the index.
+
+**Handoff & archival** — the graph is the store, but two paths move it out-of-band. `asobi export [--scope <entity>] [--rationale]` writes a portable JSON bundle (whole graph, or one epic + its task subtree with `--scope`, optionally including the cited decision chain via `--rationale`); `asobi import` reads it back — this is the format for teammate, machine, or backend handoff. `asobi backup [--keep N]` / `asobi restore <file>` take physical libSQL snapshots (graph + skill bodies + document data) for local disaster recovery. Truth history is local physical state and rides along with `backup`, not with JSON `export`.
 
 ## Entity Reference
 
@@ -298,26 +302,28 @@ Remaining types: `reference` (external URLs/resources). Write protocol for every
 
 If an entity is missing from `show`, create and seed it immediately. These are established cross-project defaults — do not ask the user to confirm them.
 
-**`UserPreferences`** (`preference`)
+**`UserPreferences`** (`preference`) — how you work with me
 
-- Project-local worktrees by default for isolated work; parallel sessions are opt-in only
-- Sub-agents by default — dispatch independent work; don't do everything inline
-- Simple solutions over clever ones — avoid over-engineering and speculative abstractions
-- Use haiku or other efficient models for dispatch/sub-agent tasks
-- Terse responses — no trailing summaries, no preamble
+- **Think first, then stop-and-ask (fail-fast)** — surface assumptions and tradeoffs before acting; if multiple interpretations exist, present them rather than pick silently; on any ambiguity (an error you don't understand, a missing tool, state that contradicts your assumptions) halt and ask instead of improvising a fallback or guessing flags. One clear question beats three speculative attempts. This is the canonical rule other skills point to.
+- **Goal-driven** — turn the task into a verifiable check and loop until it's green ("fix the bug" → a test that reproduces it, then make it pass); leave one runnable check behind for non-trivial logic
+- Work inline by default; worktrees and sub-agents are **opt-in** — reach for them only when the user asks or the work is genuinely isolated/parallel
+- When you do dispatch, use haiku or other efficient models for scoped sub-agent tasks
+- Terse responses — no preamble, no trailing summaries
 
-**`CodingStyle`** (`standard`)
+**`CodingStyle`** (`standard`) — how code is written
 
-- Conventional commits: `feat:`, `fix:`, `chore:`, `deploy:` — no emojis in commit messages
-- 2-space indentation for config files (YAML, TOML, JSON)
-- No emojis anywhere unless explicitly requested
-- No manually wrapped prose — let formatters handle line length
-- Staging discipline: `git add <specific files>` only, never `git add -A` or `git add .`
+- **KISS + YAGNI — climb the lazy ladder**: does it need to exist? → reuse what's already in the codebase → stdlib/native platform feature → an already-installed dep → one line → minimal code that works. Deletion over addition, boring over clever
+- **Understand before you change** — trace the full flow first; the smallest diff in the wrong place is a second bug. Never simplify away validation at trust boundaries, error handling, security, or accessibility
+- **Surgical changes** — every changed line traces to the request; match existing style, don't refactor or reformat adjacent code; remove only the orphans your change creates (mention other dead code, don't delete it)
+- **Bug fix = root cause** — grep the callers and fix once where they route through, not per-symptom
+- **Mark a deliberately cut corner** with a comment naming the ceiling + upgrade path
+- Conventional commits (`feat:`/`fix:`/`chore:`/`deploy:`, emojis welcome); atomic commits — one logical change per commit; SemVer + Keep a Changelog
+- 2-space indentation for config files (YAML, TOML, JSON); no manually wrapped prose; `git add <specific files>` only, never `git add -A`
 
 **`ToolPreferences`** (`preference`)
 
 - Nix-first: all tools come from devShell (`nix develop`)
-- `mise` for language runtimes only (not general tooling)
+- `mise` for language runtimes only (not general tooling); run a project-pinned runtime/tool with `mise x -- <tool>` (alias `mise exec`)
 - `make` is the task runner — always reference `make <target>`
 - `make check` runs before commits; `make validate` before PRs (enforced by hooks)
 
@@ -329,15 +335,16 @@ asobi graph
 asobi search "query" [--limit <N>] [--where KEY=VALUE ...]
 asobi show "name1" "name2" ... [--with-ids] [--expand <relation_type> ...]
 asobi query "natural-language question"   # hybrid semantic (requires --features documents)
+asobi history "name" [key]                 # superseded truth values + valid-time windows
 asobi stats [--per-entity] [--json]       # obs counts + limits; --per-entity flags near-cap entities
 
-# Write
-asobi new "name" "type" [--obs "content" ...]
+# Write (append --json to any mutating command to print the affected entity)
+asobi new "name" "type" ["name2" "type2" ...] [--obs "content" ...]   # batch: repeated NAME TYPE pairs
 asobi obs "name" "content" [<content> ...]        # append-only trail
 asobi update-obs "name" "old"|<id> "new" [--id]   # atomic in-place edit (by content, or by ID with --id)
-asobi link "from" "to" "relation_type" [<from> <to> <relation_type> ...]
+asobi link "from" "to" "relation_type" [<from> <to> <relation_type> ...]   # batch: repeated triples
 
-# Truths (current-state key→value, upserts in place)
+# Truths (current-state key→value, upserts in place; overwrite is logged to history)
 asobi truth "name" "key" "value"
 asobi rm-truth "name" "key"
 
@@ -355,7 +362,14 @@ asobi skills show <name>                   # print raw body of installed skill
 asobi rm "name1" "name2" ...               # delete entities (cascades to obs and relations)
 asobi rm-obs "name" "exact content"        # delete specific observation (by content)
 asobi rm-obs "name" <id> --id              # delete specific observation (by integer ID)
+asobi rm-obs "name" "prefix" --prefix      # delete all observations matching a prefix
 asobi unlink "from" "to" "relation_type"   # delete specific relation
+
+# Handoff & archival
+asobi export [--scope <entity>] [--rationale] [-o file.json]   # portable JSON bundle (whole graph or one epic subtree)
+asobi import "file.json"                    # read a JSON bundle back in
+asobi backup [--keep <N>] [-o file.db]      # physical libSQL snapshot (graph + skills + docs)
+asobi restore "file.db" [--force]           # replace live DB from a snapshot
 
 # Maintenance
 asobi compact          # archive + refresh FTS/vector (requires --features documents)

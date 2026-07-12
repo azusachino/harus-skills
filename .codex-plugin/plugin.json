@@ -1,13 +1,13 @@
 {
   "name": "harus-skills",
-  "version": "3.1.2",
-  "description": "Project scaffolding, shared-state/session management, lesson capture, and tooling skills for Codex workflows.",
+  "version": "3.2.0",
+  "description": "Shared-state/session management, lesson capture, and tooling skills for Codex workflows.",
   "author": {
     "name": "haru",
     "email": "azusachino@duck.com"
   },
   "repository": "https://github.com/azusachino/harus-skills",
   "license": "MIT",
-  "keywords": ["skills", "asobi", "init-project", "revise", "session", "toolbelt", "productivity"],
+  "keywords": ["skills", "asobi", "revise", "session", "toolbelt", "productivity"],
   "skills": "./skills/"
 }

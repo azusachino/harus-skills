@@ -1,18 +1,40 @@
-# harus-skills
+<h1 align="center">harus-skills</h1>
 
-A collection of custom Claude Code skills for productivity and project management.
+<p align="center">
+  <em>Curated Claude Code skills for durable memory, disciplined tooling, and lazy-senior-dev code.</em>
+</p>
 
-## Skills
+<p align="center">
+  <img src="https://img.shields.io/badge/version-3.2.0-111111?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT license">
+  <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex%20%7C%20Antigravity-111111?style=flat-square" alt="works with Claude Code, Codex, Antigravity">
+  <img src="https://img.shields.io/badge/format-Agent%20Skills%20Standard-111111?style=flat-square" alt="Agent Skills Standard">
+</p>
 
-**`/asobi`** — Share durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan|list|dispatch|sync|close`) that replaces ephemeral TodoWrite/local jsonl, a **knowledge tier** (`recall` — `ingest`/`query` + an ADR decision log), and a **skill library** (`skills` — install/recall agent skills from git). `asobi` is required — there is no `.agents/` file fallback.
+<p align="center">
+  <sub>Three skills. One graph for memory. One toolbelt for the terminal. Zero runtime code — just markdown an agent reads.</sub>
+</p>
 
-**`/init-project`** (alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `CLAUDE.md`, `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in); seeds the asobi graph so `/asobi start` has context on first run.
+---
 
-**`/revise`** — Persist project lessons, findings, and wrong approaches so future sessions can recall them. Stores positive lessons on the project entity, wrong approaches as active `[project]:pitfall:<slug>` warnings, and falls back to `docs/lessons/` only when asobi is unavailable.
+## ✨ Skills
 
-**`/toolbelt`** — Reference for haru's preferred modern CLIs (`eza`/`bat`, `rg`/`fd`, `sd`, `xh`, `dasel`, `procs`, `doggo`, `hexyl`, `duckdb`/`psql`, `hyperfine`/`oha`) plus the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON). Self-contained, so it works on any device.
+| Skill | What it does |
+| --- | --- |
+| 🧠 **`/asobi`** | Durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan\|list\|dispatch\|sync\|close`) that replaces ephemeral TodoWrite/jsonl, a **knowledge tier** (`recall` — `ingest`/`query` + an ADR log), and a **skill library** (`skills` — install/recall agent skills from git). |
+| 📝 **`/revise`** | Persist lessons, findings, and dead ends so future sessions recall them — positive lessons on the project entity, wrong approaches as active `pitfall` warnings surfaced at the next `/asobi start`. |
+| 🧰 **`/toolbelt`** | Reference for haru's preferred modern CLIs + the core tooling discipline (Nix-first, `make` runner, `jq` for JSON, `mise x -- <tool>`). Self-contained, works on any device. |
 
-## Installation
+### 🧰 What's in the toolbelt
+
+Modern OSS CLIs, reached for by default over the classic Unix tools:
+
+- **Search & edit** — [`rg`](https://github.com/BurntSushi/ripgrep)/[`fd`](https://github.com/sharkdp/fd) (text/file), [`ast-grep`](https://ast-grep.github.io/) (AST-aware structural search & rewrite), [`sd`](https://github.com/chmln/sd) (find/replace), [`difftastic`](https://github.com/Wilfred/difftastic) (syntax-aware diffs), [`typos`](https://github.com/crate-ci/typos) (source spell-check)
+- **View & inspect** — [`eza`](https://github.com/eza-community/eza)/[`bat`](https://github.com/sharkdp/bat)/[`dust`](https://github.com/bootandy/dust), [`procs`](https://github.com/dalance/procs) (ps), [`doggo`](https://github.com/mr-karan/doggo) (dig), [`hexyl`](https://github.com/sharkdp/hexyl) (hex), [`tailspin`](https://github.com/bensadeh/tailspin) (log highlight)
+- **HTTP & data** — [`xh`](https://github.com/ducaale/xh) (curl), [`dasel`](https://github.com/TomWright/dasel) (YAML/TOML/XML/CSV), [`duckdb`](https://duckdb.org/), [`miller`](https://github.com/johnkerl/miller) (CSV/TSV), [`hyperfine`](https://github.com/sharkdp/hyperfine)/[`oha`](https://github.com/hatoo/oha) (benchmarks)
+- **Runtimes** — [`uv`](https://github.com/astral-sh/uv)/`uvx` (Python), [`bun`](https://github.com/oven-sh/bun)/`bunx` (JS/TS)
+
+## 📦 Installation
 
 ### Prerequisites
 
@@ -42,7 +64,7 @@ agy plugin link /path/to/harus-skills
 codex plugin install https://github.com/azusachino/harus-skills
 ```
 
-## Development
+## 🛠️ Development
 
 Tools via nix devShell. Tasks via Makefile.
 
@@ -56,7 +78,7 @@ make verify          # Verify repository structure
 make list-skills     # List all available skills
 ```
 
-## Skill Structure
+## 🗂️ Skill Structure
 
 Each skill follows the [Agent Skills Standard](http://agentskills.io) format as a flat directory under `skills/`:
 
@@ -65,23 +87,30 @@ skills/
   asobi/
     SKILL.md          # Skill definition with YAML frontmatter
     README.md
-  init-project/
-    SKILL.md
-    configs/          # Bundled config templates
   revise/
     SKILL.md
   toolbelt/
     SKILL.md
 ```
 
-## Contributing
+## 🤝 Contributing
 
 1. Create a new directory directly under `skills/`
 2. Add a `SKILL.md` with YAML frontmatter (`name`, `description`, `metadata.version`)
 3. Run `make check` before submitting
 4. Open a pull request
 
-## Resources
+## 🙏 Credits & inspiration
+
+Design decisions are recorded as [ADRs](docs/adr/). The skills stand on the shoulders of the OSS agent-skill community:
+
+- [**asobi**](https://github.com/azusachino/asobi) — the knowledge-graph CLI that backs `/asobi`
+- [**Agent Skills Standard**](http://agentskills.io) — the `SKILL.md` format every skill targets
+- [**ponytail**](https://github.com/DietrichGebert/ponytail) — the "lazy senior dev" YAGNI ladder distilled into the `CodingStyle` seed
+- [**karpathy-guidelines**](https://github.com/multica-ai/andrej-karpathy-skills) — surgical changes + goal-driven verification, folded into the seed values
+- [**superpowers**](https://github.com/obra/superpowers) — the ethos of distilling the *gist* into a few load-bearing principles
+
+## 📚 Resources
 
 - [Agent Skills Standard](http://agentskills.io)
 - [Claude Code Documentation](https://code.claude.com/docs)

@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-07-12
+
+### Removed
+- **init-project** skill dropped entirely (superseded — no longer maintained). Removed from `skills/`, manifests, README, and CLAUDE.md.
+- **Stale `docs/`** cleared — the entire pre-asobi legacy tree (`architecture`/`status`/`setup`/`plan`/`todo`/`requirements`/`project-design` + 17 dated `docs/plans/` design archives, all describing the retired `session`/`.agents`/MCP model). The still-true decisions were salvaged into ADRs first.
+
+### Added
+- **`docs/adr/`** — Architecture Decision Records capturing the durable, non-obvious choices: pure-markdown skills (0001), single plugin + auto-discovery (0002), Agent Skills Standard with parallel agent manifests (0003).
+
+### Changed
+- **asobi** (2.2.0): Updated for the `asobi 0.5.2` CLI API.
+  - Added `--json` on mutating commands (skip the follow-up `show`), batched `new`/`link` and `new --obs` seeding, `rm-obs --prefix`.
+  - Added `history <name> [key]` (valid-time truth audit trail) and the **Handoff & archival** path: `export --scope`/`import` (portable JSON) and `backup`/`restore` (physical libSQL snapshots).
+  - **Preference reversal**: worktrees and sub-agents are now **opt-in** (inline work by default); **emojis are welcome**. Added the `mise x -- <tool>` idiom.
+  - **Seed principles curated** — distilled the gist of popular OSS agent skills ([ponytail](https://github.com/DietrichGebert/ponytail), [karpathy-guidelines](https://github.com/multica-ai/andrej-karpathy-skills)) into the core context every agent/session loads, named for recall and deduped:
+    - `UserPreferences`: canonical **think-first / stop-and-ask (fail-fast)** rule (toolbelt now points to it) and **goal-driven** (verifiable check, loop until green).
+    - `CodingStyle`: **KISS + YAGNI as the lazy ladder** (reuse → stdlib/native → installed dep → one line), **understand-before-you-change** + safety carve-out, **surgical changes**, **bug fix = root cause**, **mark cut corners**, plus **atomic commits / SemVer / Keep a Changelog**.
+- **toolbelt** (2.1.0): Reconciled with the actual `harus-config` nix tool set — dropped tools not installed (`yq`, `awscli2`, `ffmpeg`, `unar`, `minikube`-as-installed, `colima`), fixed archives to `ouch`. Added `ast-grep` (structural search/rewrite), `typos` (spell-check), `difftastic` (syntax-aware diffs), and the `mise x -- <tool>` discipline. Emojis welcome.
+
 ## [3.1.2] - 2026-07-02
 
 ### Changed

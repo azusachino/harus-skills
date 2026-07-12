@@ -1,9 +1,9 @@
 ---
 name: toolbelt
-description: Reference for haru's preferred modern CLI tools — when and how to use eza/bat/fd/ripgrep/sd, xh, dasel, procs, doggo, hexyl, duckdb/psql/sqlx-cli, hyperfine/oha. Invoke when a task involves searching files, editing text, HTTP/API calls, data/SQL work, DNS or process debugging, hex inspection, or benchmarking, and you want the idiomatic tool + flags instead of the classic Unix default.
+description: Reference for haru's preferred modern CLI tools — when and how to use eza/bat/fd/ripgrep/sd/ast-grep, xh, dasel, procs, doggo, hexyl, duckdb/psql/sqlx-cli, hyperfine/oha, difftastic, typos. Invoke when a task involves searching files, editing/refactoring code, HTTP/API calls, data/SQL work, DNS or process debugging, hex inspection, diffing, or benchmarking, and you want the idiomatic tool + flags instead of the classic Unix default.
 metadata:
   author: haru
-  version: 2.0.2
+  version: 2.1.0
 user-invokable: true
 ---
 
@@ -31,7 +31,7 @@ Rule of thumb: classic tools for piping inside scripts that must be portable; mo
 
 ## Stop-and-ask rule (hard stop)
 
-**When a situation is unclear, STOP and ask the user — do not improvise an alternative path.** If a command errors in a way you don't understand, a tool is missing, a flag behaves unexpectedly, a file/state contradicts what you assumed, or you're unsure which of several approaches is right: halt right there and ask for clarification. Do **not** silently fall back to a different tool, retry with guessed flags, or work around the block — that "try something else" reflex is how agents produce confusing, wrong-turn behavior and cascading failures. One clear question to the user beats three speculative attempts. (This overrides the graceful-fallback note in *When NOT to substitute*: fall back only for the specific, well-understood "tool literally not installed" case; anything ambiguous is a stop.)
+**On any ambiguity — an error you don't understand, a missing tool, a flag behaving oddly, state that contradicts your assumptions — STOP and ask.** Never improvise a fallback, retry with guessed flags, or work around the block; one clear question beats three speculative attempts. This is the global **stop-and-ask / fail-fast** default (canonical in `UserPreferences`). The sole exception: a tool that's literally not installed (`command -v` fails) may fall back gracefully — anything else ambiguous is a stop.
 
 ## Substitution table (always-on)
 
@@ -40,14 +40,16 @@ Reach for the right-hand tool by default; fall back to the classic only when the
 | Instead of           | Use                                     | For                             |
 | -------------------- | --------------------------------------- | ------------------------------- |
 | `ls` / `cat` / `du`  | `eza` / `bat` / `dust`                  | listing, viewing, disk usage    |
-| `grep` / `find`      | `ripgrep` (`rg`) / `fd`                 | search                          |
+| `grep` / `find`      | `ripgrep` (`rg`) / `fd`                 | text/file search                |
+| `grep` for code structure | `ast-grep` (`sg`)                  | AST-aware search & rewrite      |
 | `sed` (substitute)   | `sd`                                    | find & replace                  |
+| `git diff`           | `difftastic` (`difft`)                  | syntax-aware diffs              |
 | `ps` / `dig` / `xxd` | `procs` / `doggo` / `hexyl`             | processes, DNS, hex             |
 | `curl` (API testing) | `xh`                                    | HTTP requests                   |
 | `jq` for non-JSON    | `dasel`                                 | YAML/TOML/XML/CSV query+convert |
-| `jq` for YAML        | `yq`                                    | YAML query + convert            |
 | `wc -l` (code count) | `tokei`                                 | code statistics (LOC)           |
 | ad-hoc regex design  | `grex`                                  | generate regular expressions    |
+| spell-check source   | `typos`                                 | typo linting in code + docs     |
 | ad-hoc SQL           | `duckdb`, `psql` (postgres), `sqlx-cli` | data + migrations               |
 | benchmarking         | `hyperfine` (CLI), `oha` (HTTP)         | perf checks                     |
 | `python` / `pip` / `pipx` | `uv` / `uvx`                       | Python runtime, deps, tools     |
@@ -57,10 +59,10 @@ Reach for the right-hand tool by default; fall back to the classic only when the
 
 These hold across all of haru's projects and are restated here so the skill stands alone:
 
-- **Nix-first** — tools come from the project devShell (`nix develop`); use `mise` only for language runtimes, not general tooling.
+- **Nix-first** — tools come from the project devShell (`nix develop`); use `mise` only for language runtimes, not general tooling. To run a project-pinned runtime/tool through mise, use `mise x -- <tool>` (alias `mise exec`) — it resolves the version from the repo's `.mise.toml`.
 - **`make` is the task runner** — reference `make <target>` everywhere; `make check` before commits, `make validate` before PRs (hook-enforced).
 - **JSON → `jq`** — always `jq` for JSON processing; never `python3 -c` or inline Python. Reach for `dasel` the moment the format isn't JSON.
-- **Conventional commits, 2-space config indent, no emojis** — per global CodingStyle.
+- **Conventional commits, 2-space config indent** — per global CodingStyle. Emojis are welcome (commits, prose, docs).
 
 ## Runtimes & package managers
 
@@ -91,6 +93,11 @@ Caveats: stick to `python3`/`node` + `pip`/`npm` when a project's toolchain or C
 
 Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane defaults. When piping `bat` output, add `-p` to strip line numbers/borders.
 
+- **`ast-grep` (`sg`)** — structural, syntax-aware code search & rewrite (matches by AST, not regex — immune to formatting/whitespace):
+  - `sg run -p 'console.log($A)' -l ts` (find every `console.log(...)` call, any argument)
+  - `sg run -p 'foo($$$ARGS)' --rewrite 'bar($$$ARGS)' -l py -U` (rename a call, preserving all args; `-U` applies in place)
+  - Reach for `sg` over `rg` the moment the pattern is about code *shape* (a call, an import, a JSX element) rather than literal text — no brittle regex, no false hits inside strings/comments.
+
 ## Edit text
 
 - **`sd`** — find & replace, literal-friendly, real regex (no `sed` escaping pain):
@@ -98,6 +105,7 @@ Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane d
   - `sd -p 'foo' 'bar' file.txt` (preview diff, don't write)
   - `sd '(\w+)@(\w+)' '$2.$1' file` (capture groups with `$1`)
   - Reach for `sed` only for stream edits in portable scripts.
+  - For *code-structure* rewrites (rename a call, swap an API) use `ast-grep --rewrite` instead — it edits by AST, not text, so formatting and string/comment matches can't trip it up.
 
 ## HTTP / API debugging
 
@@ -114,10 +122,8 @@ Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane d
 - **`dasel`** — one tool to query/convert JSON/YAML/TOML/XML/CSV:
   - `dasel -f config.yaml '.services.web.port'`
   - `dasel -f data.json -r json -w yaml` (convert JSON→YAML)
-  - Use `jq` for pure-JSON pipelines (it's still the default for JSON); reach for `dasel` the moment the format isn't JSON.
-- **`yq`** — query/update YAML documents:
-  - `yq '.services.web.ports[0]' docker-compose.yml`
-  - `yq -P '.foo = "bar"' file.yaml` (pretty print YAML)
+  - `dasel put -f config.yaml -v 8080 '.services.web.port'` (edit YAML/TOML/etc. in place)
+  - Use `jq` for pure-JSON pipelines (it's still the default for JSON); reach for `dasel` the moment the format isn't JSON. `dasel` handles YAML query *and* edit — it's the one tool for non-JSON structured data here.
 - **`tokei`** — count lines of code quickly:
   - `tokei .` (recursive code statistics by language)
 - **`duckdb`** — fast analytical SQL over files, no server:
@@ -146,8 +152,14 @@ Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane d
 - **`grex`** — generate regular expressions from user-provided test cases:
   - `grex a b c` (returns `^[a-c]$`)
   - `grex -d -w -p email@example.com` (generate with digits, words, non-space)
+- **`typos`** — fast source-code spell checker (skips code identifiers sensibly):
+  - `typos` (check the tree), `typos -w` (auto-fix), `typos path/to/file`
+  - Good as a pre-commit gate and before shipping docs; low false-positive rate.
+- **`difftastic` (`difft`)** — structural, syntax-aware diff (compares ASTs, ignores pure reflow):
+  - `difft old.rs new.rs` (standalone), or wire it into git: `GIT_EXTERNAL_DIFF=difft git diff`
+  - Reach for it when a plain-text diff is noisy because indentation/wrapping changed but the code didn't.
 
-Terminal multiplexing stays on `tmux` (haru's choice) — do not reach for `zellij`.
+Terminal multiplexing: `tmux`.
 
 ## Benchmark
 
@@ -162,16 +174,16 @@ Not substitutions — these are the specialised tools harus-nix already provisio
 | Domain | Tools | Reach for it when |
 | --- | --- | --- |
 | **Nix workflow** | `nh` (ergonomic nix/home-manager wrapper), `nom` (`nix-output-monitor`) | rebuilding a config, watching a nix build's progress |
-| **Kubernetes** | `k9s` (TUI), `kubectl`, `stern` (multi-pod log tail), `minikube` | inspecting/driving a cluster, tailing pod logs, local k8s |
-| **Cloud & sync** | `awscli2`, `rclone` | AWS API calls, syncing to/from cloud/object storage |
-| **Containers** | Linux: `podman`/`buildah`/`skopeo` · macOS: `colima` + `docker-client` | building/running/inspecting OCI images (rootless, daemonless) |
+| **Kubernetes** | `k9s` (TUI), `kubectl`, `stern` (multi-pod log tail) | inspecting/driving a cluster, tailing pod logs |
+| **Cloud & sync** | `rclone` | syncing to/from cloud/object storage |
+| **Containers (Linux)** | `podman`, `buildah`, `skopeo` | building/running/inspecting OCI images (rootless, daemonless) |
 | **Secrets** | `sops`, `age` | encrypting/decrypting secrets in the repo |
 | **Watch & run** | `watchexec` | re-run a command on file changes (tests, builds) |
-| **Lint & format** | `shellcheck`, `shfmt`, `yamlfmt`, `prettier`, `markdownlint-cli2`, `pre-commit` | linting/formatting shell, YAML, JS/TS, Markdown; hook setup |
-| **Lang tooling** | `golangci-lint`, `ruff`/`ty` (Python), `cargo-update`/`-sweep`/`-cache`/`-zigbuild` | project-local linting, Rust cargo maintenance |
-| **Media & docs** | `yt-dlp`, `ffmpeg`, `unar` (archives), `typst` (doc compiler) | downloading media, transcoding, extracting archives, typesetting |
-| **Shell & nav** | `navi` (interactive cheat sheet), `fzf`, `zoxide`, `helix` (`hx` editor) | fuzzy-finding, cheat lookups, quick edits |
-| **Runtime pinning** | `mise` (per-project versions via `.mise.toml`), `rustup` (Rust toolchains) | a project pins a language version; switching Rust toolchains |
+| **Lint & format** | `shellcheck`, `shfmt`, `yamlfmt`, `prettier`, `markdownlint-cli2`, `typos`, `pre-commit` | linting/formatting shell, YAML, JS/TS, Markdown; spell-check; hook setup |
+| **Lang tooling** | `golangci-lint`, `ruff`/`ty` (Python), `cargo-update`/`-sweep`/`-cache` | project-local linting, Rust cargo maintenance |
+| **Archives & docs** | `ouch` (compress/extract), `typst` (doc compiler) | packing/unpacking archives, typesetting |
+| **Shell & nav** | `navi` (interactive cheat sheet), `fzf`, `zoxide`, `yazi` (file manager) | fuzzy-finding, cheat lookups, browsing files |
+| **Runtime pinning** | `mise` (per-project versions via `.mise.toml`, run with `mise x -- <tool>`), `rustup` (Rust toolchains) | a project pins a language version; switching Rust toolchains |
 
 If a task needs a tool not on this list or in the tables above, apply the stop-and-ask rule — confirm with the user before installing anything.
 
