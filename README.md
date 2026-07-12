@@ -6,11 +6,14 @@ A collection of custom Claude Code skills for productivity and project managemen
 
 **`/asobi`** — Share durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan|list|dispatch|sync|close`) that replaces ephemeral TodoWrite/local jsonl, a **knowledge tier** (`recall` — `ingest`/`query` + an ADR decision log), and a **skill library** (`skills` — install/recall agent skills from git). `asobi` is required — there is no `.agents/` file fallback.
 
-**`/init-project`** (alias: `/init`) — Scaffold agent infrastructure for any project. Scans the codebase, asks targeted questions, and generates `CLAUDE.md`, `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in); seeds the asobi graph so `/asobi start` has context on first run.
-
 **`/revise`** — Persist project lessons, findings, and wrong approaches so future sessions can recall them. Stores positive lessons on the project entity, wrong approaches as active `[project]:pitfall:<slug>` warnings, and falls back to `docs/lessons/` only when asobi is unavailable.
 
-**`/toolbelt`** — Reference for haru's preferred modern CLIs (`eza`/`bat`, `rg`/`fd`, `sd`, `xh`, `dasel`, `procs`, `doggo`, `hexyl`, `duckdb`/`psql`, `hyperfine`/`oha`) plus the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON). Self-contained, so it works on any device.
+**`/toolbelt`** — Reference for haru's preferred modern CLIs plus the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON, `mise x -- <tool>` for project-pinned runtimes). Self-contained, so it works on any device. Covers the whole kit:
+
+- **Search & edit** — `rg`/`fd` (text/file search), `ast-grep` (AST-aware structural search & rewrite), `sd` (find/replace), `difftastic` (syntax-aware diffs), `typos` (source spell-check)
+- **View & inspect** — `eza`/`bat`/`dust`, `procs` (ps), `doggo` (dig), `hexyl` (hex), `tailspin` (log highlight), `btop`
+- **HTTP & data** — `xh` (curl), `dasel` (YAML/TOML/XML/CSV), `duckdb`/`psql`, `miller` (CSV/TSV), `hyperfine`/`oha` (benchmarks)
+- **Runtimes** — `uv`/`uvx` (Python), `bun`/`bunx` (JS/TS)
 
 ## Installation
 
@@ -65,9 +68,6 @@ skills/
   asobi/
     SKILL.md          # Skill definition with YAML frontmatter
     README.md
-  init-project/
-    SKILL.md
-    configs/          # Bundled config templates
   revise/
     SKILL.md
   toolbelt/

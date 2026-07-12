@@ -10,17 +10,14 @@ This repository contains custom Claude Code skills for productivity and project 
 
 ```text
 skills/                           # Custom skill definitions (flat)
-  init-project/                   # Project initialization skill
-    SKILL.md
-    configs/                      # Bundled config templates
   asobi/                          # Session, task dispatcher, knowledge tier, skill library (asobi CLI)
     SKILL.md
   revise/                         # Persist lessons, findings, and wrong approaches
     SKILL.md
-  toolbelt/                       # Modern CLI tool reference (eza/rg/fd/sd/xh/dasel/...)
+  toolbelt/                       # Modern CLI tool reference (eza/rg/fd/sd/ast-grep/xh/dasel/...)
     SKILL.md
 docs/                             # Project documentation
-  plans/                          # Design documents
+  adr/                            # Architecture Decision Records
 .claude-plugin/
   marketplace.json                # Plugin marketplace registration
 .codex-plugin/
@@ -45,16 +42,15 @@ All skills follow the [Agent Skills Standard](http://agentskills.io) format with
 The `.claude-plugin/marketplace.json` defines a single plugin under the `harus-skills` marketplace. Skills are auto-discovered from `skills/` — no explicit listing required.
 
 - **Marketplace name**: `harus-skills`
-- **Plugin `harus-skills`**: skills auto-discovered (`init-project`, `asobi`, `revise`, `toolbelt`)
+- **Plugin `harus-skills`**: skills auto-discovered (`asobi`, `revise`, `toolbelt`)
 
 ### Skill Invocation
 
 | Invocation | Skill |
 | --- | --- |
-| `/init-project`, `/init` | Initialize project with agent infrastructure |
 | `/asobi` | Session continuity, task dispatcher, knowledge tier, and skill library (`asobi` CLI) |
 | `/revise` | Persist project lessons, findings, and wrong approaches for future recall |
-| `/toolbelt` | Reference for preferred modern CLIs (`eza`/`rg`/`fd`/`sd`/`xh`/`dasel`/...) |
+| `/toolbelt` | Reference for preferred modern CLIs (`eza`/`rg`/`fd`/`sd`/`ast-grep`/`xh`/`dasel`/...) |
 
 ## Skill Reference
 
@@ -67,7 +63,7 @@ CLI-native shared state via the `asobi` knowledge graph — one graph, four pill
 - `/asobi recall` — knowledge tier: `ingest`/`query` over docs + an ADR decision log
 - `/asobi skills` — install/update agent skills from a git repo or local path into the graph, recalled alongside docs
 - Active pitfalls are surfaced at `/asobi start`; task dispatch queries relevant lessons and includes linked pitfall warnings
-- Pruning & maintenance: each entity caps at 50 observations by default — append during active work, then rewrite/consolidate (`asobi stats` → `rm-obs`) to stay under the cap
+- Pruning & maintenance: each entity caps at 200 observations by default — append during active work, then rewrite/consolidate (`asobi stats` → `rm-obs`) to stay under the cap
 
 ### `revise`
 
@@ -75,11 +71,7 @@ Captures durable lessons separately from session status. Classifies free-form le
 
 ### `toolbelt`
 
-Self-contained reference for haru's preferred modern CLIs. Carries both the substitution table (`ls`/`cat`→`eza`/`bat`, `grep`/`find`→`rg`/`fd`, `sed`→`sd`, `curl`→`xh`, non-JSON→`dasel`, etc.) and the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON) so it works on any device regardless of the local global `CLAUDE.md`.
-
-### `init-project`
-
-Scans a project, asks targeted questions, and generates `CLAUDE.md` (single source of truth), `.claude/` infra, docs, and tooling configs. Mise-first tool provisioning (nix opt-in for repos with a flake). Seeds the asobi graph so `/asobi start` has context on first run; asobi is required (no `.agents/` fallback).
+Self-contained reference for haru's preferred modern CLIs. Carries both the substitution table (`ls`/`cat`→`eza`/`bat`, `grep`/`find`→`rg`/`fd`, code structure→`ast-grep`, `sed`→`sd`, `curl`→`xh`, non-JSON→`dasel`, etc.) and the core tooling discipline (Nix-first, `make` task runner, `jq` for JSON, `mise x -- <tool>`) so it works on any device regardless of the local global `CLAUDE.md`.
 
 ## MCP Servers
 
@@ -133,7 +125,6 @@ CI (`.github/workflows/ci.yml`) runs `nix develop --command make validate` on ev
 
 - All skills use SKILL.md format with YAML frontmatter
 - Skills ask user permission before executing commands
-- No emojis in git commit messages or MR descriptions
-- Conventional commit style: `feat:`, `fix:`, `docs:`, `chore:`
+- Conventional commit style: `feat:`, `fix:`, `docs:`, `chore:`; emojis are welcome
 - Always run `make check` before committing; `make validate` before PRs
 - Never overwrite existing files without asking
