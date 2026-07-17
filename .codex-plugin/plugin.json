@@ -1,6 +1,6 @@
 {
   "name": "harus-skills",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "Shared-state/session management, lesson capture, and tooling skills for Codex workflows.",
   "author": {
     "name": "haru",

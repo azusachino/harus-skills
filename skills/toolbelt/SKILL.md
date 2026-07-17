@@ -1,9 +1,9 @@
 ---
 name: toolbelt
-description: Reference for haru's preferred modern CLI tools — when and how to use eza/bat/fd/ripgrep/sd/ast-grep, xh, dasel, procs, doggo, hexyl, duckdb/psql/sqlx-cli, hyperfine/oha, difftastic, typos. Invoke when a task involves searching files, editing/refactoring code, HTTP/API calls, data/SQL work, DNS or process debugging, hex inspection, diffing, or benchmarking, and you want the idiomatic tool + flags instead of the classic Unix default.
+description: Reference for haru's preferred modern CLI tools — when and how to use eza/bat/fd/ripgrep/sd/ast-grep, xh, gh, dasel, procs, doggo, hexyl, duckdb/psql/sqlx-cli, hyperfine/oha, difftastic, typos. Invoke when a task involves searching files, editing/refactoring code, HTTP/API or GitHub calls, data/SQL work, DNS or process debugging, hex inspection, diffing, or benchmarking, and you want the idiomatic tool + flags instead of the classic Unix default.
 metadata:
   author: haru
-  version: 2.1.0
+  version: 2.2.0
 user-invokable: true
 ---
 
@@ -19,6 +19,7 @@ haru's machines (managed by `harus-nix` Home Manager) ship a curated set of mode
 - [Search & navigate](#search--navigate)
 - [Edit text](#edit-text)
 - [HTTP / API debugging](#http--api-debugging)
+- [GitHub and GitLab](#github-and-gitlab)
 - [Data & SQL](#data--sql)
 - [Debug & inspect](#debug--inspect)
 - [Benchmark](#benchmark)
@@ -116,6 +117,18 @@ Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane d
   - `xh get url Authorization:"Bearer $TOK"` (header with `:`)
   - Use `curl` in scripts / when exact wire control or `--resolve` is needed.
 - **`oha`** — load testing: `oha -n 1000 -c 50 https://api.local/health`.
+
+## GitHub and GitLab
+
+- **`gh`** — GitHub-native repository, PR, release, and workflow operations:
+  - `gh repo view OWNER/REPO --json nameWithOwner,defaultBranchRef`
+  - `gh api repos/OWNER/REPO/releases/tags/v1.2.3 --jq '{name,body,html_url}'`
+  - `gh pr create --fill`, `gh pr view`, `gh run view`
+  - Prefer `gh api` over raw HTTP for GitHub metadata; use `--jq` to keep responses focused.
+- **`glab`** — GitLab-native equivalent for projects, merge requests, releases, and pipelines:
+  - `glab mr create --fill`, `glab mr view`, `glab pipeline view`
+
+Use the provider-native CLI when the task targets GitHub or GitLab state. Keep `xh` for generic HTTP APIs and `curl` for scripts requiring exact wire control.
 
 ## Data & SQL
 
