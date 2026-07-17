@@ -5,10 +5,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.2.1-111111?style=flat-square" alt="version">
-  <img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT license">
-  <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex%20%7C%20Antigravity-111111?style=flat-square" alt="works with Claude Code, Codex, Antigravity">
-  <img src="https://img.shields.io/badge/format-Agent%20Skills%20Standard-111111?style=flat-square" alt="Agent Skills Standard">
+  <a href="https://github.com/azusachino/harus-skills/actions/workflows/ci.yml"><img src="https://github.com/azusachino/harus-skills/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/Agent%20Skills-Standard-blue.svg" alt="Agent Skills Standard">
+  <img src="https://img.shields.io/badge/Works%20with-Claude%20Code%20%7C%20Codex%20%7C%20Antigravity-blueviolet.svg" alt="Works with Claude Code, Codex, and Antigravity">
 </p>
 
 <p align="center">
@@ -108,7 +108,6 @@ Design decisions are recorded as [ADRs](docs/adr/). The skills stand on the shou
 - [**Agent Skills Standard**](http://agentskills.io) — the `SKILL.md` format every skill targets
 - [**ponytail**](https://github.com/DietrichGebert/ponytail) — the "lazy senior dev" YAGNI ladder distilled into the `CodingStyle` seed
 - [**karpathy-guidelines**](https://github.com/multica-ai/andrej-karpathy-skills) — surgical changes + goal-driven verification, folded into the seed values
-- [**superpowers**](https://github.com/obra/superpowers) — the ethos of distilling the *gist* into a few load-bearing principles
 
 ## 📚 Resources
 
