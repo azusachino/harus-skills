@@ -116,6 +116,8 @@ The truths upsert, so the session entity stays clean on its own — the `complet
 
 ## `/asobi tasks` — Task Dispatcher
 
+Asobi 0.6.0 added the durable task dispatcher commands `tasks plan`, `list`, `dispatch`, `sync`, and `close`, with nested help, lifecycle validation, and JSON response schemas. Dispatch claiming is atomic: the status transition, claimant truth, and dispatch observation commit together, so concurrent agents produce one winner.
+
 A durable replacement for in-conversation todo lists. An **epic** entity holds the objective and scope; **task** entities hold one dispatchable unit each, linked `part_of` the epic. Each task's current `status` is a **truth** (upserts in place; cheaply readable via `search` without loading observations); the `impl:` / `TL-review:` observations are the append-only audit trail. The session entity points at the active epic and the next task.
 
 ### `tasks plan <epic-name>`
