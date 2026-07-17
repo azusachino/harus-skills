@@ -1,9 +1,9 @@
 ---
 name: asobi
-description: Use to share state across sessions and agents via the asobi CLI knowledge graph — session continuity (start/end), a durable task dispatcher (`/asobi tasks`) that replaces ephemeral TodoWrite/local jsonl, a knowledge tier (`/asobi recall`), and a skill library (`/asobi skills`). Auto-triggers when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
+description: Use Asobi's persistent SQLite knowledge graph to share state across sessions and agents — session continuity, durable task dispatch, keyword recall, and the skill library. Auto-triggers when the user says "start session", "let's continue", "dispatch the next task", "wrap up", "end session".
 metadata:
   author: haru
-  version: 2.2.0
+  version: 2.3.0
 ---
 
 # Asobi Skill
@@ -28,12 +28,14 @@ Share durable state across conversations and sub-agents using the `asobi` CLI kn
 | --- | --- | --- |
 | **Session continuity** | `/asobi start`, `/asobi end` | resume work after `/clear`, context compaction, or a machine restart |
 | **Task dispatcher** | `/asobi tasks plan\|list\|dispatch\|sync\|close` | durable, cross-agent task state — replaces TodoWrite / local jsonl |
-| **Knowledge tier** | `/asobi recall` | hybrid semantic search over ingested docs + a decision log |
-| **Skill library** | `/asobi skills` | install/update agent skills from git into the graph, recalled alongside docs |
+| **Knowledge tier** | `/asobi recall` | keyword/entity search over the SQLite graph + a decision log |
+| **Skill library** | `/asobi skills` | install/update agent skills from git into the graph |
 
 **Core principle**: `asobi` is the canonical store and is required — there is no local-file fallback. Task state lives in the graph, never in an ephemeral in-conversation todo list — that is the whole point: a dispatched sub-agent and the lead coordinate *through the graph*, not through the user.
 
 **State scope** — default to **shared (XDG global) state**. Project-local state (`asobi init --local` → `./asobi.toml`) is opt-in only on explicit request. Cross-project entities (`UserPreferences`, `CodingStyle`, `ToolPreferences`) always live in the global graph regardless of scope.
+
+**CLI stream contract** — read commands write JSON to stdout. Mutating commands write a confirmation to stderr and leave stdout empty unless the global `--json` flag is passed; use `asobi schema --command NAME` to inspect a command's JSON contract.
 
 ## Primitives — trail vs state
 
@@ -43,7 +45,7 @@ One graph, two ways to write a fact onto an entity — picking the right one *is
 - **Truth** — a `key → value` fact that **upserts in place**. The *current state*: `status`, `next`, `version`, dates. Writing the same key again overwrites the old value — no stale accumulation, no delete-then-recreate dance.
 - **Relation** — a directed edge `(from, to, type)` between two entities (`part_of`, `supersedes`, `depends_on`).
 
-`search` / `graph` return **truths + `observationCount` only** (cheap, lazy-read) — so anything you scan often (a task's `status`) belongs in a truth: readable without `show`. `show` additionally returns the full observation list and a skill body; add `--with-ids` for each observation's integer ID, or `--expand <relation_type>` to pull linked entities into the same payload.
+`search` / `graph` return **truths, `observationCount`, and matching relations only** (cheap, lazy-read) — observations and skill bodies are omitted. Anything you scan often (a task's `status`) belongs in a truth: readable without `show`. `show` additionally returns the full observation list and a skill body; add `--with-ids` for each observation's integer ID, or `--expand <relation_type>` to pull linked entities into the same payload. Use `export` or `backup` when a complete archival payload is required.
 
 Write current state with `asobi truth <name> <key> <value>` (upserts); append history with `asobi obs`. The 200-observation cap (overridable via `ASOBI_OBSERVATION_LIMIT` or `asobi.toml`) applies to observations only — truths never count toward it. Overwriting a truth keeps the old value in a valid-time audit trail; read it with `asobi history <name> [key]`.
 
@@ -108,7 +110,7 @@ The truths upsert, so the session entity stays clean on its own — the `complet
 
 **Step 3 — Save project context** (conventions, patterns, decisions): `asobi search "[topic]"`, then `asobi obs [repo-basename] "[fact]"`.
 
-**Step 4 — Compact** (optional): if `asobi` was built with the `documents` feature, run `asobi compact` to refresh the FTS/vector index. It syncs **durable knowledge only** (`project`/`concept`/`reference`/`preference`/`standard`) — volatile `session`/`task` and self-indexing `skill` entities are deliberately not written to the recall tier (they stay cheaply readable via `search`/`show`). It is idempotent: unchanged entities are left byte-for-byte and not re-embedded. Skip silently if unavailable.
+**Step 4 — Compact** (optional): run `asobi compact` to refresh Markdown projections for durable knowledge. It syncs **durable knowledge only** (`project`/`concept`/`reference`/`preference`/`standard`) — volatile `session`/`task` and self-indexing `skill` entities remain graph-only and are read with `search`/`show`. Use `asobi compact --older-than DAYS` when pruning old session Markdown files. Compact is not a semantic/vector index rebuild.
 
 **Step 5 — Confirm**: "Session saved. Next: [one-sentence handoff]."
 
@@ -156,10 +158,10 @@ asobi truth "[project]:[epic]:task-N" status DISPATCHED
 asobi obs "[project]:[epic]:task-N" "dispatched to [agent] YYYY-MM-DD"
 ```
 
-Before briefing the sub-agent, query task-relevant lessons:
+Before briefing the sub-agent, search task-relevant lessons:
 
 ```bash
-asobi query "[task title]"
+asobi search "[task title]"
 ```
 
 Also inspect the shown task for `depends_on` relations to `[project]:pitfall:<slug>` and include those linked pitfalls as explicit warnings. The relation direction is `task --depends_on--> pitfall`, meaning the task depends on knowing the warning.
@@ -206,19 +208,15 @@ asobi obs "[project]:[epic]" "outcome: [PR link] YYYY-MM-DD"
 
 ## `/asobi recall` — Knowledge Tier
 
-Semantic recall over your own docs and a decision log. Requires the `documents` feature for `ingest`/`query`; degrade to `search` otherwise.
-
-### Ingest + query
+Asobi 0.6 uses SQLite FTS5/BM25 keyword search over graph observations, with an entity-name/type fallback. There is no `documents` feature, `ingest` command, or semantic/vector query path.
 
 ```bash
-asobi ingest docs/specs/          # load ONE file or directory into the document tier (one path per call)
-asobi ingest ~/.claude/CLAUDE.md  # index an instruction file for semantic recall
-asobi query "how does session auth verify tokens"   # hybrid semantic + keyword recall
+asobi search "WAL concurrency"
+asobi search "auth" --limit 500
+asobi search --where status=READY
 ```
 
-`ingest` takes exactly one `<PATH>` (file or directory) — call it once per path, not as a list. Prefer `query` before re-reading a large doc — it returns the relevant chunks, not the whole file. Re-`ingest` after meaningful doc changes.
-
-**Guardrail — index, never duplicate.** `CLAUDE.md` is the canonical, harness-loaded source of truth; `ingest` makes it *queryable*, not graph-owned. Never copy file content into entities — that creates a second source that drifts. The seed entities (`UserPreferences`/`CodingStyle`/`ToolPreferences`) are the curated, agent-writable slice of global `CLAUDE.md` and stay the primary recall path: `query` hybrid-ranks them *above* ingested chunks, so an ingested instruction file is a full-text safety net, not a replacement for the seed trio.
+Use `search` for ranked recall and `show` for the selected entities' full observations and skill bodies. Use `graph` when the full lean graph is required; do not treat a broad `search` as a complete export.
 
 ### Decision log (ADRs)
 
@@ -235,7 +233,7 @@ asobi link "[project]:decision:[new]" "[project]:decision:[old]" "supersedes"
 asobi link "[project]:[epic]:task-N" "[project]:decision:[slug]" "depends_on"
 ```
 
-Surface them with `asobi search "[topic]"` or `asobi query "why [topic]"`.
+Surface them with `asobi search "[topic]"`.
 
 ### Pitfall log
 
@@ -256,11 +254,11 @@ Keep `status` as a truth so `/asobi start` can cheaply surface active pitfalls w
 
 ## `/asobi skills` — Skill Library
 
-Install reusable agent skills straight into the graph from a git repo or local path. Each skill's frontmatter + body is stored as an entity and (with the `documents` feature) indexed for vector search, so an installed skill is reachable from `asobi query` alongside your ingested docs — one recall path for docs *and* skills.
+Install reusable agent skills straight into the graph from a git repo or local path. Each skill's frontmatter + body is stored as an entity. Skill bodies are lazy in `graph`/`search`; use `asobi skills show` or `asobi show` when the instructions are needed.
 
 ```bash
-asobi skills install <git-url|path> --all          # ingest every skill found
-asobi skills install <git-url|path> --select a b   # ingest only the named skills
+asobi skills install <git-url|path> --all          # install/sync every skill found
+asobi skills install <git-url|path> --select a b   # install only the named skills
 asobi skills install <git-url|path>                # interactive picker (TTY required)
 asobi skills                                       # list installed skills, grouped by source
 asobi skills show <name>                           # print one skill's raw body
@@ -270,15 +268,26 @@ asobi skills remove <name|source>                  # drop one skill or a whole s
 
 Git sources are shallow-cloned to a reused cache (`.asobi/caches/<slug>`); `update` does `git fetch` + `reset --hard`, re-cloning if that fails (needs `git` on `$PATH`). Installed names are `skill:<slug>:<name>`; `show`/`remove` also accept the short name.
 
-**Efficient use**: ingest a curated set in one call with `--select a b c` (use `--all` only for a whole repo); afterward recall via `asobi query "<task>"` instead of re-fetching the repo; refresh with `update`, treating upstream as source of truth — never hand-edit installed skill entities. Example: `asobi skills install https://github.com/azusachino/asobi --all`.
+**Efficient use**: install a curated set in one call with `--select a b c` (use `--all` only for a whole repo); afterward use `asobi skills show <name>` instead of re-fetching the repo; refresh with `update`, treating upstream as source of truth — never hand-edit installed skill entities. `--all` synchronizes the source and prunes skills removed upstream; `--select` remains additive. Example: `asobi skills install https://github.com/azusachino/asobi --all`.
 
 ## Pruning & Maintenance
 
 Each entity caps at **200 observations** by default (overridable via `ASOBI_OBSERVATION_LIMIT` or `asobi.toml`'s `observation_limit`) — you can't append forever. **Truths are exempt: they upsert in place and never count toward the cap** — keeping current state (`status`, `next`, dates) in truths is the first defense against fill-up. Only observations accumulate. Run `asobi stats --per-entity` to see which entities are near their cap. Append freely during active work, but when an entity fills, **rewrite and consolidate** rather than pile on: merge duplicate facts and collapse a closed task's observation trail to its final `impl:` + `done:` (its `status` truth is already just `DONE`). Decisions are the exception — never delete one; supersede it (`link [new] [old] "supersedes"`) so the *why* of the reversal survives.
 
-Edit or delete a single observation by its integer ID (from `show --with-ids`), which sidesteps fragile string matching: `asobi update-obs [name] [id] "[new content]" --id` rewrites it in place; `asobi rm-obs [name] [id] --id` removes it. Content matching still works when you'd rather copy the exact string from `show`: `asobi rm-obs [name] "[exact content]"`, and `asobi rm-obs [name] "prefix" --prefix` clears every observation sharing a prefix in one call. To correct a truth, just `truth` the new value (it overwrites) or `rm-truth [name] [key]`. Never prune an in-flight session or an open epic's live trail. With the `documents` feature, follow a prune with `asobi compact` to rebuild the index.
+Edit or delete a single observation by its integer ID (from `show --with-ids`), which sidesteps fragile string matching: `asobi update-obs [name] [id] "[new content]" --id` rewrites it in place; `asobi rm-obs [name] [id] --id` removes it. Content matching still works when you'd rather copy the exact string from `show`: `asobi rm-obs [name] "[exact content]"`, and `asobi rm-obs [name] "prefix" --prefix` clears every observation sharing a prefix in one call. To correct a truth, just `truth` the new value (it overwrites) or `rm-truth [name] [key]`. Never prune an in-flight session or an open epic's live trail.
 
-**Handoff & archival** — the graph is the store, but two paths move it out-of-band. `asobi export [--scope <entity>] [--rationale]` writes a portable JSON bundle (whole graph, or one epic + its task subtree with `--scope`, optionally including the cited decision chain via `--rationale`); `asobi import` reads it back — this is the format for teammate, machine, or backend handoff. `asobi backup [--keep N]` / `asobi restore <file>` take physical libSQL snapshots (graph + skill bodies + document data) for local disaster recovery. Truth history is local physical state and rides along with `backup`, not with JSON `export`.
+### Safe retention
+
+`purge` is preview-first and restricted to operational entities: `session` plus terminal `task` statuses (`DONE`, `CLOSED`, or `ABANDONED`). It never purges durable knowledge or skills and does not run implicitly during `graph`, `search`, `compact`, or startup. Review the candidates first, then add `--apply`:
+
+```bash
+asobi purge --type task --status DONE --older-than 90
+asobi purge --type task --status DONE --older-than 90 --apply
+```
+
+Use `--dry-run` explicitly when scripting a preview. Purge is transactional and cleans related observations, relations, and search data.
+
+**Handoff & archival** — the graph is the store, but two paths move it out-of-band. `asobi export [--scope <entity>] [--rationale]` writes a portable JSON bundle (whole graph, or one epic + its task subtree with `--scope`, optionally including the cited decision chain via `--rationale`); `asobi import` reads it back — this is the format for teammate, machine, or backend handoff. `asobi backup [--keep N]` / `asobi restore <file>` take physical SQLite snapshots including graph state and skill bodies for local disaster recovery. Truth history is local physical state and rides along with `backup`, not with JSON `export`.
 
 ## Entity Reference
 
@@ -334,8 +343,8 @@ If an entity is missing from `show`, create and seed it immediately. These are e
 asobi graph
 asobi search "query" [--limit <N>] [--where KEY=VALUE ...]
 asobi show "name1" "name2" ... [--with-ids] [--expand <relation_type> ...]
-asobi query "natural-language question"   # hybrid semantic (requires --features documents)
 asobi history "name" [key]                 # superseded truth values + valid-time windows
+asobi schema --command NAME                 # inspect a command's JSON response contract
 asobi stats [--per-entity] [--json]       # obs counts + limits; --per-entity flags near-cap entities
 
 # Write (append --json to any mutating command to print the affected entity)
@@ -348,11 +357,8 @@ asobi link "from" "to" "relation_type" [<from> <to> <relation_type> ...]   # bat
 asobi truth "name" "key" "value"
 asobi rm-truth "name" "key"
 
-# Documents
-asobi ingest <path>                        # load docs into the document tier
-
 # Skills
-asobi skills install <git-url|path> --all  # ingest a repo's skills into the graph
+asobi skills install <git-url|path> --all  # install/sync a repo's skills into the graph
 asobi skills                               # list installed skills
 asobi skills update [source]               # refresh installed skills
 asobi skills remove <name|source>          # drop a skill or source
@@ -368,11 +374,14 @@ asobi unlink "from" "to" "relation_type"   # delete specific relation
 # Handoff & archival
 asobi export [--scope <entity>] [--rationale] [-o file.json]   # portable JSON bundle (whole graph or one epic subtree)
 asobi import "file.json"                    # read a JSON bundle back in
-asobi backup [--keep <N>] [-o file.db]      # physical libSQL snapshot (graph + skills + docs)
+asobi backup [--keep <N>] [-o file.db]      # physical SQLite snapshot (graph + skills)
 asobi restore "file.db" [--force]           # replace live DB from a snapshot
 
 # Maintenance
-asobi compact          # archive + refresh FTS/vector (requires --features documents)
+asobi compact [--older-than <DAYS>]         # sync durable Markdown projections and prune old sessions
+asobi purge [--dry-run]                     # preview operational retention candidates
+asobi purge --type task --status DONE --older-than 90 --apply
+asobi completions bash|elvish|fish|powershell|zsh
 asobi stats            # entity / relation / observation counts — check before a prune pass
 asobi init --local     # opt-in: project-local graph (only on explicit user request)
 ```
