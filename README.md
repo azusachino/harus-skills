@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.2.0-111111?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-3.2.1-111111?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT license">
   <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex%20%7C%20Antigravity-111111?style=flat-square" alt="works with Claude Code, Codex, Antigravity">
   <img src="https://img.shields.io/badge/format-Agent%20Skills%20Standard-111111?style=flat-square" alt="Agent Skills Standard">
@@ -21,7 +21,7 @@
 
 | Skill | What it does |
 | --- | --- |
-| 🧠 **`/asobi`** | Durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan\|list\|dispatch\|sync\|close`) that replaces ephemeral TodoWrite/jsonl, a **knowledge tier** (`recall` — `ingest`/`query` + an ADR log), and a **skill library** (`skills` — install/recall agent skills from git). |
+| 🧠 **`/asobi`** | Durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan\|list\|dispatch\|sync\|close`) with atomic claims that replaces ephemeral TodoWrite/jsonl, SQLite FTS5/BM25 **keyword recall** (`search` + an ADR log), and a **skill library** (`skills` — install/update skills from git). |
 | 📝 **`/revise`** | Persist lessons, findings, and dead ends so future sessions recall them — positive lessons on the project entity, wrong approaches as active `pitfall` warnings surfaced at the next `/asobi start`. |
 | 🧰 **`/toolbelt`** | Reference for haru's preferred modern CLIs + the core tooling discipline (Nix-first, `make` runner, `jq` for JSON, `mise x -- <tool>`). Self-contained, works on any device. |
 
@@ -39,7 +39,7 @@ Modern OSS CLIs, reached for by default over the classic Unix tools:
 ### Prerequisites
 
 - [Claude Code](https://claude.ai/code) CLI
-- [`asobi`](https://github.com/azusachino/asobi) CLI for the `/asobi` skill (`cargo install asobi --features documents`)
+- [`asobi`](https://github.com/azusachino/asobi) CLI for the `/asobi` skill (`cargo install asobi`)
 
 ### Claude Code — Marketplace Plugin
 

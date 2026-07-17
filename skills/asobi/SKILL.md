@@ -27,7 +27,7 @@ Share durable state across conversations and sub-agents using the `asobi` CLI kn
 | Pillar | Command | What it backs |
 | --- | --- | --- |
 | **Session continuity** | `/asobi start`, `/asobi end` | resume work after `/clear`, context compaction, or a machine restart |
-| **Task dispatcher** | `/asobi tasks plan\|list\|dispatch\|sync\|close` | durable, cross-agent task state — replaces TodoWrite / local jsonl |
+| **Task dispatcher** | `/asobi tasks plan\|list\|dispatch\|sync\|close` | primary durable, cross-agent task workflow with atomic claiming — replaces TodoWrite / local jsonl |
 | **Knowledge tier** | `/asobi recall` | keyword/entity search over the SQLite graph + a decision log |
 | **Skill library** | `/asobi skills` | install/update agent skills from git into the graph |
 
@@ -110,38 +110,38 @@ The truths upsert, so the session entity stays clean on its own — the `complet
 
 **Step 3 — Save project context** (conventions, patterns, decisions): `asobi search "[topic]"`, then `asobi obs [repo-basename] "[fact]"`.
 
-**Step 4 — Compact** (optional): run `asobi compact` to refresh Markdown projections for durable knowledge. It syncs **durable knowledge only** (`project`/`concept`/`reference`/`preference`/`standard`) — volatile `session`/`task` and self-indexing `skill` entities remain graph-only and are read with `search`/`show`. Use `asobi compact --older-than DAYS` when pruning old session Markdown files. Compact is not a semantic/vector index rebuild.
+**Step 4 — Compact** (optional): run `asobi compact` to refresh Markdown projections for durable knowledge. It syncs **durable knowledge only** (`project`/`concept`/`reference`/`preference`/`standard`) — volatile `session`/`task` and self-indexing `skill` entities remain graph-only and are read with `search`/`show`. Use `asobi compact --older-than DAYS` when pruning old session Markdown files.
 
 **Step 5 — Confirm**: "Session saved. Next: [one-sentence handoff]."
 
 ## `/asobi tasks` — Task Dispatcher
 
-Asobi 0.6.0 added the durable task dispatcher commands `tasks plan`, `list`, `dispatch`, `sync`, and `close`, with nested help, lifecycle validation, and JSON response schemas. Dispatch claiming is atomic: the status transition, claimant truth, and dispatch observation commit together, so concurrent agents produce one winner.
+Asobi 0.6.0 added the durable task dispatcher commands `tasks plan`, `list`, `dispatch`, `sync`, and `close`, with nested help, lifecycle validation, and JSON response schemas. Dispatch claiming is atomic: the status transition, claimant truth, and dispatch observation commit together, so concurrent agents produce one winner. Use these commands as the normal task workflow; do not recreate task state in an in-conversation todo list.
 
 A durable replacement for in-conversation todo lists. An **epic** entity holds the objective and scope; **task** entities hold one dispatchable unit each, linked `part_of` the epic. Each task's current `status` is a **truth** (upserts in place; cheaply readable via `search` without loading observations); the `impl:` / `TL-review:` observations are the append-only audit trail. The session entity points at the active epic and the next task.
 
 ### `tasks plan <epic-name>`
 
-Break work into an epic + tasks. Create once, then never overwrite:
+Create an epic and its child tasks in execution order:
 
 ```bash
-asobi new "[project]:[epic]" "task"
-asobi truth "[project]:[epic]" objective "[what this epic delivers]"
-asobi obs "[project]:[epic]" "scope: [in / out of scope, decided constraints]"
-
-asobi new "[project]:[epic]:task-1" "task"
-asobi truth "[project]:[epic]:task-1" title "[one-line goal]"
-asobi truth "[project]:[epic]:task-1" status READY_TO_DISPATCH
-asobi obs "[project]:[epic]:task-1" "plan: [file paths + line numbers + approach]"
-asobi link "[project]:[epic]:task-1" "[project]:[epic]" "part_of"
-# ...repeat per task; dependent tasks start with status "BLOCKED_ON task-N"
+asobi tasks plan "[project]:[epic]" \
+  --objective "[what this epic delivers]" \
+  --task "[first dispatchable task]" \
+  --task "[next dispatchable task]"
 ```
 
-Then point the session at it: `asobi truth "[project]:session" objective "[epic] — see [project]:[epic]"`. Order tasks **smallest → biggest** to build momentum. `title` + `status` are truths so the board renders from a cheap `search`; put concrete file paths and line numbers in the `plan:` observation so the dispatched agent (briefed via `show`) needs zero discovery.
+The command creates the epic and task children, links them with `part_of`, and preserves the supplied execution order. Order tasks **smallest → biggest** to build momentum. Point the session at the epic with `asobi truth "[project]:session" objective "[epic] — see [project]:[epic]"`.
 
 ### `tasks list [epic-name]`
 
-`asobi search "[epic]"` returns each task's `status` truth + `observationCount` without loading observations — render the board straight from the truths (no `show` per task). `asobi show "[epic]" --expand part_of` returns the same truths for the epic and every child in one payload if you also want the relations:
+Use the task board directly:
+
+```bash
+asobi tasks list "[project]:[epic]"
+```
+
+For lower-level graph inspection, `asobi search "[epic]"` returns each task's `status` truth + `observationCount` without loading observations, while `asobi show "[epic]" --expand part_of` loads the epic and child details:
 
 ```
 [project]:[epic]
@@ -156,8 +156,7 @@ Then point the session at it: `asobi truth "[project]:session" objective "[epic]
 Pick the next `READY_TO_DISPATCH` task (or the named one). **Sub-agent dispatch is opt-in** — by default the lead executes the task inline and records the outcome back into the task entity itself. Spawn a sub-agent only when the user asks or the work is genuinely independent; either way, the result is written **back into the task entity** — not just into the conversation:
 
 ```bash
-asobi truth "[project]:[epic]:task-N" status DISPATCHED
-asobi obs "[project]:[epic]:task-N" "dispatched to [agent] YYYY-MM-DD"
+asobi tasks dispatch "[project]:[epic]:task-N" --agent "[agent]"
 ```
 
 Before briefing the sub-agent, search task-relevant lessons:
@@ -168,11 +167,12 @@ asobi search "[task title]"
 
 Also inspect the shown task for `depends_on` relations to `[project]:pitfall:<slug>` and include those linked pitfalls as explicit warnings. The relation direction is `task --depends_on--> pitfall`, meaning the task depends on knowing the warning.
 
-When you do dispatch, brief the sub-agent from the task's `title` truth, `plan:` observation (`show` the task), task-relevant query results, and any linked active pitfalls. Default agent is `haiku-developer` (efficient model for scoped work) unless the task is correctness-critical. The agent (or the lead, if running inline) ends by recording:
+When you do dispatch, brief the sub-agent from the task's `title` truth, task plan (`show` the task), task-relevant search results, and any linked active pitfalls. The default agent is `lead`; pass `--agent` for an explicit agent name. The command records the dispatch state atomically.
 
 ```bash
-asobi obs "[project]:[epic]:task-N" "impl: [what changed; files touched; make check result]"
-asobi truth "[project]:[epic]:task-N" status REVIEW
+asobi tasks sync "[project]:[epic]:task-N" \
+  --status REVIEW \
+  --note "[what changed; files touched; make check result]"
 ```
 
 **Dispatch models** — pick per epic:
@@ -185,23 +185,24 @@ asobi truth "[project]:[epic]:task-N" status REVIEW
 The lead reviews the dispatched diff, records the outcome, and advances status. Never blind-trust a sub-agent's diff — note anything you trimmed:
 
 ```bash
-asobi obs "[project]:[epic]:task-N" "TL-review YYYY-MM-DD: [diff verdict; what was adjusted]"
-asobi truth "[project]:[epic]:task-N" status AWAITING_VERIFY   # human/device check needed
+asobi tasks sync "[project]:[epic]:task-N" \
+  --status AWAITING_VERIFY \
+  --note "TL-review YYYY-MM-DD: [diff verdict; what was adjusted]"
 # or
-asobi truth "[project]:[epic]:task-N" status DONE
-asobi obs "[project]:[epic]:task-N" "done: committed on [branch] YYYY-MM-DD"
+asobi tasks sync "[project]:[epic]:task-N" \
+  --status DONE \
+  --note "done: committed on [branch] YYYY-MM-DD"
 ```
 
 Then re-point the session `next` truth at the following task, and unblock dependents — upsert each dependent's `status` truth from `BLOCKED_ON task-N` to `READY_TO_DISPATCH` (`tasks list` will now show them ready).
 
 ### `tasks close <epic-name>`
 
-When every task is `DONE`: lift the durable lessons out of the volatile task entities into the persistent project entity, then let the epic rest (no delete — the history stays queryable):
+When every task is `DONE`, close the epic and optionally promote lessons to the project entity:
 
 ```bash
-asobi obs "[repo-basename]" "[convention or decision learned during the epic]"
-asobi truth "[project]:[epic]" status DONE
-asobi obs "[project]:[epic]" "outcome: [PR link] YYYY-MM-DD"
+asobi tasks close "[project]:[epic]" \
+  --lesson "[convention or decision learned during the epic]"
 ```
 
 ### Status lifecycle
@@ -210,7 +211,7 @@ asobi obs "[project]:[epic]" "outcome: [PR link] YYYY-MM-DD"
 
 ## `/asobi recall` — Knowledge Tier
 
-Asobi 0.6 uses SQLite FTS5/BM25 keyword search over graph observations, with an entity-name/type fallback. There is no `documents` feature, `ingest` command, or semantic/vector query path.
+Asobi 0.6 uses SQLite FTS5/BM25 keyword search over graph observations, with an entity-name/type fallback.
 
 ```bash
 asobi search "WAL concurrency"

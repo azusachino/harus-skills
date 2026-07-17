@@ -60,8 +60,8 @@ CLI-native shared state via the `asobi` knowledge graph — one graph, four pill
 
 - `/asobi start` / `/asobi end` — session continuity (load/save the `[project]:session` entity)
 - `/asobi tasks plan|list|dispatch|sync|close` — durable task dispatcher (epic + task entities, status lifecycle) replacing TodoWrite/local jsonl
-- `/asobi recall` — knowledge tier: `ingest`/`query` over docs + an ADR decision log
-- `/asobi skills` — install/update agent skills from a git repo or local path into the graph, recalled alongside docs
+- `/asobi recall` — SQLite FTS5/BM25 keyword search over graph observations plus an ADR decision log
+- `/asobi skills` — install/update agent skills from a git repo or local path into the graph
 - Active pitfalls are surfaced at `/asobi start`; task dispatch queries relevant lessons and includes linked pitfall warnings
 - Pruning & maintenance: each entity caps at 200 observations by default — append during active work, then rewrite/consolidate (`asobi stats` → `rm-obs`) to stay under the cap
 

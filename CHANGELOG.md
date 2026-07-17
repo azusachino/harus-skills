@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2026-07-17
+
+### Changed
+- **asobi** (2.3.0): Updated for Asobi 0.6.0/0.6.1 — SQLite FTS5/BM25 keyword recall, lazy `graph`/`search` reads, the primary `tasks plan|list|dispatch|sync|close` workflow with atomic dispatch claims, preview-first `purge`, and shell completions.
+- **toolbelt** (2.2.0): Added provider-native `gh` and `glab` guidance for repository, PR/MR, release, workflow, and API operations.
+- Bumped the universal plugin version to 3.2.1 across all manifests.
+
 ## [3.2.0] - 2026-07-12
 
 ### Removed
