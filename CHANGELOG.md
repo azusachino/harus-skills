@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [3.2.1] - 2026-07-17
 
 ### Changed
-- **asobi** (2.4.0): Consolidated current Asobi 0.6.1 guidance around the favored session, task-dispatcher, recall, skill, retention, and recovery workflows; removed duplicated and obsolete instructions.
+- **asobi** (2.3.0): Consolidated current Asobi 0.6.1 guidance around the favored session, task-dispatcher, recall, skill, retention, and recovery workflows; removed duplicated and obsolete instructions.
 - **toolbelt** (2.2.0): Added provider-native `gh` and `glab` guidance for repository, PR/MR, release, workflow, and API operations.
 - Bumped the universal plugin version to 3.2.1 across all manifests.
 
