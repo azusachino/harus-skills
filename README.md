@@ -1,3 +1,5 @@
+
+
 <h1 align="center">harus-skills</h1>
 
 <p align="center">
@@ -39,7 +41,7 @@ Modern OSS CLIs, reached for by default over the classic Unix tools:
 ### Prerequisites
 
 - [Claude Code](https://claude.ai/code) CLI
-- [`asobi`](https://github.com/azusachino/asobi) CLI for the `/asobi` skill (`cargo install asobi`)
+- [`asobi`](https://github.com/azusachino/asobi) CLI for the `/asobi` skill (`cargo install asobi` or `cargo binstall asobi`)
 
 ### Claude Code — Marketplace Plugin
 
