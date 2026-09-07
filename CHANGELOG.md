@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-09-07
+
+### Changed
+- **asobi** (2.4.0): Correct ancestor graph discovery and dispatch semantics; document declarative skill sync, explicit task selection, scoped delegation, and requested maintenance. Continue independent work when persistence is unavailable.
+- **revise** (1.1.0): Confirm graph ownership, inspect dedup matches, preserve evidence limits, and correct the claim that dispatch automatically loads pitfalls.
+- **toolbelt** (2.3.0): Replace blanket stop-and-ask and Nix-first defaults with evidence-driven troubleshooting and Mise project pinning; respect existing toolchains and verify tool availability.
+- Pruned duplicated skill descriptions, obsolete MCP mandates, nonexistent file listings, stale seed claims, and blanket permission rules from contributor guidance. Documented the existing hook and validation limitations.
+
 ## [3.2.1] - 2026-07-17
 
 ### Changed

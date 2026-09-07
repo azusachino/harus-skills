@@ -3,7 +3,7 @@ name: revise
 description: Persist project lessons, findings, and wrong approaches so future sessions can recall them
 metadata:
   author: haru
-  version: 1.0.0
+  version: 1.1.0
 user-invokable: true
 disable-auto-invoke: true
 ---
@@ -29,8 +29,8 @@ Read the user's free-form text and classify it yourself; ask only if it is too v
 ## Flow
 
 1. Detect asobi: `command -v asobi`. If absent, use the fallback files below.
-2. Derive `[project]` (repo basename). Use shared XDG state unless `./asobi.toml` exists; never run `asobi init --local`.
-3. Dedup first: `asobi search "<topic>" --limit 10`. If a matching entity exists, append `seen-again YYYY-MM-DD: <evidence>` rather than creating a duplicate.
+2. Derive `[project]` from the owning repository and confirm graph scope using the Asobi skill's discovery rules. Ancestor configuration can select a parent workspace graph. Use the intended graph; do not initialize or migrate state as a side effect of lesson capture.
+3. Dedup first: `asobi search "<topic>" --limit 10`. Inspect matching entities. Append `seen-again YYYY-MM-DD: <evidence>` only for genuinely new evidence; skip an unchanged repeat. If the lesson contradicts an old one, record the correction and resolve the obsolete pitfall rather than reinforcing it.
 4. Write — ensure the project entity exists (`asobi new "[project]" "project"`), then:
    ```bash
    asobi obs "[project]" "experience YYYY-MM-DD: <lesson>"   # work-experience
@@ -53,22 +53,22 @@ asobi obs "[project]:pitfall:<slug>" "do-instead: <better path, or 'open'>"
 asobi obs "[project]:pitfall:<slug>" "date: YYYY-MM-DD"
 ```
 
-When the dead end is obsolete: upsert `status resolved` and append `obs "resolved YYYY-MM-DD: <why it no longer applies>"`. If the lesson belongs to an active task, link it so dispatch surfaces it — `asobi link "[project]:[epic]:task-N" "[project]:pitfall:<slug>" "depends_on"` (the task depends on knowing the warning). Slugs are lowercase, `-` inside a segment and `:` only between levels — e.g. `harus-skills:pitfall:bump-tool-overreach`.
+When the dead end is obsolete: upsert `status resolved` and append `obs "resolved YYYY-MM-DD: <why it no longer applies>"`. If it belongs to an active task, link it with `asobi link "[project]:[epic]:task-N" "[project]:pitfall:<slug>" "depends_on"`. The agent must read those relations and the relevant lesson before dispatch; claiming a task does not load the warning automatically. Slugs are lowercase, `-` inside a segment and `:` only between levels — e.g. `harus-skills:pitfall:bump-tool-overreach`.
 
 ## Recall
 
-`/revise` only writes; recall lives in asobi. `/asobi start` reports active pitfalls, and `/asobi tasks dispatch` queries task-relevant lessons and includes linked pitfalls. Prefer pitfall titles that read as warnings in a dispatch brief.
+Revise captures lessons; the Asobi skill handles session recall and the agent's pre-dispatch lesson search. Prefer pitfall titles that state a concrete warning. Preserve evidence and its limits: an observed failure is not proof of a root cause, and one task's workaround is not a universal policy.
 
 ## Fallback (asobi unavailable)
 
-A `/revise`-only fallback — it does not relax asobi's requirement for session continuity. Append to repo-tracked files, creating each as needed with the header `> Project-local fallback lessons captured when asobi was unavailable. Migrate into asobi when possible.`
+A lesson-capture fallback; it does not provide graph-backed session continuity. Use the repository's existing lesson or pitfall convention first. If none exists, append to these repo-tracked files with the header `> Project-local fallback lessons captured when asobi was unavailable. Migrate into asobi when possible.`
 
 - `docs/lessons/pitfalls.md` — `## YYYY-MM-DD — <slug>`, then Status / Tried / Why it failed / Do instead
 - `docs/lessons/learnings.md` — `## YYYY-MM-DD — <title>`, then Type (`work-experience`|`finding`) / Lesson
 
 ## Confirmation
 
-End with one terse line:
+After a write, confirm its destination. For an unchanged repeat, say `No revision needed: existing lesson already covers this evidence.` Do not claim a save when nothing was written.
 
 ```text
 Revision saved: <class> -> <destination>.            # or: -> docs/lessons/<file>.md (asobi unavailable)

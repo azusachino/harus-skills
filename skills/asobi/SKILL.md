@@ -3,16 +3,16 @@ name: asobi
 description: Use Asobi's persistent SQLite knowledge graph for session continuity, durable task dispatch, keyword recall, and reusable skills.
 metadata:
   author: haru
-  version: 2.3.0
+  version: 2.4.0
 ---
 
 # Asobi Skill
 
 Use Asobi as the canonical shared state store. Session state, task state, decisions, pitfalls, and reusable skills belong in the graph rather than in chat-only notes or local todo files.
 
-Asobi uses shared XDG state by default and automatically uses project-local state when `./asobi.toml` or `./.asobi/` exists. Create project-local state explicitly with `asobi init --local`.
+Resolve graph scope before reading or writing. Asobi searches ancestors for `asobi.toml`, then `.asobi/`, and otherwise uses shared XDG state; `ASOBI_HOME` overrides discovery. A nested repository can inherit its parent's graph. Follow the workspace's intended ownership and inspect the discovered configuration; changing directories into a submodule does not guarantee shared state. Create local state with `asobi init --local` only when requested.
 
-Read commands emit JSON on stdout. Mutating commands emit a confirmation on stderr; pass the global `--json` flag when the affected entities are needed immediately.
+Graph reads emit JSON on stdout; `asobi skills show` emits Markdown. Pass the global `--json` flag when a mutation's result needs parsing; human confirmations vary by command. Check `asobi --version` and command help against the installed CLI before relying on an unfamiliar operation.
 
 ## State model
 
@@ -26,11 +26,11 @@ Use `asobi schema --command NAME` when a scripted caller needs the exact respons
 
 ## Detect Asobi
 
-Run `command -v asobi` once at session start. If it is unavailable, stop and ask the user to install it with `cargo install asobi` or `cargo binstall asobi`.
+Run `command -v asobi` once at session start. If unavailable, report that persistence is unavailable and continue independent work. If the task itself requires graph access, explain that dependency and request installation; do not claim that state was loaded or saved.
 
 ## Session start
 
-Load shared preferences, the project entity, and the project session:
+In the selected graph, load the project and session plus any preferences stored there. Shared preferences may require a separate read from the configured shared graph. Current user instructions override recalled preferences; verify drift-prone state against Git and the relevant live system.
 
 ```bash
 asobi show UserPreferences CodingStyle ToolPreferences "[project]" "[project]:session"
@@ -50,7 +50,7 @@ asobi search "pitfall" --where status=active
 
 Report only `[project]:pitfall:*` entities. Also run `git log --oneline -5` and flag stale context when recent feature commits are not reflected in the loaded state.
 
-Report: `Session resumed. Last task: [X]. Next: [Y].` Include the active task board and active pitfall titles when present.
+Briefly report the relevant last task and next action when a prior session exists. Surface applicable active pitfalls and discrepancies without dumping the graph or inventing continuity for an empty result.
 
 ## Session end
 
@@ -68,17 +68,17 @@ asobi obs "[project]:session" "completed YYYY-MM-DD: [finished work]"
 
 Record durable project facts on `[project]`, cross-project facts on `UserPreferences`, `CodingStyle`, or `ToolPreferences`, and decisions or pitfalls in their dedicated entities. Check `asobi search "[topic]"` before adding a duplicate.
 
-Run `asobi compact` to sync durable knowledge to Markdown topics. It does not replace graph reads for sessions, tasks, or skills.
+Use `asobi compact` only as requested maintenance. Installed versions may advertise session pruning as well as Markdown synchronization; check the installed version's implementation before assuming it only exports topics. Ordinary session closeout only needs the state writes above.
 
 ## Tasks — primary workflow
 
-The task dispatcher is the favored workflow for all non-trivial work. Do not maintain task state in an in-conversation todo list or recreate task state manually with graph primitives.
+Use the task dispatcher for work that benefits from durable checkpoints or handoff. A small one-step task can use session closeout alone. Human-facing plans belong in the project's documentation; store status and a pointer in Asobi instead of maintaining two competing plans.
 
 An epic is the objective; its child tasks are ordered dispatchable units. The dispatcher owns task creation, links, status transitions, dispatch notes, and closeout.
 
 ### Plan
 
-Create the epic and its tasks in execution order, smallest to largest:
+Create a finite epic with concrete completion criteria. List tasks in dependency order; use explicit task names when dispatching, since creation order alone does not enforce dependencies:
 
 ```bash
 asobi tasks plan "[project]:[epic]" \
@@ -105,14 +105,14 @@ Use `asobi show "[project]:[epic]" --expand part_of` only when task observations
 
 ### Dispatch
 
-Dispatch the next ready task, or name one explicitly:
+Dispatch the intended task by name to avoid claiming unrelated work in the same graph:
 
 ```bash
-asobi tasks dispatch
+asobi tasks dispatch "[project]:[epic]:task-N"
 asobi tasks dispatch "[project]:[epic]:task-N" --agent "[agent]"
 ```
 
-Dispatch claiming is atomic, so concurrent agents produce one winner. Sub-agent dispatch is opt-in; run work inline by default and use `--agent` only for an explicitly independent dispatch.
+Dispatch claiming is atomic. It records a claim; it does not launch an agent. Follow the current workspace's delegation policy, use subagents for independent bounded work, and reserve worktrees or parallel sessions for explicit opt-in. `--agent` labels the claim for the chosen worker.
 
 Before dispatch, read the task and search relevant lessons:
 
@@ -181,6 +181,8 @@ asobi obs "[project]:pitfall:[slug]" "do-instead: [working approach]"
 
 Use the skill library as the source of truth for installed skills. Prefer explicit non-interactive selection:
 
+When `asobi.toml` declares `[skills]`, edit that selection and run `asobi skills sync` from its workspace root. Review additions, updates, and removals in the materialized skill files; commit them with the declaration when the repository tracks them. Sync can prune undeclared skills. Read changed instructions before using them. For installations without a declarative selection:
+
 ```bash
 asobi skills install "[git-url-or-path]" --select skill-a skill-b
 asobi skills install "[git-url-or-path]" --all
@@ -207,10 +209,12 @@ Use SQLite backup/restore for local recovery and JSON export/import for portable
 
 ```bash
 asobi backup --keep 5
-asobi restore "/secure/asobi.db" --force
+asobi restore "/secure/asobi.db"
 asobi export --scope "[project]:[epic]" --rationale -o handoff.json
 asobi import handoff.json
 ```
+
+Restore replaces live state; use it only for an explicitly requested recovery after confirming the target and backup. Export/import and purge are separate maintenance actions, not implicit session closeout steps.
 
 Generate shell completions from the installed binary:
 

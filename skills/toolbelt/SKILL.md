@@ -1,18 +1,18 @@
 ---
 name: toolbelt
-description: Reference for haru's preferred modern CLI tools — when and how to use eza/bat/fd/ripgrep/sd/ast-grep, xh, gh, dasel, procs, doggo, hexyl, duckdb/psql/sqlx-cli, hyperfine/oha, difftastic, typos. Invoke when a task involves searching files, editing/refactoring code, HTTP/API or GitHub calls, data/SQL work, DNS or process debugging, hex inspection, diffing, or benchmarking, and you want the idiomatic tool + flags instead of the classic Unix default.
+description: Choose haru's preferred CLI tools for terminal search, inspection, HTTP, structured data, and benchmarking when tool selection or usage guidance is needed.
 metadata:
   author: haru
-  version: 2.2.0
+  version: 2.3.0
 user-invokable: true
 ---
 
 # Toolbelt Skill
 
-haru's machines (managed by `harus-nix` Home Manager) ship a curated set of modern CLIs. **Prefer these over the classic Unix tools by default** — fall back to the classic only when the modern tool is genuinely unavailable.
+Prefer these tools for interactive terminal work. Check availability on the current machine; repository tooling and the host agent's editing rules take precedence over these defaults.
 
 ## Table of Contents
-- [Stop-and-ask rule (hard stop)](#stop-and-ask-rule-hard-stop)
+- [Resolve uncertainty](#resolve-uncertainty)
 - [Substitution table (always-on)](#substitution-table-always-on)
 - [Tooling discipline (carried from global defaults)](#tooling-discipline-carried-from-global-defaults)
 - [Runtimes & package managers](#runtimes--package-managers)
@@ -26,13 +26,11 @@ haru's machines (managed by `harus-nix` Home Manager) ship a curated set of mode
 - [Domain & infra tools (know these exist)](#domain--infra-tools-know-these-exist)
 - [When NOT to substitute](#when-not-to-substitute)
 
-This skill is **self-contained** — it carries both the substitution rules and the usage recipes so it works on any device, even one whose global `~/.claude/CLAUDE.md` isn't synced or differs. Treat it as the portable source of truth; if the local global config disagrees, the local config wins for that machine, but these defaults travel with you.
-
 Rule of thumb: classic tools for piping inside scripts that must be portable; modern tools for interactive/agent work where clarity and ergonomics win.
 
-## Stop-and-ask rule (hard stop)
+## Resolve uncertainty
 
-**On any ambiguity — an error you don't understand, a missing tool, a flag behaving oddly, state that contradicts your assumptions — STOP and ask.** Never improvise a fallback, retry with guessed flags, or work around the block; one clear question beats three speculative attempts. This is the global **stop-and-ask / fail-fast** default (canonical in `UserPreferences`). The sole exception: a tool that's literally not installed (`command -v` fails) may fall back gracefully — anything else ambiguous is a stop.
+Use `command -v`, the installed tool's `--help`, and repository configuration to resolve missing tools or unfamiliar flags. Continue with a supported fallback when it preserves the requested result. Ask when the remaining uncertainty changes scope, risks user data, or requires authority the user has not supplied. A recipe here is not permission to install tools, load-test a service, or mutate remote state.
 
 ## Substitution table (always-on)
 
@@ -58,16 +56,15 @@ Reach for the right-hand tool by default; fall back to the classic only when the
 
 ## Tooling discipline (carried from global defaults)
 
-These hold across all of haru's projects and are restated here so the skill stands alone:
+Use these defaults when the project does not specify its own tooling:
 
-- **Nix-first** — tools come from the project devShell (`nix develop`); use `mise` only for language runtimes, not general tooling. To run a project-pinned runtime/tool through mise, use `mise x -- <tool>` (alias `mise exec`) — it resolves the version from the repo's `.mise.toml`.
-- **`make` is the task runner** — reference `make <target>` everywhere; `make check` before commits, `make validate` before PRs (hook-enforced).
+- **Mise for project tools** — pin tools and runtimes in `.mise.toml`, and run them with `mise exec -- <tool>`. Nix/Home Manager supplies the global machine environment. Honor an existing project's devShell until its toolchain is deliberately migrated.
+- **`make` is the task runner** — use the repository's own targets; run `make check` before commits and `make validate` before PRs. Verify actual hook configuration before claiming these gates run automatically.
 - **JSON → `jq`** — always `jq` for JSON processing; never `python3 -c` or inline Python. Reach for `dasel` the moment the format isn't JSON.
-- **Conventional commits, 2-space config indent** — per global CodingStyle. Emojis are welcome (commits, prose, docs).
 
 ## Runtimes & package managers
 
-Prefer the fast modern runner over the legacy one by default — they're drop-in for the common paths and far faster.
+Use the project's declared runtime and lockfile. For ad-hoc work, prefer `uv` and `bun` when compatible.
 
 - **`uv`** — Python runtime + dependency + project manager (replaces `python`/`pip`/`venv`/`pipx`/`poetry`):
   - `uv run script.py` (auto-resolves deps), `uv run pytest` (run a tool in the project env)
@@ -77,9 +74,9 @@ Prefer the fast modern runner over the legacy one by default — they're drop-in
 - **`bun`** — JS/TS runtime + package manager + bundler (replaces `node`/`npm`/`npx`/`yarn`/`pnpm`):
   - `bun run script.ts` (runs TS directly, no compile step), `bun test`
   - `bun install` (fast install), `bun add zod` / `bun remove zod`
-  - **`bunx`** — run a package one-off without installing: `bunx prettier --write .`, `bunx tsx file.ts`.
+  - **`bunx`** — execute a package, downloading it if needed: `bunx prettier --check config.json`, `bunx tsx file.ts`.
 
-Caveats: stick to `python3`/`node` + `pip`/`npm` when a project's toolchain or CI pins them, when a native addon/wheel isn't yet `bun`/`uv`-compatible, or inside a Nix devShell that already provides the interpreter (per Nix-first, `mise` handles runtimes there). For everything ad-hoc and interactive, reach for `uv`/`bun` first.
+Caveats: preserve the project's package manager, interpreter, and CI contract; changing runners can change compatibility or lockfiles. For one-off commands, inspect the installed version's help before using version-sensitive flags.
 
 ## Search & navigate
 
@@ -112,7 +109,7 @@ Prefer `rg`/`fd` over `grep -r`/`find` — faster, respects `.gitignore`, sane d
 
 - **`xh`** — httpie-style client, faster than `curl` for hand-driven requests:
   - `xh get https://api.example.com/users` (auto-pretty JSON)
-  - `xh post api.local/login name=haru pass=secret` (JSON body from `k=v`)
+  - `xh post api.local/items name=example` (JSON body from `k=v`)
   - `xh -f post url field=val` (form), `xh --headers get url` (headers only)
   - `xh get url Authorization:"Bearer $TOK"` (header with `:`)
   - Use `curl` in scripts / when exact wire control or `--resolve` is needed.
@@ -182,7 +179,7 @@ Terminal multiplexing: `tmux`.
 
 ## Domain & infra tools (know these exist)
 
-Not substitutions — these are the specialised tools harus-nix already provisions. Reach for them by name instead of hand-rolling or asking the user to install something; they're on the machine.
+Candidates for specialized work. Availability varies by machine; check the executable and the project's own targets before choosing one.
 
 | Domain | Tools | Reach for it when |
 | --- | --- | --- |
@@ -198,7 +195,7 @@ Not substitutions — these are the specialised tools harus-nix already provisio
 | **Shell & nav** | `navi` (interactive cheat sheet), `fzf`, `zoxide`, `yazi` (file manager) | fuzzy-finding, cheat lookups, browsing files |
 | **Runtime pinning** | `mise` (per-project versions via `.mise.toml`, run with `mise x -- <tool>`), `rustup` (Rust toolchains) | a project pins a language version; switching Rust toolchains |
 
-If a task needs a tool not on this list or in the tables above, apply the stop-and-ask rule — confirm with the user before installing anything.
+For tools outside this list, prefer an existing dependency or native capability. Install only within the task's authorization and the project's tool-management convention.
 
 ## When NOT to substitute
 
