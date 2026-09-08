@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-09-08
+
+### Changed
+- **asobi** (2.6.0): Track Asobi 0.7, which moved skills out of the graph and onto the filesystem. Skills no longer appear in `graph`/`search`/`show`, so `rg` over the skills directory is how you search one; the section now leads with the declarative `sync` path, notes that imperative `install` is the only option under a plain `asobi init` (which writes no `asobi.toml`), and records that `.asobi-skills.json` carries each skill's source and resolved commit. Added the review-before-trusting guidance the skills supply chain now warrants. Corrected four places that still described skills as graph entities.
+
 ## [3.4.0] - 2026-09-08
 
 ### Changed

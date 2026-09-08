@@ -3,12 +3,12 @@ name: asobi
 description: Use Asobi's persistent SQLite knowledge graph for session continuity, durable task dispatch, keyword recall, and reusable skills.
 metadata:
   author: haru
-  version: 2.5.0
+  version: 2.6.0
 ---
 
 # Asobi Skill
 
-Use Asobi as the canonical shared state store. Session state, task state, decisions, pitfalls, and reusable skills belong in the graph rather than in chat-only notes or local todo files.
+Use Asobi as the canonical shared state store. Session state, task state, decisions and pitfalls belong in the graph rather than in chat-only notes or local todo files. Skills are the exception: they live on the filesystem — see [Skills](#skills).
 
 Resolve graph scope before reading or writing. Asobi searches ancestors for `asobi.toml`, then `.asobi/`, and otherwise uses shared XDG state; `ASOBI_HOME` overrides discovery. A nested repository can inherit its parent's graph. Follow the workspace's intended ownership and inspect the discovered configuration; changing directories into a submodule does not guarantee shared state. Create local state with `asobi init --local` only when requested.
 
@@ -20,7 +20,7 @@ Read commands emit their JSON payload on stdout; `asobi skills show` emits Markd
 - **Observation** — append-only history, such as a completed session, implementation note, decision, or lesson.
 - **Relation** — a directed connection between entities.
 
-`graph` and `search` are lean reads: they return truths, observation counts, and relations without observation bodies or skill bodies. Use `show` for selected full content, `--with-ids` for observation IDs, and `--expand part_of` for an epic and its tasks.
+`graph` and `search` are lean reads: they return truths, observation counts, and relations without observation bodies. Use `show` for selected full content, `--with-ids` for observation IDs, and `--expand part_of` for an epic and its tasks.
 
 Use `asobi schema --command NAME` when a scripted caller needs the exact response contract.
 
@@ -38,9 +38,9 @@ The type passed to `asobi new` decides what later `--where` filters and `compact
 | `standard` | Conventions that apply everywhere |
 | `reference` | Pointers to external resources and URLs |
 
-`compact` projects only the durable types (`project`, `concept`, `reference`, `preference`, `standard`) to Markdown; `session`, `task`, and `skill` stay graph-only. `purge` accepts only `session` and terminal `task`. Typing a decision as `session` therefore loses it on both counts.
+`compact` projects only the durable types (`project`, `concept`, `reference`, `preference`, `standard`) to Markdown; `session` and `task` stay graph-only. `purge` accepts only `session` and terminal `task`. Typing a decision as `session` therefore loses it on both counts.
 
-Names are hierarchical and colon-separated: `[project]`, `[project]:session`, `[project]:[epic]`, `[project]:[epic]:task-N`, `[project]:decision:[slug]`, `[project]:pitfall:[slug]`. Installed skills are `skill:[source-slug]:[name]`. Cross-project entities keep their bare names — `UserPreferences`, `CodingStyle`, `ToolPreferences`. Relations read as verb phrases: `part_of`, `depends_on`, `supersedes`, `extends`, `uses`, `blocks`.
+Names are hierarchical and colon-separated: `[project]`, `[project]:session`, `[project]:[epic]`, `[project]:[epic]:task-N`, `[project]:decision:[slug]`, `[project]:pitfall:[slug]`. Cross-project entities keep their bare names — `UserPreferences`, `CodingStyle`, `ToolPreferences`. Relations read as verb phrases: `part_of`, `depends_on`, `supersedes`, `extends`, `uses`, `blocks`.
 
 Create in batches rather than one call per entity — `new` takes repeated `NAME TYPE` pairs and seeds observations onto all of them with repeatable `--obs`, and `link` takes repeated `FROM TO TYPE` triples:
 
@@ -206,20 +206,33 @@ asobi obs "[project]:pitfall:[slug]" "do-instead: [working approach]"
 
 ## Skills
 
-Use the skill library as the source of truth for installed skills. Prefer explicit non-interactive selection:
+**Skills live on the filesystem, not in the graph.** As of Asobi 0.7 the skills directory — `.agents/skills` by default — is the store of record, so `graph`, `search` and `show` never return a skill. Search one with `rg` over that directory. On an older Asobi, skills are graph entities and `show` returns a body; check `asobi --version` before assuming either.
 
-When `asobi.toml` declares `[skills]`, edit that selection and run `asobi skills sync` from its workspace root. Review additions, updates, and removals in the materialized skill files; commit them with the declaration when the repository tracks them. Sync can prune undeclared skills. Read changed instructions before using them. For installations without a declarative selection:
+Prefer the declarative path. When `asobi.toml` declares `[skills]`, edit that selection and run `asobi skills sync` from its workspace root:
+
+```bash
+asobi skills sync
+asobi skills               # what is installed, with each one's source commit
+asobi skills show "[name]"
+```
+
+`sync` treats the config as the whole truth: it installs what is declared and prunes what is not, so removing a source from the config removes its skills. Where no `[skills]` block exists, install imperatively instead — this is the only option under a plain `asobi init`, which writes no `asobi.toml`:
 
 ```bash
 asobi skills install "[git-url-or-path]" --select skill-a skill-b
 asobi skills install "[git-url-or-path]" --all
 asobi skills update "[source]"
-asobi skills show "[name]"
 ```
 
-`--all` synchronizes a source and removes skills deleted upstream. `--select` is additive. Never hand-edit installed skill entities.
+`--all` synchronizes one source and drops what vanished upstream; `--select` is additive. Neither disturbs another source's skills.
 
-`select` names come from each skill's frontmatter `name:`, which is often not its directory name. When a source mirrors the same skills across several tool-specific directories, scope the walk with `subdir` — otherwise the duplicate copies collide on name during install.
+Three things that decide whether a declaration works:
+
+- `select` names come from each skill's frontmatter `name:`, which is often not its directory name.
+- When a source mirrors the same skills across several tool-specific directories, scope the walk with `subdir`, or the duplicate copies collide on name.
+- Never hand-edit an installed skill; the next sync overwrites it. Edit the source repository.
+
+**Review before trusting.** A skill is natural-language instruction loaded straight into an agent's context, and the published skill ecosystem has a measured supply-chain problem, so an unreviewed skill update is an unreviewed behaviour change. Where the repository tracks the skills directory, commit the materialized files together with the declaration and read the diff — that is what makes an upstream change reviewable at all. `sync` also writes `.asobi-skills.json` recording each skill's source and resolved commit; commit it too, and use `asobi skills` to see what commit is actually installed.
 
 ## Retention and recovery
 
