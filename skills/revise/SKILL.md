@@ -3,18 +3,16 @@ name: revise
 description: Persist project lessons, findings, and wrong approaches so future sessions can recall them
 metadata:
   author: haru
-  version: 1.1.0
-user-invokable: true
-disable-auto-invoke: true
+  version: 1.1.1
 ---
 
 # Revise
 
-Persist durable lessons from the current work into the asobi graph. `/asobi end` records *where we are* (session status); `/revise` records *what should change future behavior*.
+Persist durable lessons from the current work into the asobi graph. The Asobi skill's session closeout records *where we are*; this records *what should change future behaviour*.
 
 ## When to use
 
-After a meaningful discovery — a workflow worth repeating, a non-obvious project fact, or (most importantly) a dead end an agent should not re-walk. Capture while context is fresh. Not for ordinary task status; that is `/asobi end`.
+After a meaningful discovery — a workflow worth repeating, a non-obvious project fact, or (most importantly) a dead end an agent should not re-walk. Capture while context is fresh. Not for ordinary task status, which belongs in session closeout.
 
 ## Classify
 
@@ -23,7 +21,7 @@ Read the user's free-form text and classify it yourself; ask only if it is too v
 | Class | Means | Destination |
 | --- | --- | --- |
 | `work-experience` | how work was actually done | `[project]` observation |
-| `finding` | a non-obvious fact or gotcha (an architectural *choice* → a decision entity, see `/asobi recall`) | `[project]` observation |
+| `finding` | a non-obvious fact or gotcha (an architectural *choice* → a decision entity, per the Asobi skill) | `[project]` observation |
 | `wrong-approach` | something tried and rejected | `[project]:pitfall:<slug>` entity |
 
 ## Flow
@@ -41,7 +39,7 @@ Read the user's free-form text and classify it yourself; ask only if it is too v
 
 ## Pitfall entity
 
-A pitfall warns future agents away from a rejected path — it is not an ADR (ADRs explain *chosen* paths). One entity per dead end; `status` and `title` are truths so `/asobi start` can surface active pitfalls cheaply.
+A pitfall warns future agents away from a rejected path — it is not an ADR (ADRs explain *chosen* paths). One entity per dead end; `status` and `title` are truths, so session start can surface active pitfalls with a lean `search --where status=active` rather than opening every entity.
 
 ```bash
 asobi new "[project]:pitfall:<slug>" "concept"

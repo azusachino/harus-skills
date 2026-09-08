@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [3.5.0] - 2026-09-08
 
+### Fixed
+- **revise** (1.1.1) and **toolbelt** (2.3.1): Dropped `user-invokable` and `disable-auto-invoke` from frontmatter. Neither is in the Agent Skills specification, which allows only `name`, `description`, `license`, `compatibility`, `metadata` and `allowed-tools` — and neither did anything: the field agent hosts actually honour for this is `disable-model-invocation`, and `revise` was model-invocable regardless of its declaration. All three skills now pass the spec's reference validator.
+- **revise** (1.1.1): Replaced references to `/asobi start`, `/asobi end` and `/asobi recall` — slash commands that no longer exist — with the Asobi skill's session sections.
+- README no longer describes the skill library as a pillar of the graph; skills live on the filesystem as of Asobi 0.7.
+
 ### Changed
-- **asobi** (2.6.0): Track Asobi 0.7, which moved skills out of the graph and onto the filesystem. Skills no longer appear in `graph`/`search`/`show`, so `rg` over the skills directory is how you search one; the section now leads with the declarative `sync` path, notes that imperative `install` is the only option under a plain `asobi init` (which writes no `asobi.toml`), and records that `.asobi-skills.json` carries each skill's source and resolved commit. Added the review-before-trusting guidance the skills supply chain now warrants. Corrected four places that still described skills as graph entities.
+- **asobi** (2.7.0): Track Asobi 0.7, which moved skills out of the graph and onto the filesystem. Skills no longer appear in `graph`/`search`/`show`, so `rg` over the skills directory is how you search one; the section now leads with the declarative `sync` path, notes that imperative `install` is the only option under a plain `asobi init` (which writes no `asobi.toml`), and records that `.asobi-skills.json` carries each skill's source and resolved commit. Added the review-before-trusting guidance the skills supply chain now warrants. Corrected four places that still described skills as graph entities.
+- **asobi** (2.7.0): Track the rest of Asobi 0.7. `tasks list` with no epic is now the cross-project "what is open" read and belongs at session start; an all-`DONE` epic that nobody closed surfaces there on its own. Session start compares the recorded `commit` truth against `git log` instead of judging staleness by eye, since `tasks sync`/`close` now stamp `commit` and `branch` automatically. Documented `rev` pinning, bundled skill resources, and that `export` carries the truth change trail. Trimmed the pitfall-writing recipe, which duplicated the revise skill that owns it, and dropped shell-completion trivia that belongs in the CLI's own reference.
 
 ## [3.4.0] - 2026-09-08
 

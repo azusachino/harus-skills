@@ -45,4 +45,4 @@ JSON/YAML uses Prettier with 2-space indentation. Markdown is reviewed as prose:
 
 The current `make install-hooks` assumes `.git/` is a directory and restages files; it is unsuitable for submodules and partial staging. Run `make check` explicitly until that target is repaired. `make validate` checks manifest JSON and version alignment, not installation in every agent host.
 
-The current audit and remediation plan live in harus-kb under `docs/runbooks/audits/2026-09/2026-09-07-harus-skills-guidance-audit.md` and `docs/runbooks/plans/2026-09/2026-09-07-refresh-harus-skills.md` in the workstation repository. Operational commands remain owned here.
+Every skill must pass the Agent Skills specification's own reference validator: `bun x skills-ref validate skills/<name>`. Frontmatter allows only `name`, `description`, `license`, `compatibility`, `metadata` and `allowed-tools` — anything else fails, and a field a host does not read is worse than absent, since it looks like configuration and is not. Put non-standard values under `metadata`.
