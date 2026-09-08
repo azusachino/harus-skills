@@ -21,8 +21,8 @@
 
 | Skill | What it does |
 | --- | --- |
-| 🧠 **`/asobi`** | Durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph. One graph, four pillars: **session continuity** (`start`/`end`), a **task dispatcher** (`tasks plan\|list\|dispatch\|sync\|close`) with atomic claims that replaces ephemeral TodoWrite/jsonl, SQLite FTS5/BM25 **keyword recall** (`search` + an ADR log), and a **skill library** (`skills` — install/update skills from git). |
-| 📝 **`/revise`** | Persist lessons, findings, and dead ends so future sessions recall them — positive lessons on the project entity, wrong approaches as active `pitfall` warnings surfaced at the next `/asobi start`. |
+| 🧠 **`/asobi`** | Durable state across sessions and sub-agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph: **session continuity**, a **task dispatcher** (`tasks plan\|list\|dispatch\|sync\|close`) with atomic claims that replaces ephemeral TodoWrite/jsonl, and SQLite FTS5/BM25 **keyword recall** (`search` + an ADR log). Skills themselves live on the filesystem, not in the graph — `asobi skills sync` reconciles them from a declaration. |
+| 📝 **`/revise`** | Persist lessons, findings, and dead ends so future sessions recall them — positive lessons on the project entity, wrong approaches as active `pitfall` warnings surfaced at the next session start. |
 | 🧰 **`/toolbelt`** | Preferred modern CLIs and usage recipes. Mise pins project tools, Make owns tasks, and `jq` handles JSON; the project's declared toolchain takes precedence. |
 
 Skills support the current task and its authorization. They resolve routine uncertainty through evidence, keep task state separate from durable lessons, and verify results in proportion to risk. Current user and project instructions override portable defaults or recalled preferences. Tool availability is checked on the actual machine.

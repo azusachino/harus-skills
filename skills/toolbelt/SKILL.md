@@ -3,8 +3,7 @@ name: toolbelt
 description: Choose haru's preferred CLI tools for terminal search, inspection, HTTP, structured data, and benchmarking when tool selection or usage guidance is needed.
 metadata:
   author: haru
-  version: 2.3.0
-user-invokable: true
+  version: 2.3.1
 ---
 
 # Toolbelt Skill

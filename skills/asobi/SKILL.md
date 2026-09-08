@@ -3,16 +3,16 @@ name: asobi
 description: Use Asobi's persistent SQLite knowledge graph for session continuity, durable task dispatch, keyword recall, and reusable skills.
 metadata:
   author: haru
-  version: 2.4.0
+  version: 2.7.0
 ---
 
 # Asobi Skill
 
-Use Asobi as the canonical shared state store. Session state, task state, decisions, pitfalls, and reusable skills belong in the graph rather than in chat-only notes or local todo files.
+Use Asobi as the canonical shared state store. Session state, task state, decisions and pitfalls belong in the graph rather than in chat-only notes or local todo files. Skills are the exception: they live on the filesystem — see [Skills](#skills).
 
 Resolve graph scope before reading or writing. Asobi searches ancestors for `asobi.toml`, then `.asobi/`, and otherwise uses shared XDG state; `ASOBI_HOME` overrides discovery. A nested repository can inherit its parent's graph. Follow the workspace's intended ownership and inspect the discovered configuration; changing directories into a submodule does not guarantee shared state. Create local state with `asobi init --local` only when requested.
 
-Graph reads emit JSON on stdout; `asobi skills show` emits Markdown. Pass the global `--json` flag when a mutation's result needs parsing; human confirmations vary by command. Check `asobi --version` and command help against the installed CLI before relying on an unfamiliar operation.
+Read commands emit their JSON payload on stdout; `asobi skills show` emits Markdown. Mutating commands print a one-line confirmation to **stderr** and leave stdout empty, so branch on the exit code rather than on stdout being non-empty. Pass the global `--json` flag when a mutation's result needs parsing — it prints the affected entities to stdout and removes the follow-up `show`. Check `asobi --version` and command help against the installed CLI before relying on an unfamiliar operation.
 
 ## State model
 
@@ -20,9 +20,29 @@ Graph reads emit JSON on stdout; `asobi skills show` emits Markdown. Pass the gl
 - **Observation** — append-only history, such as a completed session, implementation note, decision, or lesson.
 - **Relation** — a directed connection between entities.
 
-`graph` and `search` are lean reads: they return truths, observation counts, and relations without observation bodies or skill bodies. Use `show` for selected full content, `--with-ids` for observation IDs, and `--expand part_of` for an epic and its tasks.
+`graph` and `search` are lean reads: they return truths, observation counts, and relations without observation bodies. Use `show` for selected full content, `--with-ids` for observation IDs, and `--expand part_of` for an epic and its tasks.
 
 Use `asobi schema --command NAME` when a scripted caller needs the exact response contract.
+
+## Types and naming
+
+The type passed to `asobi new` decides what later `--where` filters and `compact` see, so choose it deliberately:
+
+| Type | Use for |
+| --- | --- |
+| `project` | Stable per-project facts and architecture decisions |
+| `session` | Volatile session state, rewritten each closeout |
+| `task` | Epics and their dispatchable child tasks |
+| `concept` | Decisions, pitfalls, technical definitions |
+| `preference` | Cross-project user or tool preferences |
+| `standard` | Conventions that apply everywhere |
+| `reference` | Pointers to external resources and URLs |
+
+`compact` projects only the durable types (`project`, `concept`, `reference`, `preference`, `standard`) to Markdown; `session` and `task` stay graph-only. `purge` accepts only `session` and terminal `task`. Typing a decision as `session` therefore loses it on both counts.
+
+Names are hierarchical and colon-separated: `[project]`, `[project]:session`, `[project]:[epic]`, `[project]:[epic]:task-N`, `[project]:decision:[slug]`, `[project]:pitfall:[slug]`. Cross-project entities keep their bare names — `UserPreferences`, `CodingStyle`, `ToolPreferences`. Relations read as verb phrases: `part_of`, `depends_on`, `supersedes`, `extends`, `uses`, `blocks`.
+
+Create in batches rather than one call per entity: `new` takes repeated `NAME TYPE` pairs (`new A task B concept`) and seeds observations onto all of them with repeatable `--obs`, and `link` takes repeated `FROM TO TYPE` triples. `new` no-ops on names that already exist, so it is safe to re-run.
 
 ## Detect Asobi
 
@@ -36,10 +56,10 @@ In the selected graph, load the project and session plus any preferences stored 
 asobi show UserPreferences CodingStyle ToolPreferences "[project]" "[project]:session"
 ```
 
-If an active epic is named in the session, load its board:
+Then read what is open, which needs no epic name:
 
 ```bash
-asobi tasks list "[project]:[epic]"
+asobi tasks list
 ```
 
 Load active project pitfalls without opening every entity:
@@ -48,7 +68,7 @@ Load active project pitfalls without opening every entity:
 asobi search "pitfall" --where status=active
 ```
 
-Report only `[project]:pitfall:*` entities. Also run `git log --oneline -5` and flag stale context when recent feature commits are not reflected in the loaded state.
+Report only `[project]:pitfall:*` entities. Compare the session's or task's `commit` truth against `git log --oneline -5`: a checkpoint records the revision it was taken at, so a mismatch says exactly how far the tree has moved since, rather than leaving staleness to be judged by eye.
 
 Briefly report the relevant last task and next action when a prior session exists. Surface applicable active pitfalls and discrepancies without dumping the graph or inventing continuity for an empty result.
 
@@ -68,7 +88,7 @@ asobi obs "[project]:session" "completed YYYY-MM-DD: [finished work]"
 
 Record durable project facts on `[project]`, cross-project facts on `UserPreferences`, `CodingStyle`, or `ToolPreferences`, and decisions or pitfalls in their dedicated entities. Check `asobi search "[topic]"` before adding a duplicate.
 
-Use `asobi compact` only as requested maintenance. Installed versions may advertise session pruning as well as Markdown synchronization; check the installed version's implementation before assuming it only exports topics. Ordinary session closeout only needs the state writes above.
+`tasks sync` and `tasks close` record `commit` and `branch` truths automatically inside a git worktree, so a task checkpoint already carries its revision; a session truth does not, and is worth setting when the handoff matters. Use `asobi compact` only as requested maintenance — ordinary closeout needs the state writes above and nothing else.
 
 ## Tasks — primary workflow
 
@@ -95,11 +115,15 @@ asobi truth "[project]:session" objective "[project]:[epic]"
 
 ### List
 
-Use the task board as the normal status read:
+`asobi tasks list` with no epic is the "what is open" read across every project — it returns only unfinished work, so it is cheap enough for session start. Name an epic for that board alone:
 
 ```bash
-asobi tasks list "[project]:[epic]"
+asobi tasks list                      # open work everywhere
+asobi tasks list "[project]:[epic]"   # one board
+asobi tasks list --all                # include finished work
 ```
+
+An epic with all children `DONE` but no `status` of its own appears alone, with no open children under it: that is an epic whose work finished and which nobody closed. Close it rather than leaving it to reappear every session.
 
 Use `asobi show "[project]:[epic]" --expand part_of` only when task observations or linked details are needed.
 
@@ -154,7 +178,7 @@ asobi search "auth" --limit 500
 asobi search --where status=READY
 ```
 
-Use `show` for the full observations of selected entities. Use `graph` only when the full lean graph is required. Use `export` for portable graph handoff and `backup` for full-fidelity local recovery.
+Use `show` for the full observations of selected entities. Use `graph` only when the full lean graph is required. Use `export` for portable graph handoff — it carries the truth change trail, so the receiver can tell a fact that was always true from one corrected since — and `backup` for full-fidelity local recovery.
 
 Record non-obvious decisions as concepts:
 
@@ -166,31 +190,38 @@ asobi obs "[project]:decision:[slug]" "consequences: [accepted trade-offs]"
 asobi link "[project]:decision:[new]" "[project]:decision:[old]" supersedes
 ```
 
-Record rejected approaches as active pitfalls:
-
-```bash
-asobi new "[project]:pitfall:[slug]" concept
-asobi truth "[project]:pitfall:[slug]" status active
-asobi truth "[project]:pitfall:[slug]" title "[short warning]"
-asobi obs "[project]:pitfall:[slug]" "tried: [rejected approach]"
-asobi obs "[project]:pitfall:[slug]" "why-it-failed: [cause]"
-asobi obs "[project]:pitfall:[slug]" "do-instead: [working approach]"
-```
+Rejected approaches become `[project]:pitfall:[slug]` entities with a `status` truth, which is what makes the session-start search above cheap. The revise skill owns writing them.
 
 ## Skills
 
-Use the skill library as the source of truth for installed skills. Prefer explicit non-interactive selection:
+**Skills live on the filesystem, not in the graph.** As of Asobi 0.7 the skills directory — `.agents/skills` by default — is the store of record, so `graph`, `search` and `show` never return a skill. Search one with `rg` over that directory. On an older Asobi, skills are graph entities and `show` returns a body; check `asobi --version` before assuming either.
 
-When `asobi.toml` declares `[skills]`, edit that selection and run `asobi skills sync` from its workspace root. Review additions, updates, and removals in the materialized skill files; commit them with the declaration when the repository tracks them. Sync can prune undeclared skills. Read changed instructions before using them. For installations without a declarative selection:
+Prefer the declarative path. When `asobi.toml` declares `[skills]`, edit that selection and run `asobi skills sync` from its workspace root:
+
+```bash
+asobi skills sync
+asobi skills               # what is installed, with each one's source commit
+asobi skills show "[name]"
+```
+
+`sync` treats the config as the whole truth: it installs what is declared and prunes what is not, so removing a source from the config removes its skills. Where no `[skills]` block exists, install imperatively instead — this is the only option under a plain `asobi init`, which writes no `asobi.toml`:
 
 ```bash
 asobi skills install "[git-url-or-path]" --select skill-a skill-b
 asobi skills install "[git-url-or-path]" --all
 asobi skills update "[source]"
-asobi skills show "[name]"
 ```
 
-`--all` synchronizes a source and removes skills deleted upstream. `--select` is additive. Never hand-edit installed skill entities.
+`--all` synchronizes one source and drops what vanished upstream; `--select` is additive. Neither disturbs another source's skills. A skill that ships `references/`, `scripts/` or `assets/` is installed with them, so its instructions can point at files that are actually there.
+
+Four things that decide whether a declaration works:
+
+- `select` names come from each skill's frontmatter `name:`, which is often not its directory name.
+- When a source mirrors the same skills across several tool-specific directories, scope the walk with `subdir`, or the duplicate copies collide on name.
+- `rev` pins a source to a commit, tag, or branch. Without it a re-sync adopts whatever the source moved to.
+- Never hand-edit an installed skill; the next sync overwrites it. Edit the source repository.
+
+**Review before trusting.** A skill is natural-language instruction loaded straight into an agent's context, and the published skill ecosystem has a measured supply-chain problem, so an unreviewed skill update is an unreviewed behaviour change. Where the repository tracks the skills directory, commit the materialized files together with the declaration and read the diff — that is what makes an upstream change reviewable at all. `sync` also writes `.asobi-skills.json` recording each skill's source and resolved commit; commit it too, and use `asobi skills` to see what commit is actually installed. Pinning with `rev` is what turns adopting a new one into a decision.
 
 ## Retention and recovery
 
@@ -203,7 +234,7 @@ asobi purge --type task --status DONE --older-than 90
 asobi purge --type task --status DONE --older-than 90 --apply
 ```
 
-Purge is restricted to terminal sessions and tasks; durable knowledge and skills are protected. It is never implicit.
+Purge is restricted to terminal sessions and tasks; durable knowledge is protected. It is never implicit.
 
 Use SQLite backup/restore for local recovery and JSON export/import for portable handoff:
 
@@ -215,9 +246,3 @@ asobi import handoff.json
 ```
 
 Restore replaces live state; use it only for an explicitly requested recovery after confirming the target and backup. Export/import and purge are separate maintenance actions, not implicit session closeout steps.
-
-Generate shell completions from the installed binary:
-
-```bash
-asobi completions bash|elvish|fish|powershell|zsh
-```
