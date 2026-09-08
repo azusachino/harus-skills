@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-09-08
+
+### Changed
+- **asobi** (2.5.0): Became the single installable skill for the Asobi CLI. The `asobi` repository dropped its own competing `SKILL.md`, so this skill absorbs the interface facts an agent cannot get from workflow guidance alone: the entity-type table and what `compact` and `purge` each accept, the hierarchical naming and relation-verb conventions, batched `new`/`link` with `--obs` seeding, and the stdout/stderr stream contract (mutations confirm on stderr and leave stdout empty — branch on the exit code). Documented `subdir` scoping and that `select` names come from frontmatter rather than directory names.
+
+### Added
+- Contributor guidance now records the skill/CLI ownership split: the `asobi` repository owns the interface reference, this skill owns the workflow. Four copies of the session protocol had drifted into disagreeing about `compact` as a closeout step and about whether the next action is a truth or an observation.
+
 ## [3.3.0] - 2026-09-07
 
 ### Changed

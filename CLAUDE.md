@@ -21,6 +21,8 @@ Three Markdown skills shared across agent runtimes: `asobi` for durable work sta
 
 Use the Asobi skill for session start and closeout. Confirm graph scope before writes: ancestor configuration can apply inside a nested repository. Capture lessons when they would change future behavior; deduplicate and retain their evidence limits.
 
+The `asobi` skill is the only installable skill for the Asobi CLI. The `asobi` repository documents its own interface — commands, flags, response contract, storage layout — in its `docs/usage.md`, and deliberately ships no `SKILL.md` of its own; a tool repository publishing a competing workflow skill produced four copies of the session protocol that disagreed with each other about `compact` and about where the next action is stored. Keep the split: that repository owns what the CLI *is*, this skill owns *when and in what order* to reach for it. Cite the exact contract with `asobi schema --command NAME` rather than restating flags here, and re-read `docs/usage.md` before documenting an unfamiliar operation.
+
 ## Packaging and versions
 
 The flat `skills/` tree is the authored source. `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, and `gemini-extension.json` package the same content. Keep historical decisions in `docs/adr/`; supersede an accepted ADR with a new one rather than rewriting history.

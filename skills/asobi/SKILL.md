@@ -3,7 +3,7 @@ name: asobi
 description: Use Asobi's persistent SQLite knowledge graph for session continuity, durable task dispatch, keyword recall, and reusable skills.
 metadata:
   author: haru
-  version: 2.4.0
+  version: 2.5.0
 ---
 
 # Asobi Skill
@@ -12,7 +12,7 @@ Use Asobi as the canonical shared state store. Session state, task state, decisi
 
 Resolve graph scope before reading or writing. Asobi searches ancestors for `asobi.toml`, then `.asobi/`, and otherwise uses shared XDG state; `ASOBI_HOME` overrides discovery. A nested repository can inherit its parent's graph. Follow the workspace's intended ownership and inspect the discovered configuration; changing directories into a submodule does not guarantee shared state. Create local state with `asobi init --local` only when requested.
 
-Graph reads emit JSON on stdout; `asobi skills show` emits Markdown. Pass the global `--json` flag when a mutation's result needs parsing; human confirmations vary by command. Check `asobi --version` and command help against the installed CLI before relying on an unfamiliar operation.
+Read commands emit their JSON payload on stdout; `asobi skills show` emits Markdown. Mutating commands print a one-line confirmation to **stderr** and leave stdout empty, so branch on the exit code rather than on stdout being non-empty. Pass the global `--json` flag when a mutation's result needs parsing — it prints the affected entities to stdout and removes the follow-up `show`. Check `asobi --version` and command help against the installed CLI before relying on an unfamiliar operation.
 
 ## State model
 
@@ -23,6 +23,33 @@ Graph reads emit JSON on stdout; `asobi skills show` emits Markdown. Pass the gl
 `graph` and `search` are lean reads: they return truths, observation counts, and relations without observation bodies or skill bodies. Use `show` for selected full content, `--with-ids` for observation IDs, and `--expand part_of` for an epic and its tasks.
 
 Use `asobi schema --command NAME` when a scripted caller needs the exact response contract.
+
+## Types and naming
+
+The type passed to `asobi new` decides what later `--where` filters and `compact` see, so choose it deliberately:
+
+| Type | Use for |
+| --- | --- |
+| `project` | Stable per-project facts and architecture decisions |
+| `session` | Volatile session state, rewritten each closeout |
+| `task` | Epics and their dispatchable child tasks |
+| `concept` | Decisions, pitfalls, technical definitions |
+| `preference` | Cross-project user or tool preferences |
+| `standard` | Conventions that apply everywhere |
+| `reference` | Pointers to external resources and URLs |
+
+`compact` projects only the durable types (`project`, `concept`, `reference`, `preference`, `standard`) to Markdown; `session`, `task`, and `skill` stay graph-only. `purge` accepts only `session` and terminal `task`. Typing a decision as `session` therefore loses it on both counts.
+
+Names are hierarchical and colon-separated: `[project]`, `[project]:session`, `[project]:[epic]`, `[project]:[epic]:task-N`, `[project]:decision:[slug]`, `[project]:pitfall:[slug]`. Installed skills are `skill:[source-slug]:[name]`. Cross-project entities keep their bare names — `UserPreferences`, `CodingStyle`, `ToolPreferences`. Relations read as verb phrases: `part_of`, `depends_on`, `supersedes`, `extends`, `uses`, `blocks`.
+
+Create in batches rather than one call per entity — `new` takes repeated `NAME TYPE` pairs and seeds observations onto all of them with repeatable `--obs`, and `link` takes repeated `FROM TO TYPE` triples:
+
+```bash
+asobi new "[project]:decision:[slug]" concept "[project]:pitfall:[slug]" concept
+asobi link "[project]:[epic]:task-1" "[project]:[epic]" part_of
+```
+
+`new` silently no-ops on names that already exist, so it is safe to re-run.
 
 ## Detect Asobi
 
@@ -191,6 +218,8 @@ asobi skills show "[name]"
 ```
 
 `--all` synchronizes a source and removes skills deleted upstream. `--select` is additive. Never hand-edit installed skill entities.
+
+`select` names come from each skill's frontmatter `name:`, which is often not its directory name. When a source mirrors the same skills across several tool-specific directories, scope the walk with `subdir` — otherwise the duplicate copies collide on name during install.
 
 ## Retention and recovery
 
