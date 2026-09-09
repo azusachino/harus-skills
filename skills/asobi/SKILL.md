@@ -3,12 +3,12 @@ name: asobi
 description: Use Asobi's persistent SQLite knowledge graph for session continuity, durable task dispatch, keyword recall, and reusable skills.
 metadata:
   author: haru
-  version: 2.7.0
+  version: 2.7.1
 ---
 
 # Asobi Skill
 
-Use Asobi as the canonical shared state store. Session state, task state, decisions and pitfalls belong in the graph rather than in chat-only notes or local todo files. Skills are the exception: they live on the filesystem — see [Skills](#skills).
+Use Asobi as the canonical shared state store. Session state, task state, decisions and pitfalls belong in the graph rather than in chat-only notes or local todo files. Skills live on the filesystem — see [Skills](#skills).
 
 Resolve graph scope before reading or writing. Asobi searches ancestors for `asobi.toml`, then `.asobi/`, and otherwise uses shared XDG state; `ASOBI_HOME` overrides discovery. A nested repository can inherit its parent's graph. Follow the workspace's intended ownership and inspect the discovered configuration; changing directories into a submodule does not guarantee shared state. Create local state with `asobi init --local` only when requested.
 
@@ -178,7 +178,7 @@ asobi search "auth" --limit 500
 asobi search --where status=READY
 ```
 
-Use `show` for the full observations of selected entities. Use `graph` only when the full lean graph is required. Use `export` for portable graph handoff — it carries the truth change trail, so the receiver can tell a fact that was always true from one corrected since — and `backup` for full-fidelity local recovery.
+Use `show` for the full observations of selected entities. Use `graph` only when the full lean graph is required.
 
 Record non-obvious decisions as concepts:
 
@@ -194,7 +194,7 @@ Rejected approaches become `[project]:pitfall:[slug]` entities with a `status` t
 
 ## Skills
 
-**Skills live on the filesystem, not in the graph.** As of Asobi 0.7 the skills directory — `.agents/skills` by default — is the store of record, so `graph`, `search` and `show` never return a skill. Search one with `rg` over that directory. On an older Asobi, skills are graph entities and `show` returns a body; check `asobi --version` before assuming either.
+**The skills directory is the store of record** — `.agents/skills` by default. Search a skill with `rg` over that directory; `asobi skills show` prints one.
 
 Prefer the declarative path. When `asobi.toml` declares `[skills]`, edit that selection and run `asobi skills sync` from its workspace root:
 
@@ -221,28 +221,26 @@ Four things that decide whether a declaration works:
 - `rev` pins a source to a commit, tag, or branch. Without it a re-sync adopts whatever the source moved to.
 - Never hand-edit an installed skill; the next sync overwrites it. Edit the source repository.
 
-**Review before trusting.** A skill is natural-language instruction loaded straight into an agent's context, and the published skill ecosystem has a measured supply-chain problem, so an unreviewed skill update is an unreviewed behaviour change. Where the repository tracks the skills directory, commit the materialized files together with the declaration and read the diff — that is what makes an upstream change reviewable at all. `sync` also writes `.asobi-skills.json` recording each skill's source and resolved commit; commit it too, and use `asobi skills` to see what commit is actually installed. Pinning with `rev` is what turns adopting a new one into a decision.
+**Review before trusting.** A skill is natural-language instruction loaded straight into an agent's context, and the published skill ecosystem has a measured supply-chain problem, so an unreviewed skill update is an unreviewed behaviour change. Where the repository tracks the skills directory, commit the materialized files together with the declaration and read the diff — that is what makes an upstream change reviewable at all. `sync` also writes `.asobi-skills.json` recording each skill's source and resolved commit. Commit it where the workspace pins with `rev`; gitignore it where the workspace always takes the latest, since `asobi.toml` and the tracked `SKILL.md` files already carry everything else it holds.
 
 ## Retention and recovery
 
 Observations are capped at 200 per entity by default. Keep current state in truths and consolidate old observation trails when needed.
 
-Preview stale operational records before applying retention:
+Retention is automatic: finished sessions and terminal tasks older than `retention_days` (7 by default) are deleted once per process, before the first write. Treat it as already done.
+
+`purge` previews that policy, or sweeps a narrower window:
 
 ```bash
-asobi purge --type task --status DONE --older-than 90
-asobi purge --type task --status DONE --older-than 90 --apply
+asobi purge --older-than 30          # preview, the default
+asobi purge --older-than 30 --apply
 ```
 
-Purge is restricted to terminal sessions and tasks; durable knowledge is protected. It is never implicit.
+It reaches terminal sessions and tasks only.
 
-Use SQLite backup/restore for local recovery and JSON export/import for portable handoff:
+Back up by copying the file; move one entity between graphs with `new`/`truth`/`obs` against the target.
 
 ```bash
-asobi backup --keep 5
-asobi restore "/secure/asobi.db"
-asobi export --scope "[project]:[epic]" --rationale -o handoff.json
-asobi import handoff.json
+cp .asobi/data/asobi.db backup.db          # project-local
+cp ~/.local/share/asobi/data/asobi.db .    # XDG
 ```
-
-Restore replaces live state; use it only for an explicitly requested recovery after confirming the target and backup. Export/import and purge are separate maintenance actions, not implicit session closeout steps.
