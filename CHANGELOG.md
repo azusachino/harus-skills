@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1] - 2026-09-09
+
+Tracks asobi 0.7.1 and re-grounds the toolbelt in what is actually installed.
+
+### Changed
+- **asobi** (2.7.1): Retention is automatic — finished sessions and terminal tasks older than `retention_days` (7 by default) are deleted once per process before the first write — so the skill states that as current behaviour and tells agents to treat it as already done. `purge` is documented with the two flags it has. Backup is `cp` of the database file, and moving one entity between graphs is `new`/`truth`/`obs` against the target.
+
+  The section is shorter than what it replaced. The previous text described a `purge --type`/`--status` invocation and an `export --scope` handoff that no longer exist, and the first pass at correcting it narrated the removals instead of stating the current shape. A skill is loaded into context on every use, so it carries what the tool *is*; `CHANGELOG.md` carries what changed.
+
+  `.asobi-skills.json`: commit it where the workspace pins with `rev`, gitignore it where the workspace always takes the latest, since `asobi.toml` and the tracked `SKILL.md` files already carry everything else it holds.
+
+- **toolbelt** (2.3.2): `delta` is the git pager, wired in by `programs.delta`, so `git diff`/`log`/`show`/`blame` already render side-by-side with `n`/`N` hunk navigation — the table previously sent `git diff` to `difftastic`. `difft` stays as the opt-in structural diff, which compares ASTs rather than highlighting a line diff. Notes `git --no-pager diff` for raw unified text.
+
+  Adds `comma` (`, <cmd>`), which runs any nixpkgs binary on demand and so changes this skill's own fallback rule for a missing tool. Adds `nix-tree`, `nix-locate`, `git-cliff`. Corrects `psql`, which arrives per project through `.mise.toml` rather than globally.
+
+  Adds one rule: `command -v <tool>` is the check. Tool inventories drift — `scripts/tools` is hand-maintained help text, `packages.nix` declares intent a machine may not have switched to, and this skill's own table is a third copy.
+
 ## [3.5.0] - 2026-09-08
 
 Everything below shipped together in one pull request; the intermediate 3.4.0 bump never became a release, and the skills' intermediate versions (`asobi` 2.5.0/2.6.0) never shipped either.

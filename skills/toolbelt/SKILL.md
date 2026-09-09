@@ -3,7 +3,7 @@ name: toolbelt
 description: Choose haru's preferred CLI tools for terminal search, inspection, HTTP, structured data, and benchmarking when tool selection or usage guidance is needed.
 metadata:
   author: haru
-  version: 2.3.1
+  version: 2.3.2
 ---
 
 # Toolbelt Skill
@@ -41,14 +41,15 @@ Reach for the right-hand tool by default; fall back to the classic only when the
 | `grep` / `find`      | `ripgrep` (`rg`) / `fd`                 | text/file search                |
 | `grep` for code structure | `ast-grep` (`sg`)                  | AST-aware search & rewrite      |
 | `sed` (substitute)   | `sd`                                    | find & replace                  |
-| `git diff`           | `difftastic` (`difft`)                  | syntax-aware diffs              |
+| `git diff`           | `delta` — already wired as the pager    | `diff`/`log`/`show`/`blame`     |
+| a noisy reflow diff  | `difftastic` (`difft`)                  | AST diff, opt-in                |
 | `ps` / `dig` / `xxd` | `procs` / `doggo` / `hexyl`             | processes, DNS, hex             |
 | `curl` (API testing) | `xh`                                    | HTTP requests                   |
 | `jq` for non-JSON    | `dasel`                                 | YAML/TOML/XML/CSV query+convert |
 | `wc -l` (code count) | `tokei`                                 | code statistics (LOC)           |
 | ad-hoc regex design  | `grex`                                  | generate regular expressions    |
 | spell-check source   | `typos`                                 | typo linting in code + docs     |
-| ad-hoc SQL           | `duckdb`, `psql` (postgres), `sqlx-cli` | data + migrations               |
+| ad-hoc SQL           | `duckdb`; `psql`/`sqlx-cli` per project | data + migrations               |
 | benchmarking         | `hyperfine` (CLI), `oha` (HTTP)         | perf checks                     |
 | `python` / `pip` / `pipx` | `uv` / `uvx`                       | Python runtime, deps, tools     |
 | `node` / `npm` / `npx`    | `bun` / `bunx`                     | JS/TS runtime, deps, tools      |
@@ -140,7 +141,7 @@ Use the provider-native CLI when the task targets GitHub or GitLab state. Keep `
   - `duckdb -c "select count(*) from read_parquet('*.parquet')"`
 - **`miller`** (`mlr`) — CSV/TSV/JSON record processing:
   - `mlr --csv cut -f a,b then sort -nr b data.csv`
-- **`psql`** (from `postgresql`) — Postgres client:
+- **`psql`** (from `postgresql`) — Postgres client. Not installed globally: it arrives through a project's `.mise.toml` (`mise exec -- psql`) or `, psql` for a one-off, so check before assuming it is on `PATH`.
   - `psql "$DATABASE_URL" -c '\dt'`, `psql -h host -U user db`
 - **`sqlx-cli`** — Rust SQL toolkit / migrations:
   - `sqlx database create`, `sqlx migrate add <name>`, `sqlx migrate run`
@@ -164,9 +165,10 @@ Use the provider-native CLI when the task targets GitHub or GitLab state. Keep `
 - **`typos`** — fast source-code spell checker (skips code identifiers sensibly):
   - `typos` (check the tree), `typos -w` (auto-fix), `typos path/to/file`
   - Good as a pre-commit gate and before shipping docs; low false-positive rate.
-- **`difftastic` (`difft`)** — structural, syntax-aware diff (compares ASTs, ignores pure reflow):
-  - `difft old.rs new.rs` (standalone), or wire it into git: `GIT_EXTERNAL_DIFF=difft git diff`
-  - Reach for it when a plain-text diff is noisy because indentation/wrapping changed but the code didn't.
+- **`delta`** — the git pager, wired in by `programs.delta`. `git diff`/`log`/`show`/`blame` render side-by-side with line numbers and `n`/`N` to jump hunks. Use `git --no-pager diff` for raw unified text to parse, or in a narrow terminal.
+- **`difftastic` (`difft`)** — the opt-in structural diff: compares ASTs, so reflow is not a change. `delta` highlights a line diff; `difft` changes what counts as a difference.
+  - `difft old.rs new.rs` (standalone), or for one command: `GIT_EXTERNAL_DIFF=difft git diff`
+  - Reach for it only when a plain diff is noisy because indentation or wrapping moved but the code didn't.
 
 Terminal multiplexing: `tmux`.
 
@@ -182,7 +184,8 @@ Candidates for specialized work. Availability varies by machine; check the execu
 
 | Domain | Tools | Reach for it when |
 | --- | --- | --- |
-| **Nix workflow** | `nh` (ergonomic nix/home-manager wrapper), `nom` (`nix-output-monitor`) | rebuilding a config, watching a nix build's progress |
+| **Nix workflow** | `nh` (ergonomic nix/home-manager wrapper), `nom` (`nix-output-monitor`), `nix-tree` (closure explorer), `nix-locate` (which package owns a binary), `comma` (invoked as a lone `,` — runs a binary without installing it) | rebuilding a config, watching a build, asking why something is in the closure, finding or borrowing a missing tool |
+| **Git extras** | `git-cliff` (changelog from conventional commits), `gh`, `git-lfs` | generating a release changelog, driving GitHub, large files |
 | **Kubernetes** | `k9s` (TUI), `kubectl`, `stern` (multi-pod log tail) | inspecting/driving a cluster, tailing pod logs |
 | **Cloud & sync** | `rclone` | syncing to/from cloud/object storage |
 | **Containers (Linux)** | `podman`, `buildah`, `skopeo` | building/running/inspecting OCI images (rootless, daemonless) |
@@ -200,4 +203,11 @@ For tools outside this list, prefer an existing dependency or native capability.
 
 - Portable shell scripts that may run on minimal/other machines → stick to POSIX (`grep`, `sed`, `find`, `curl`) so they don't depend on this toolbelt.
 - Pure-JSON pipelines → `jq` remains the default (per global CLAUDE.md).
-- If a tool isn't installed (`command -v <tool>` fails), fall back gracefully.
+- For a tool `command -v` cannot find, `comma` fetches and runs any nixpkgs binary on demand. Its command name is a single comma, so it reads oddly inline:
+
+  ```bash
+  , ffmpeg -i in.mov out.mp4
+  ```
+
+  Good for a one-off; reaching for the same tool repeatedly is a signal to add it to `harus-config`. Fall back to the classic when `comma` is unavailable too.
+- **`command -v <tool>` is the check.** Tool inventories drift: `scripts/tools` is hand-maintained help text, `packages.nix` declares intent a machine may not have switched to, and this skill's own table is a third copy. Verify against the machine.
