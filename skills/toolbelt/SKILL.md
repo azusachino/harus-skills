@@ -3,7 +3,7 @@ name: toolbelt
 description: Choose haru's preferred CLI tools for terminal search, inspection, HTTP, structured data, and benchmarking when tool selection or usage guidance is needed.
 metadata:
   author: haru
-  version: 2.3.2
+  version: 2.3.3
 ---
 
 # Toolbelt Skill
@@ -211,3 +211,4 @@ For tools outside this list, prefer an existing dependency or native capability.
 
   Good for a one-off; reaching for the same tool repeatedly is a signal to add it to `harus-config`. Fall back to the classic when `comma` is unavailable too.
 - **`command -v <tool>` is the check.** Tool inventories drift: `scripts/tools` is hand-maintained help text, `packages.nix` declares intent a machine may not have switched to, and this skill's own table is a third copy. Verify against the machine.
+- **`command -v` sees binaries on `PATH`, and that is all.** A fish function (`cprune`, `gbs`, `zf`) is real in an interactive shell and invisible to it; so is anything run through `uvx`, `bunx` or `comma`. And a package's binary can differ from its name — `tailspin` installs `tspin`. Before concluding a tool is absent, check the fish functions and the package's actual binary name.
