@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.2] - 2026-09-09
+
+### Fixed
+
+- **toolbelt** (2.3.3): 3.5.1 added the rule that `command -v <tool>` is the check, against a drifting tool inventory. Auditing `harus-nix/scripts/tools` with exactly that rule then produced three false positives, so the rule now carries its own limit: `command -v` sees binaries on `PATH` and nothing else. A fish function (`cprune`, `gbs`, `zf`) is real in an interactive shell and invisible to it, as is anything run through `uvx`, `bunx` or `comma` — and a package's binary can differ from its name, since `tailspin` installs `tspin`.
+
+  The audit's one true finding is fixed upstream: `hx` was advertised on the strength of a `packages.nix` comment pointing at a `users/haru/helix.nix` that exists in neither repository, so Helix was never provisioned.
+
 ## [3.5.1] - 2026-09-09
 
 Tracks asobi 0.7.1 and re-grounds the toolbelt in what is actually installed.
