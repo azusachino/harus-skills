@@ -96,7 +96,7 @@ asobi obs "[project]:session" "completed YYYY-MM-DD: [finished work]"
 
 Record durable project facts on `[project]`, cross-project facts on `UserPreferences`, `CodingStyle`, or `ToolPreferences`, and decisions or pitfalls in their dedicated entities. Check `asobi search "[topic]"` before adding a duplicate.
 
-`tasks sync` and `tasks close` record `commit` and `branch` truths automatically inside a git worktree, so a task checkpoint already carries its revision; a session truth does not. Use `asobi compact` only as requested maintenance — ordinary closeout needs the state writes above and nothing else.
+`tasks sync` and `tasks close` do not infer the repository revision: one graph can serve several repositories, so record `branch` and `commit` explicitly when a task handoff needs a Git checkpoint, using the repository where the work actually happened. Use `asobi compact` only as requested maintenance — ordinary closeout needs the state writes above and nothing else.
 
 ## Tasks — primary workflow
 

@@ -12,5 +12,6 @@ build/
 
 # Cache and temp
 .cache/
+.rumdl_cache/
 *.tmp
 *.temp
