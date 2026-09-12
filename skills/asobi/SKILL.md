@@ -74,13 +74,15 @@ Briefly report the relevant last task and next action when a prior session exist
 
 ## Session end
 
-First resolve the project name from the repository or workspace you actually
-worked in, then read that project's session before writing it. Replace every
-`[project]` below with that verified name; never copy a session entity from a
-different project or write a generic session name into a shared graph. If the
-existing session's prefix does not match the current project, correct the
-target before continuing. Record the repository revision as part of the
-handoff, because session writes do not capture it automatically.
+First resolve the graph scope, then identify the owner repository and its
+project namespace from the task you actually worked in. Run `asobi stats` to
+confirm the graph before writing. Read that project's session and verify that
+it is the intended owner; if another project's session is active, preserve it
+and use the correct project-scoped entity. Replace `[project]` and
+`[repository-path]` below with those verified values; never copy a session
+entity from a different project or write a generic session name into a shared
+graph. Record the owner repository's revision explicitly, because session
+writes do not capture it automatically.
 
 ```bash
 asobi new "[project]:session" session
@@ -89,8 +91,8 @@ asobi truth "[project]:session" status "[IN_PROGRESS|BLOCKED|REVIEW|DONE]"
 asobi truth "[project]:session" remaining "[what remains]"
 asobi truth "[project]:session" next "[single most important next action]"
 asobi truth "[project]:session" last-updated "YYYY-MM-DD"
-asobi truth "[project]:session" branch "$(git branch --show-current)"
-asobi truth "[project]:session" commit "$(git rev-parse HEAD)"
+asobi truth "[project]:session" branch "$(git -C '[repository-path]' branch --show-current)"
+asobi truth "[project]:session" commit "$(git -C '[repository-path]' rev-parse HEAD)"
 asobi obs "[project]:session" "completed YYYY-MM-DD: [finished work]"
 ```
 
