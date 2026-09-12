@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 Tracks asobi 0.7.1 and re-grounds the toolbelt in what is actually installed.
 
 ### Changed
+
 - **asobi** (2.7.1): Retention is automatic — finished sessions and terminal tasks older than `retention_days` (7 by default) are deleted once per process before the first write — so the skill states that as current behaviour and tells agents to treat it as already done. `purge` is documented with the two flags it has. Backup is `cp` of the database file, and moving one entity between graphs is `new`/`truth`/`obs` against the target.
 
   The section is shorter than what it replaced. The previous text described a `purge --type`/`--status` invocation and an `export --scope` handoff that no longer exist, and the first pass at correcting it narrated the removals instead of stating the current shape. A skill is loaded into context on every use, so it carries what the tool *is*; `CHANGELOG.md` carries what changed.
@@ -34,22 +35,26 @@ Tracks asobi 0.7.1 and re-grounds the toolbelt in what is actually installed.
 Everything below shipped together in one pull request; the intermediate 3.4.0 bump never became a release, and the skills' intermediate versions (`asobi` 2.5.0/2.6.0) never shipped either.
 
 ### Changed
+
 - **asobi** (2.7.0): Became the single installable skill for the Asobi CLI. The `asobi` repository dropped its own competing `SKILL.md`, so this skill absorbs the interface facts workflow guidance alone cannot supply: the entity-type table and what `compact` and `purge` each accept, hierarchical naming and relation verbs, batched `new`/`link` with `--obs` seeding, and the stdout/stderr stream contract (mutations confirm on stderr and leave stdout empty — branch on the exit code).
 - **asobi** (2.7.0): Tracks Asobi 0.7, which moved skills out of the graph onto the filesystem. Skills no longer appear in `graph`/`search`/`show`, so `rg` over the skills directory is how you search one; the section leads with the declarative `sync` path and notes that imperative `install` is the only option under a plain `asobi init`, which writes no `asobi.toml`. Also covers `tasks list` as the cross-project "what is open" read (where an all-`DONE` epic nobody closed surfaces on its own), comparing the recorded `commit` truth against `git log` instead of judging staleness by eye, `rev` pinning, bundled skill resources, and `export` carrying the truth change trail. Corrected four places that still described skills as graph entities.
 - **asobi** (2.7.0): Net thinner despite the additions, 265 → 248 lines. Dropped the pitfall-writing recipe, which duplicated the revise skill that owns it, and shell-completion trivia that belongs in the CLI's own reference.
 
 ### Fixed
+
 - **revise** (1.1.1) and **toolbelt** (2.3.1): Dropped `user-invokable` and `disable-auto-invoke` from frontmatter. Neither is in the Agent Skills specification, which allows only `name`, `description`, `license`, `compatibility`, `metadata` and `allowed-tools` — and neither did anything: the field agent hosts actually honour is `disable-model-invocation`, and `revise` was model-invocable regardless of its declaration. All three skills now pass the spec's reference validator.
 - **revise** (1.1.1): Replaced references to `/asobi start`, `/asobi end` and `/asobi recall` — slash commands that no longer exist — with the Asobi skill's session sections.
 - README no longer describes the skill library as a pillar of the graph; skills live on the filesystem as of Asobi 0.7.
 - `CLAUDE.md` cited two harus-kb documents that were never written; replaced with the spec-validator requirement, which is checkable.
 
 ### Added
+
 - Contributor guidance records the skill/CLI ownership split: the `asobi` repository owns the interface reference, this skill owns the workflow. Four copies of the session protocol had drifted into disagreeing about `compact` as a closeout step and about whether the next action is a truth or an observation.
 
 ## [3.3.0] - 2026-09-07
 
 ### Changed
+
 - **asobi** (2.4.0): Correct ancestor graph discovery and dispatch semantics; document declarative skill sync, explicit task selection, scoped delegation, and requested maintenance. Continue independent work when persistence is unavailable.
 - **revise** (1.1.0): Confirm graph ownership, inspect dedup matches, preserve evidence limits, and correct the claim that dispatch automatically loads pitfalls.
 - **toolbelt** (2.3.0): Replace blanket stop-and-ask and Nix-first defaults with evidence-driven troubleshooting and Mise project pinning; respect existing toolchains and verify tool availability.
@@ -58,6 +63,7 @@ Everything below shipped together in one pull request; the intermediate 3.4.0 bu
 ## [3.2.1] - 2026-07-17
 
 ### Changed
+
 - **asobi** (2.3.0): Consolidated current Asobi 0.6.1 guidance around the favored session, task-dispatcher, recall, skill, retention, and recovery workflows; removed duplicated and obsolete instructions.
 - **toolbelt** (2.2.0): Added provider-native `gh` and `glab` guidance for repository, PR/MR, release, workflow, and API operations.
 - Bumped the universal plugin version to 3.2.1 across all manifests.
@@ -65,13 +71,16 @@ Everything below shipped together in one pull request; the intermediate 3.4.0 bu
 ## [3.2.0] - 2026-07-12
 
 ### Removed
+
 - **init-project** skill dropped entirely (superseded — no longer maintained). Removed from `skills/`, manifests, README, and CLAUDE.md.
 - **Stale `docs/`** cleared — the entire pre-asobi legacy tree (`architecture`/`status`/`setup`/`plan`/`todo`/`requirements`/`project-design` + 17 dated `docs/plans/` design archives, all describing the retired `session`/`.agents`/MCP model). The still-true decisions were salvaged into ADRs first.
 
 ### Added
+
 - **`docs/adr/`** — Architecture Decision Records capturing the durable, non-obvious choices: pure-markdown skills (0001), single plugin + auto-discovery (0002), Agent Skills Standard with parallel agent manifests (0003).
 
 ### Changed
+
 - **asobi** (2.2.0): Updated for the `asobi 0.5.2` CLI API.
   - Added `--json` on mutating commands (skip the follow-up `show`), batched `new`/`link` and `new --obs` seeding, `rm-obs --prefix`.
   - Added `history <name> [key]` (valid-time truth audit trail) and the **Handoff & archival** path: `export --scope`/`import` (portable JSON) and `backup`/`restore` (physical libSQL snapshots).
@@ -84,6 +93,7 @@ Everything below shipped together in one pull request; the intermediate 3.4.0 bu
 ## [3.1.2] - 2026-07-02
 
 ### Changed
+
 - **asobi** (2.1.2): Updated for the `asobi 0.3.0` CLI API, verified against the live binary:
   - Default observation cap raised **50 → 200** (overridable via `ASOBI_OBSERVATION_LIMIT` / `observation_limit`).
   - Documented sequential integer **observation IDs**: `show --with-ids`, atomic `update-obs <name> <id> "…" --id`, and `rm-obs <name> <id> --id`.
@@ -95,22 +105,27 @@ Everything below shipped together in one pull request; the intermediate 3.4.0 bu
 ## [3.1.1] - 2026-06-29
 
 ### Changed
+
 - Removed stale RTK references across the skills and docs.
 
 ## [3.1.0] - 2026-06-24
 
 ### Added
+
 - **revise** (1.0.0): New `/revise` skill that persists project lessons, findings, and wrong approaches — positive lessons on the project entity, rejected approaches as active `[project]:pitfall:<slug>` warnings, with a `docs/lessons/` fallback when asobi is unavailable.
 
 ### Changed
+
 - **asobi** (2.1.0): Documented the pitfall log and surfaced active pitfalls at `/asobi start` and during task dispatch.
 
 ## [3.0.0] - 2026-06-18
 
 ### Added
+
 - **toolbelt** (2.0.0): Added modern CLI tools (`yq`, `tokei`, `grex`, `zellij`).
 
 ### Changed
+
 - **asobi** (2.0.0): Upgraded to the new v0.2 command API:
   - Switched `create-entities` $\rightarrow$ `new`
   - Switched `add-observations` $\rightarrow$ `obs`
@@ -128,6 +143,7 @@ Everything below shipped together in one pull request; the intermediate 3.4.0 bu
 - Root `README.md` and `CLAUDE.md`: Replaced all legacy Gemini references with Antigravity (`agy`) CLI plugin commands.
 
 ### Removed
+
 - **session**: Completely dropped the deprecated MCP-primary `session` skill.
 
 ## [2.6.0] - 2026-06-11

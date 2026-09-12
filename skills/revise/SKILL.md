@@ -30,10 +30,12 @@ Read the user's free-form text and classify it yourself; ask only if it is too v
 2. Derive `[project]` from the owning repository and confirm graph scope using the Asobi skill's discovery rules. Ancestor configuration can select a parent workspace graph. Use the intended graph; do not initialize or migrate state as a side effect of lesson capture.
 3. Dedup first: `asobi search "<topic>" --limit 10`. Inspect matching entities. Append `seen-again YYYY-MM-DD: <evidence>` only for genuinely new evidence; skip an unchanged repeat. If the lesson contradicts an old one, record the correction and resolve the obsolete pitfall rather than reinforcing it.
 4. Write — ensure the project entity exists (`asobi new "[project]" "project"`), then:
+
    ```bash
    asobi obs "[project]" "experience YYYY-MM-DD: <lesson>"   # work-experience
    asobi obs "[project]" "finding YYYY-MM-DD: <lesson>"      # finding
    ```
+
    For a wrong-approach, write the pitfall entity below.
 5. Confirm in one line.
 

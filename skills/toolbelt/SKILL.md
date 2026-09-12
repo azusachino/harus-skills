@@ -11,6 +11,7 @@ metadata:
 Prefer these tools for interactive terminal work. Check availability on the current machine; repository tooling and the host agent's editing rules take precedence over these defaults.
 
 ## Table of Contents
+
 - [Resolve uncertainty](#resolve-uncertainty)
 - [Substitution table (always-on)](#substitution-table-always-on)
 - [Tooling discipline (carried from global defaults)](#tooling-discipline-carried-from-global-defaults)
