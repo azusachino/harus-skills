@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.3] - 2026-09-13
+
+### Fixed
+
+- **asobi** (2.7.2): session closeout now anchors `branch`/`commit` truths to the owner repository the work actually happened in, rather than the process's working directory -- one graph can serve several repositories, so the two are not always the same. The skill-install section is corrected to describe asobi 0.7.3's `shared_markdown` mechanism; it previously said Asobi never creates a shared references directory, written hours before 0.7.3 shipped exactly that.
+
 ## [3.5.2] - 2026-09-09
 
 ### Fixed

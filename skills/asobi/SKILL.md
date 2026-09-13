@@ -3,7 +3,7 @@ name: asobi
 description: Use Asobi's persistent SQLite knowledge graph for session continuity, durable task dispatch, keyword recall, and reusable skills.
 metadata:
   author: haru
-  version: 2.7.3
+  version: 2.7.2
 ---
 
 # Asobi Skill
