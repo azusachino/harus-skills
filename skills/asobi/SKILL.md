@@ -3,7 +3,7 @@ name: asobi
 description: Use Asobi's persistent SQLite knowledge graph for session continuity, durable task dispatch, keyword recall, and reusable skills.
 metadata:
   author: haru
-  version: 2.7.2
+  version: 2.7.3
 ---
 
 # Asobi Skill
@@ -222,13 +222,14 @@ asobi skills install "[git-url-or-path]" --all
 asobi skills update "[source]"
 ```
 
-`--all` synchronizes one source and drops what vanished upstream; `--select` is additive. Neither disturbs another source's skills. A skill is a directory containing `SKILL.md`; Asobi installs that file and sibling Markdown files (including `references/`) inside the same skill directory. It does not create or copy a shared `.agents/references/` directory. Non-Markdown files such as `scripts/` and `assets/` are skipped with a warning, so a skill must not depend on them being installed. Keep relative references inside the skill's own directory and verify them after installation.
+`--all` synchronizes one source and drops what vanished upstream; `--select` is additive. Neither disturbs another source's skills. A skill is a directory containing `SKILL.md`; Asobi installs that file and sibling Markdown files (including `references/`) inside the same skill directory. A source can also declare `shared_markdown` — exact `.md`/`.markdown` files that live outside any one skill's own directory and that several of its skills reference (for example `../../references/*.md`); these install once under `.shared/<source-slug>/`, and a single-backtick path or simple Markdown link to a declared file is relocated to point there automatically. Non-Markdown files such as `scripts/` and `assets/` are still skipped with a warning, so a skill must not depend on them being installed. Keep relative references inside the skill's own directory or a declared shared file, and verify them after installation — `sync`/`install`/`update` warn, advisory only, when a reference cannot resolve from the planned installation.
 
-Four things that decide whether a declaration works:
+Five things that decide whether a declaration works:
 
 - `select` names come from each skill's frontmatter `name:`, which is often not its directory name.
 - When a source mirrors the same skills across several tool-specific directories, scope the walk with `subdir`, or the duplicate copies collide on name.
 - `rev` pins a source to a commit, tag, or branch. Without it a re-sync adopts whatever the source moved to.
+- A skill referencing a file outside its own directory needs that file declared in `shared_markdown`, or the reference is left broken.
 - Never hand-edit an installed skill; the next sync overwrites it. Edit the source repository.
 
 **Review before trusting.** A skill is natural-language instruction loaded straight into an agent's context, and the published skill ecosystem has a measured supply-chain problem, so an unreviewed skill update is an unreviewed behaviour change. Where the repository tracks the skills directory, commit the materialized files together with the declaration and read the diff — that is what makes an upstream change reviewable at all. `sync` records each installed skill's directory, source and resolved commit in `skills.json` under Asobi's resolved `data_dir`; the manifest names the skills directory it describes and is regenerated, so it normally does not belong in the project tree. The declaration and reviewed skill files are the durable installation record.
