@@ -1,18 +1,18 @@
 ---
 name: revise
-description: Persist project lessons, findings, and wrong approaches so future sessions can recall them
+description: Persist project lessons, findings, and wrong approaches so future work can recall them
 metadata:
   author: haru
-  version: 1.1.1
+  version: 1.1.2
 ---
 
 # Revise
 
-Persist durable lessons from the current work into the asobi graph. The Asobi skill's session closeout records *where we are*; this records *what should change future behaviour*.
+Persist durable lessons from the current work into the asobi graph. The Asobi skill's task notes record *where the work is*; this records *what should change future behaviour*.
 
 ## When to use
 
-After a meaningful discovery — a workflow worth repeating, a non-obvious project fact, or (most importantly) a dead end an agent should not re-walk. Capture while context is fresh. Not for ordinary task status, which belongs in session closeout.
+After a meaningful discovery — a workflow worth repeating, a non-obvious project fact, or (most importantly) a dead end an agent should not re-walk. Capture while context is fresh. Not for ordinary task status, which belongs in the task's sync notes.
 
 ## Classify
 
@@ -41,7 +41,7 @@ Read the user's free-form text and classify it yourself; ask only if it is too v
 
 ## Pitfall entity
 
-A pitfall warns future agents away from a rejected path — it is not an ADR (ADRs explain *chosen* paths). One entity per dead end; `status` and `title` are truths, so session start can surface active pitfalls with a lean `search --where status=active` rather than opening every entity.
+A pitfall warns future agents away from a rejected path — it is not an ADR (ADRs explain *chosen* paths). One entity per dead end; `status` and `title` are truths, so the start-of-work read can surface active pitfalls with a lean `search --where status=active` rather than opening every entity.
 
 ```bash
 asobi new "[project]:pitfall:<slug>" "concept"
@@ -57,11 +57,11 @@ When the dead end is obsolete: upsert `status resolved` and append `obs "resolve
 
 ## Recall
 
-Revise captures lessons; the Asobi skill handles session recall and the agent's pre-dispatch lesson search. Prefer pitfall titles that state a concrete warning. Preserve evidence and its limits: an observed failure is not proof of a root cause, and one task's workaround is not a universal policy.
+Revise captures lessons; the Asobi skill handles start-of-work recall and the agent's pre-dispatch lesson search. Prefer pitfall titles that state a concrete warning. Preserve evidence and its limits: an observed failure is not proof of a root cause, and one task's workaround is not a universal policy.
 
 ## Fallback (asobi unavailable)
 
-A lesson-capture fallback; it does not provide graph-backed session continuity. Use the repository's existing lesson or pitfall convention first. If none exists, append to these repo-tracked files with the header `> Project-local fallback lessons captured when asobi was unavailable. Migrate into asobi when possible.`
+A lesson-capture fallback; it does not provide graph-backed task continuity. Use the repository's existing lesson or pitfall convention first. If none exists, append to these repo-tracked files with the header `> Project-local fallback lessons captured when asobi was unavailable. Migrate into asobi when possible.`
 
 - `docs/lessons/pitfalls.md` — `## YYYY-MM-DD — <slug>`, then Status / Tried / Why it failed / Do instead
 - `docs/lessons/learnings.md` — `## YYYY-MM-DD — <title>`, then Type (`work-experience`|`finding`) / Lesson
