@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-09-27
+
+Tracks asobi 0.8.0, which removes session entities and `asobi skills` and adds a shared graph server.
+
+### Changed
+
+- **asobi** (3.0.0, breaking): requires Asobi 0.8+. There is no session protocol: work starts from `asobi tasks list` plus the project and preferences, and ends with `tasks sync` notes and `branch`/`commit` truths on the tasks actually worked; work without a task gets a standalone `[project]:task:[name]`. Graph scope covers remote mode (`remote`/`graph`, `ASOBI_REMOTE`/`ASOBI_GRAPH`), confirming the graph with `asobi stats`, the nested-repository inheritance trap, and what the offline-fallback warning means. Dispatch covers a lead assigning named workers on a shared board across machines. The lifecycle section covers automatic abandonment (`abandon_days`) and server-side backup. The `asobi skills` section is removed: skills are installed with the `skills` CLI.
+- **revise** (1.1.2): refers to task notes instead of session closeout.
+
 ## [3.5.3] - 2026-09-13
 
 ### Fixed
