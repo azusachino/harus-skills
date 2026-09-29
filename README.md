@@ -1,7 +1,7 @@
 <h1 align="center">harus-skills</h1>
 
 <p align="center">
-  <em>Portable agent skills for durable work state, evidence-backed lessons, and practical tooling.</em>
+  <em>Portable agent skills for evidence-backed lessons and practical tooling.</em>
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <sub>Three skills. One graph for memory. One toolbelt for the terminal. Zero runtime code — just markdown an agent reads.</sub>
+  <sub>Two focused skills. Zero runtime code — just markdown an agent reads.</sub>
 </p>
 
 ---
@@ -21,13 +21,10 @@
 
 | Skill | What it does |
 | --- | --- |
-| 🧠 **`/asobi`** | Shared working memory for agents via the [`asobi`](https://github.com/azusachino/asobi) CLI knowledge graph, local or served by `asobi-server` across machines: a **task dispatcher** (`tasks plan\|list\|dispatch\|sync\|close`) with atomic claims visible to every agent, replacing ephemeral TodoWrite/jsonl and session notes, and SQLite FTS5/BM25 **keyword recall** (`search` + a decision log). Requires Asobi 0.8+. |
 | 📝 **`/revise`** | Persist lessons, findings, and dead ends so future work recalls them — positive lessons on the project entity, wrong approaches as active `pitfall` warnings surfaced when work next starts. |
 | 🧰 **`/toolbelt`** | Preferred modern CLIs and usage recipes. Mise pins project tools, Make owns tasks, and `jq` handles JSON; the project's declared toolchain takes precedence. |
 
 Skills support the current task and its authorization. They resolve routine uncertainty through evidence, keep task state separate from durable lessons, and verify results in proportion to risk. Current user and project instructions override portable defaults or recalled preferences. Tool availability is checked on the actual machine.
-
-Asobi discovers configuration in ancestor directories, so a nested repository can share its parent's graph (and its remote graph name). Task dispatch records ownership; the agent still reads relevant lessons and starts any delegated work.
 
 ### 🧰 What's in the toolbelt
 
@@ -43,7 +40,12 @@ Modern OSS CLIs, reached for by default over the classic Unix tools:
 ### Prerequisites
 
 - A supported agent host (Claude Code, Codex, or Antigravity)
-- [`asobi`](https://github.com/azusachino/asobi) CLI for the `/asobi` skill, 0.8 or later (`cargo install asobi --features remote`, or the prebuilt release)
+
+The Asobi workflow skill is maintained in the [`asobi`](https://github.com/azusachino/asobi) repository. Install it directly with the `skills` CLI:
+
+```bash
+npx skills add https://github.com/azusachino/asobi --skill asobi --agent universal
+```
 
 ### Claude Code — Marketplace Plugin
 
@@ -89,8 +91,6 @@ Each skill follows the [Agent Skills Standard](http://agentskills.io) format as 
 
 ```text
 skills/
-  asobi/
-    SKILL.md          # Skill definition with YAML frontmatter
   revise/
     SKILL.md
   toolbelt/
@@ -108,7 +108,6 @@ skills/
 
 Design decisions are recorded as [ADRs](docs/adr/). The skills stand on the shoulders of the OSS agent-skill community:
 
-- [**asobi**](https://github.com/azusachino/asobi) — the knowledge-graph CLI that backs `/asobi`
 - [**Agent Skills Standard**](http://agentskills.io) — the `SKILL.md` format every skill targets
 - [**ponytail**](https://github.com/DietrichGebert/ponytail) — reuse existing capabilities and keep solutions small
 - [**karpathy-guidelines**](https://github.com/multica-ai/andrej-karpathy-skills) — surgical changes and goal-driven verification
