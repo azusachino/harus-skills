@@ -1,6 +1,6 @@
 # harus-skills
 
-Three Markdown skills shared across agent runtimes: `asobi` for durable work state, `revise` for evidence-backed lessons, and `toolbelt` for terminal tool choices. Skill behavior lives in `skills/<name>/SKILL.md`; this file governs contributions to the repository.
+Two Markdown skills shared across agent runtimes: `revise` for evidence-backed lessons and `toolbelt` for terminal tool choices. Skill behavior lives in `skills/<name>/SKILL.md`; this file governs contributions to the repository.
 
 ## Working principles
 
@@ -15,13 +15,10 @@ Three Markdown skills shared across agent runtimes: `asobi` for durable work sta
 
 | Skill | Source | Boundary |
 | --- | --- | --- |
-| `asobi` | `skills/asobi/SKILL.md` | Graph scope (local or remote), task state and dispatch, recall, and requested maintenance |
 | `revise` | `skills/revise/SKILL.md` | Durable lessons with evidence; task status stays with Asobi |
 | `toolbelt` | `skills/toolbelt/SKILL.md` | Tool selection and recipes; project configuration owns the actual toolchain |
 
-Use the Asobi skill when starting and handing off work; there are no session entities since Asobi 0.8. Confirm graph scope before writes: ancestor configuration, including a remote graph name, can apply inside a nested repository. Capture lessons when they would change future behavior; deduplicate and retain their evidence limits.
-
-The `asobi` skill is the only installable skill for the Asobi CLI. The `asobi` repository documents its own interface — commands, flags, response contract, storage layout — in its `docs/usage.md`, and deliberately ships no `SKILL.md` of its own; a tool repository publishing a competing workflow skill once produced four copies of the workflow protocol that disagreed with each other about `compact` and about where the next action is stored. Keep the split: that repository owns what the CLI *is*, this skill owns *when and in what order* to reach for it. Cite the exact contract with `asobi schema --command NAME` rather than restating flags here, and re-read `docs/usage.md` before documenting an unfamiliar operation.
+Asobi's workflow guidance and CLI reference now live in the `asobi` repository. When using Asobi, follow that repository's guidance and consult `asobi schema --command NAME` for an exact command contract. Capture lessons when they would change future behavior; deduplicate and retain their evidence limits.
 
 ## Packaging and versions
 
@@ -29,7 +26,7 @@ The flat `skills/` tree is the authored source. `.claude-plugin/marketplace.json
 
 After changing a `skills/*/SKILL.md`, bump that skill's independent `metadata.version` and the universal plugin version in the same commit. Run `make sync-version V=x.y.z` to align all manifest versions, then `make validate`. Read the actual files for current versions; prose documentation must not cache them.
 
-Installed copies belong to their installer (the `skills` CLI, since Asobi 0.8 no longer installs skills); edit this repository's source skills here, not a consumer's installed snapshot.
+Installed copies belong to their installer; edit this repository's source skills here, not a consumer's installed snapshot.
 
 ## Development
 
