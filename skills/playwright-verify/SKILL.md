@@ -3,7 +3,7 @@ name: playwright-verify
 description: Verify a web app's behavior in headless Chromium with Playwright, and give a web project that check as `make e2e`. Use after changing a web UI, when asked to confirm a page works in a real browser, or when a web project has no browser check yet. Use it instead of an interactive browser session such as agent-browser.
 metadata:
   author: haru
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # Playwright verify
@@ -34,7 +34,7 @@ In CI, run `make e2e-install E2E_INSTALL_FLAGS=--with-deps` and then `make e2e` 
 
 ## Look before you write
 
-Run `make e2e-probe ROUTE=/path` before writing a spec for a page you have not seen. The probe renders the route through the same config and server as the checks, prints its title, URL, console errors and ARIA snapshot, and saves a full-page `probe.png` under `test-results/`. The snapshot lists the page's roles and accessible names: write locators from it rather than from guesses. Read the screenshot back for anything visual. To see something the probe does not capture, extend `probe.spec.ts` rather than running a one-off script.
+Run `make e2e-probe ROUTE=/path` before writing a spec for a page you have not seen. The probe renders the route through the same config and server as the checks, waits until the page shows visible text (a client-rendered app paints after the load event), prints its title, URL, console errors and ARIA snapshot, and saves a full-page `probe.png` under `test-results/`. A page that stays blank fails the probe, with its screenshot kept. The snapshot lists the page's roles and accessible names: write locators from it rather than from guesses. Read the screenshot back for anything visual. To see something the probe does not capture, extend `probe.spec.ts` rather than running a one-off script.
 
 ## Verify a change
 
