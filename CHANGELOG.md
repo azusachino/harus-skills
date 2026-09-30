@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.1] - 2026-09-30
+
+### Fixed
+
+- **playwright-verify** (1.0.1): the probe captured client-rendered apps before they painted. On the harus-workstation KB (Rspress dev server) it returned an empty ARIA snapshot and a blank screenshot, because the page renders after the load event. It now waits with a web-first assertion until the body shows visible text (`innerText`, so inline scripts do not count), as Playwright's docs advise instead of `networkidle`. The template tests missed it because their app served plain HTML.
+
 ## [4.2.0] - 2026-09-30
 
 ### Added
