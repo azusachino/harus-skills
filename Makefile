@@ -1,6 +1,6 @@
 # Makefile for managing harus-skills tasks
 
-.PHONY: help install-hooks fmt fmt-check clean verify list-skills check validate link sync-version
+.PHONY: help install-hooks fmt fmt-check lint-md clean verify list-skills check validate link sync-version
 
 # Default target
 help:
@@ -9,8 +9,8 @@ help:
 	@echo "  Setup: nix develop  (provides all tools via nixpkgs)"
 	@echo ""
 	@echo "  make install-hooks - Install git pre-commit hooks"
-	@echo "  make fmt          - Format JSON/YAML files"
-	@echo "  make check        - Run all checks (format + verify)"
+	@echo "  make fmt          - Format JSON/YAML (Prettier) and Markdown (rumdl)"
+	@echo "  make check        - Run all checks (format + Markdown lint + verify)"
 	@echo "  make validate     - PR gate: check + manifest validation"
 	@echo "  make verify       - Verify repository structure"
 	@echo "  make list-skills  - List all available skills"
@@ -40,6 +40,8 @@ install-hooks:
 fmt:
 	@echo "Formatting JSON/YAML files..."
 	@prettier --write "**/*.{json,yaml,yml}"
+	@echo "Formatting Markdown files..."
+	@rumdl fmt .
 	@echo "Done."
 
 fmt-check:
@@ -94,7 +96,11 @@ list-skills:
 		fi; \
 	done
 
-check: fmt-check verify
+lint-md:
+	@echo "Linting Markdown files..."
+	@rumdl check .
+
+check: fmt-check lint-md verify
 	@echo "✅ All checks passed!"
 
 validate: check

@@ -39,7 +39,7 @@ make check
 make validate
 ```
 
-JSON/YAML uses Prettier with 2-space indentation. Markdown is reviewed as prose: do not run Prettier on it or manually wrap prose lines.
+JSON/YAML uses Prettier with 2-space indentation. Markdown is formatted and linted by rumdl (`.rumdl.toml`), which `make check` runs; do not run Prettier on it or manually wrap prose lines.
 
 The current `make install-hooks` assumes `.git/` is a directory and restages files; it is unsuitable for submodules and partial staging. Run `make check` explicitly until that target is repaired. `make validate` checks manifest JSON and version alignment, not installation in every agent host.
 

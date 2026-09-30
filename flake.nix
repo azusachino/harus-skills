@@ -18,6 +18,7 @@
           packages = with pkgs; [
             prettier # JSON/YAML formatter
             jq # JSON query — manifest validation in `make validate`
+            rumdl # Markdown formatter and linter
           ];
         };
       }
