@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0] - 2026-09-30
+
+### Added
+
+- **playwright-verify** (1.0.0): verifies a web app in headless Chromium with Playwright, keeping everything in source rather than one-off commands. A project copies its config, smoke and probe specs, and `e2e.mk`, gaining `make e2e`, `make e2e-probe ROUTE=/path` and `make e2e-install`; the config starts the app itself, or defers to a project script that exports `E2E_BASE_URL`, and refuses a port already in use. It follows Playwright's best practices: the documented locator priority, web-first assertions with no sleeps or `networkidle` waits, isolated tests with `page.route` for third-party services, ARIA snapshots (the probe prints one to write locators from), and the recommended CI settings (`forbidOnly`, retries with `failOnFlakyTests`, one worker); it departs from them on Chromium-only runs, the `list` reporter and `retain-on-failure` traces, and says why. Checked through those targets on harus-macmini over SSH with no console session: a passing run with the probe excluded, a console error failing with its screenshot, error context and trace, the probe printing a route's ARIA snapshot and errors with a screenshot, an external server, a busy port, and `CI=1` rejecting a committed `test.only`.
+
 ## [4.1.0] - 2026-09-30
 
 ### Changed

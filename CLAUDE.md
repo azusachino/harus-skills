@@ -1,6 +1,6 @@
 # harus-skills
 
-Two Markdown skills shared across agent runtimes: `revise` for evidence-backed lessons and `toolbelt` for terminal tool choices. Skill behavior lives in `skills/<name>/SKILL.md`; this file governs contributions to the repository.
+Three Markdown skills shared across agent runtimes: `revise` for evidence-backed lessons, `toolbelt` for terminal tool choices, and `playwright-verify` for checking web apps in headless Chromium. Skill behavior lives in `skills/<name>/SKILL.md`; this file governs contributions to the repository.
 
 ## Working principles
 
@@ -17,6 +17,7 @@ Two Markdown skills shared across agent runtimes: `revise` for evidence-backed l
 | --- | --- | --- |
 | `revise` | `skills/revise/SKILL.md` | Durable lessons with evidence; task status stays with Asobi |
 | `toolbelt` | `skills/toolbelt/SKILL.md` | Tool selection and recipes; project configuration owns the actual toolchain |
+| `playwright-verify` | `skills/playwright-verify/SKILL.md` | The browser-verification loop and the templates a project copies; each project owns its specs and `make e2e` |
 
 Asobi's workflow guidance and CLI reference now live in the `asobi` repository. When using Asobi, follow that repository's guidance and consult `asobi schema --command NAME` for an exact command contract. Capture lessons when they would change future behavior; deduplicate and retain their evidence limits.
 

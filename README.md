@@ -23,6 +23,7 @@
 | --- | --- |
 | 📝 **`/revise`** | Persist lessons, findings, and dead ends so future work recalls them — positive lessons on the project entity, wrong approaches as active `pitfall` warnings surfaced when work next starts. |
 | 🧰 **`/toolbelt`** | Preferred modern CLIs and usage recipes. Mise pins project tools, Make owns tasks, and `jq` handles JSON; the project's declared toolchain takes precedence. |
+| 🎭 **`/playwright-verify`** | Verify a web app's behavior in headless Chromium with Playwright, and give a web project that check as `make e2e` from a config and spec template. |
 
 Skills support the current task and its authorization. They resolve routine uncertainty through evidence, keep task state separate from durable lessons, and verify results in proportion to risk. Current user and project instructions override portable defaults or recalled preferences. Tool availability is checked on the actual machine.
 
@@ -91,6 +92,9 @@ Each skill follows the [Agent Skills Standard](http://agentskills.io) format as 
 
 ```text
 skills/
+  playwright-verify/
+    SKILL.md
+    assets/          # playwright.config.ts, e2e.mk, e2e/smoke.spec.ts and e2e/probe.spec.ts to copy into a project
   revise/
     SKILL.md
   toolbelt/
