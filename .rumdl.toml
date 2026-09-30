@@ -1,0 +1,3 @@
+[global]
+# Prose is deliberately not hard-wrapped, and README's centered header is HTML.
+disable = ["MD013", "MD033"]
