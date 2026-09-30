@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The version tracks the 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-09-30
+
+### Changed
+
+- **revise** (1.2.0): writes a lesson to the lesson home the owning repository's instructions name, such as harus-workstation's `docs/runbooks/pitfalls/`, and uses the Asobi graph only when none is named. harus-workstation keeps its graph for live work.
+
 ## [4.0.0] - 2026-09-29
 
 ### Removed
