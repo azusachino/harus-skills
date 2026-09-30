@@ -3,12 +3,12 @@ name: revise
 description: Persist project lessons, findings, and wrong approaches so future work can recall them
 metadata:
   author: haru
-  version: 1.1.2
+  version: 1.2.0
 ---
 
 # Revise
 
-Persist durable lessons from the current work into the asobi graph. The Asobi skill's task notes record *where the work is*; this records *what should change future behaviour*.
+Persist durable lessons from the current work into the owning repository's stated lesson home, or into the asobi graph when the repository names none. The Asobi skill's task notes record *where the work is*; this records *what should change future behaviour*.
 
 ## When to use
 
@@ -25,6 +25,8 @@ Read the user's free-form text and classify it yourself; ask only if it is too v
 | `wrong-approach` | something tried and rejected | `[project]:pitfall:<slug>` entity |
 
 ## Flow
+
+Before any graph step, check the owning repository's instructions (`AGENTS.md`, `CLAUDE.md`) for a named home for lessons or pitfalls; harus-workstation, for example, names `docs/runbooks/pitfalls/`. If one is named, dedup against it, write the lesson there under that repository's own conventions and templates, confirm, and skip the graph. The steps below apply only when none is named.
 
 1. Detect asobi: `command -v asobi`. If absent, use the fallback files below.
 2. Derive `[project]` from the owning repository and confirm graph scope using the Asobi skill's discovery rules. Ancestor configuration can select a parent workspace graph. Use the intended graph; do not initialize or migrate state as a side effect of lesson capture.
